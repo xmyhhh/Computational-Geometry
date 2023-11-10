@@ -10,9 +10,10 @@ extern void ConvexHull();
 
 int main() {
 
+	//opencv 左上角是（0，0）
 	//ShowTriangle();
-	ShowDot();
+	//ShowDot();
 	//ShowLine();
-	//ConvexHull();
+	ConvexHull();
 	return 0;
 }
