@@ -9,6 +9,7 @@ set(CMAKE_PREFIX_PATH third/opencv4)
 
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(src)
 link_directories(${OpenCV_LIBRARY_DIRS})
 
 file(GLOB_RECURSE  SOURCE_FILES 

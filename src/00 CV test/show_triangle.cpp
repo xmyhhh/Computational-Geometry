@@ -1,13 +1,4 @@
-#include "opencv2/opencv.hpp"
-#include <vector>
-#include <random>
-
-struct Triangle {
-	cv::Point p1;
-	cv::Point p2;
-	cv::Point p3;
-
-};
+#include "common/typedef.h"
 
 void ShowTriangle() {
 
