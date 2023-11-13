@@ -16,5 +16,5 @@ file(GLOB_RECURSE  SOURCE_FILES
 	${PROJECT_SOURCE_DIR}/src/*.cpp
 )
 
-add_executable(MAIN ${SOURCE_FILES})
+add_executable(MAIN ${SOURCE_FILES} )
 target_link_libraries(MAIN  ${OpenCV_LIBS})

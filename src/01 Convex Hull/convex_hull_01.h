@@ -5,7 +5,7 @@ void ConvexHull_01(std::vector<cv::Point>& all_dots, std::vector<int>& extreme_d
 	//方法一：三角形内部测试判断极点（可行，但是效率低）（n^4）
 	for (size_t i = 0; i < all_dots.size(); i++) {
 		//mark as EXTREME
-		extreme_dots_index.push_back(true);
+		extreme_dots_index[i] = (true);
 	}
 
 	for (size_t i = 0; i < all_dots.size(); i++) {

@@ -5,7 +5,7 @@ void ConvexHull_02(std::vector<cv::Point>& all_dots, std::vector<int>& extreme_d
 	//方法二：判断每条边是不是极边（n^3）
 	for (size_t i = 0; i < all_dots.size(); i++) {
 		//mark as EXTREME
-		extreme_dots_index.push_back(false);
+		extreme_dots_index[i] = (false);
 	}
 
 	for (size_t i = 0; i < all_dots.size(); i++) {

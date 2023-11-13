@@ -6,7 +6,7 @@ void ConvexHull_03(std::vector<cv::Point>& all_dots, std::vector<int>& extreme_d
 
 	for (int i = 0; i < all_dots.size(); i++) {
 		//mark as Non-EXTREME
-		extreme_dots_index.push_back(false);
+		extreme_dots_index[i]=(false);
 	}
 
 	//1: find lowest then leftmost, LTL一定是极点？
@@ -14,7 +14,7 @@ void ConvexHull_03(std::vector<cv::Point>& all_dots, std::vector<int>& extreme_d
 	int LTL_index = 0;
 	for (int i = 1; i < all_dots.size(); i++) {
 		auto LTL = all_dots[LTL_index];
-		if (LTL.y < all_dots[i].y) {
+		if (LTL.y > all_dots[i].y) {
 			LTL_index = i;
 		}
 		else if (LTL.y == all_dots[i].y && LTL.x > all_dots[i].x) {
@@ -24,8 +24,6 @@ void ConvexHull_03(std::vector<cv::Point>& all_dots, std::vector<int>& extreme_d
 	//2: find first EE and next ee……， 这个地方采用比较的思路，寻找更“右侧”的点
 
 	int current_ee_index = LTL_index;
-
-
 	do {
 		int next_ee_index = 0;
 		for (int i = 0; i < all_dots.size(); i++) {
