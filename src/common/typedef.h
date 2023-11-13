@@ -21,6 +21,17 @@ struct Edge {
 	cv::Point p2;
 };
 
+struct Line {
+	cv::Point2d p1;
+	cv::Point2d p2;
+};
+
+struct IntersectionResult {
+	Line l1;
+	Line l2;
+	cv::Point2d intersectionPoint;
+};
+
 
 struct Triangle_Index {
 	uint p1;

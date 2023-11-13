@@ -35,10 +35,14 @@ void ConvexHull() {
 	//ConvexHull_03(all_dots, extreme_dots_index);
 	ConvexHull_04(all_dots, extreme_dots_index);
 
-	//int last_extreme_point_index = -1;
+
+
+	//draw code begin
 	for (size_t i = 0; i < all_dots.size(); i++)
 	{
 		all_dots[i].y = height - all_dots[i].y;
+
+
 
 
 		if (extreme_dots_index[i]) {
