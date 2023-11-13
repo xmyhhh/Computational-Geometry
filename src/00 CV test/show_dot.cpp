@@ -14,11 +14,11 @@ void ShowDot() {
 	for (int i = 0; i < size; i++)
 	{
 		//all_Dots.push_back(cv::Point(rand() % width, rand() % height));
-		all_Dots.push_back(cv::Point(0, 0));
+		all_Dots.push_back(cv::Point(100, 0));
 
 	}
 
-	for (size_t i = 0; i < all_Dots.size(); i++)
+	for (int i = 0; i < all_Dots.size(); i++)
 	{
 		circle(img, all_Dots[i], 2, RED, 2);
 	}

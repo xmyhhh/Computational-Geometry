@@ -2,6 +2,8 @@
 #include "common/typedef.h"
 
 #include "convex_hull_01.h"
+#include "convex_hull_02.h"
+#include "convex_hull_03.h"
 
 void ConvexHull() {
 
@@ -21,7 +23,8 @@ void ConvexHull() {
 	}
 
 	//ConvexHull_01(all_dots, extreme_dots_index);
-	ConvexHull_02(all_dots, extreme_dots_index);
+	//ConvexHull_02(all_dots, extreme_dots_index);
+	ConvexHull_03(all_dots, extreme_dots_index);
 	//int last_extreme_point_index = -1;
 	for (size_t i = 0; i < all_dots.size(); i++)
 	{

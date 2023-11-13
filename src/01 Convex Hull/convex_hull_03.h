@@ -1,30 +1,45 @@
 #include "common/typedef.h"
 #include "common/helper.h"
 
-void ConvexHull_01(std::vector<cv::Point>& all_dots, std::vector<int>& extreme_dots_index) {
-	//方法一：三角形内部测试判断极点（可行，但是效率低）（n^4）
-	for (size_t i = 0; i < all_dots.size(); i++) {
-		//mark as EXTREME
-		extreme_dots_index.push_back(true);
+void ConvexHull_03(std::vector<cv::Point>& all_dots, std::vector<int>& extreme_dots_index) {
+	//方法三：Jarvis March(also known as Gidt-Wrapping)
+
+	for (int i = 0; i < all_dots.size(); i++) {
+		//mark as Non-EXTREME
+		extreme_dots_index.push_back(false);
 	}
 
-	for (size_t i = 0; i < all_dots.size(); i++) {
-		for (size_t j = 0; j < all_dots.size(); j++) {
-			if (i == j)
-				continue;
-			for (size_t k = 0; k < all_dots.size(); k++) {
-				if (j == k || i == k)
-					continue;
-				//now we get triangle as index (i,j,k)
-				//for each point
-				for (size_t point_index = 0; point_index < all_dots.size(); point_index++) {
-					if (point_index == i || point_index == j || point_index == k)
-						continue;
-					if (InTriangleTest(all_dots[i], all_dots[j], all_dots[k], all_dots[point_index]))
-						extreme_dots_index[point_index] = false;
+	//1: find lowest then leftmost, LTL一定是极点？
 
+	int LTL_index = 0;
+	for (int i = 1; i < all_dots.size(); i++) {
+		auto LTL = all_dots[LTL_index];
+		if (LTL.y < all_dots[i].y) {
+			LTL_index = i;
+		}
+		else if (LTL.y == all_dots[i].y && LTL.x > all_dots[i].x) {
+			LTL_index = i;
+		}
+	}
+	//2: find first EE and next ee……， 这个地方采用比较的思路，寻找更“右侧”的点
+
+	int current_ee_index = LTL_index;
+
+
+	do {
+		int next_ee_index = 0;
+		for (int i = 0; i < all_dots.size(); i++) {
+			extreme_dots_index[current_ee_index] = true;
+			if (i != next_ee_index && i != current_ee_index) {
+				if (!ToLeft(all_dots[current_ee_index], all_dots[i], all_dots[next_ee_index])) {
+					next_ee_index = i;
 				}
 			}
 		}
+		current_ee_index = next_ee_index;
 	}
+
+	while (current_ee_index != LTL_index);
+
+
 }
