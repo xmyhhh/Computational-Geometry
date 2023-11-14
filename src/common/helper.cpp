@@ -19,8 +19,6 @@ bool ToLeft(cv::Point& p1, cv::Point& p2, cv::Point& s)
 
 
 IntersectionResult LineIntersectionCalulate(Line l1, Line l2) {
-
-
 	double k1 = (l1.p1.y - l1.p2.y) / (l1.p1.x - l1.p2.x);
 	double k2 = (l2.p1.y - l2.p2.y) / (l2.p1.x - l2.p2.x);
 

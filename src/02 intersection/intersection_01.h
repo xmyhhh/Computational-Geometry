@@ -1,3 +1,4 @@
+#pragma once
 #include "common/typedef.h"
 #include "common/helper.h"
 
