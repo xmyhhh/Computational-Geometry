@@ -9,6 +9,7 @@ extern void ShowLine();
 extern void ConvexHull();
 extern void Intersection();
 extern void Polygon();
+extern void Monotonicity();
 extern void Delaunay();
 
 int main() {
@@ -21,8 +22,8 @@ int main() {
 	//ConvexHull();
 	//Intersection();
 
-	Polygon();
-
+	//Polygon();
+	Monotonicity();
 	//Delaunay();
 	return 0;
 }
