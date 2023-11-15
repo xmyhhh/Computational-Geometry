@@ -8,6 +8,7 @@ extern void ShowLine();
 
 extern void ConvexHull();
 extern void Intersection();
+extern void Polygon();
 extern void Delaunay();
 
 int main() {
@@ -19,6 +20,9 @@ int main() {
 	//ShowLine();
 	//ConvexHull();
 	//Intersection();
-	Delaunay();
+
+	Polygon();
+
+	//Delaunay();
 	return 0;
 }

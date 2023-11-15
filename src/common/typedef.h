@@ -43,3 +43,16 @@ struct Edge_Index {
 	uint p1;
 	uint p2;
 };
+
+struct Polygon {
+	std::vector<cv::Point2d> Point;
+	std::vector<Edge_Index> Segment;
+};
+
+struct PSLG {
+	//In computational geometry, PSLGs have often been called planar subdivisions, 
+	//with an assumption or assertion that subdivisions are polygonal rather than having curved boundaries.
+	std::vector<cv::Point2d> Point;
+	std::vector<Edge_Index> Segment;
+	std::vector<Polygon> Hole;
+};

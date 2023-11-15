@@ -10,6 +10,14 @@ void Intersection_01(std::vector<Line> &all_lines, std::vector <IntersectionResu
 			if (i == j)
 				continue;
 
+			if (
+				all_lines[i].p1 == all_lines[j].p1 || 
+				all_lines[i].p2 == all_lines[j].p2 ||
+				all_lines[i].p1 == all_lines[j].p2 ||
+				all_lines[i].p2 == all_lines[j].p1 
+				)
+				continue;
+
 			bool res = true;
 			res &= (
 				Area2(all_lines[i].p1, all_lines[i].p2, all_lines[j].p1)
