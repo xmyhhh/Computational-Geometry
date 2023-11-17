@@ -10,6 +10,7 @@ extern void ConvexHull();
 extern void Intersection();
 extern void Polygon();
 extern void Monotonicity();
+extern void Voronoi();
 extern void Delaunay();
 
 int main() {
@@ -23,7 +24,8 @@ int main() {
 	//Intersection();
 
 	//Polygon();
-	Monotonicity();
+	//Monotonicity();
+	Voronoi();
 	//Delaunay();
 	return 0;
 }

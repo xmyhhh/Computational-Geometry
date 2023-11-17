@@ -10,7 +10,7 @@ set(CMAKE_PREFIX_PATH third/opencv4)
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(src)
-link_directories(${OpenCV_LIBRARY_DIRS})
+link_directories(${OpenCV_LIB_PATH})
 
 file(GLOB_RECURSE  SOURCE_FILES 
 	${PROJECT_SOURCE_DIR}/src/*.cpp
@@ -18,3 +18,15 @@ file(GLOB_RECURSE  SOURCE_FILES
 
 add_executable(MAIN ${SOURCE_FILES} )
 target_link_libraries(MAIN  ${OpenCV_LIBS})
+
+
+file(GLOB  Opencv_Dll 
+	${OpenCV_LIB_PATH}/../bin/*.dll
+)
+
+FILE(COPY 
+    ${Opencv_Dll} 
+    DESTINATION 
+    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+    
+)
