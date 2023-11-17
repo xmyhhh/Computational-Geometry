@@ -122,3 +122,20 @@ double VectorLengthSqr(cv::Point2d a, cv::Point2d b)
 	return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
 
 }
+
+
+bool VectorSlop(cv::Point2d a, cv::Point2d b, double& slop) {
+	if (a == b)
+		return false;
+	else if (a.x == b.x) {
+		return false;
+	}
+	else if (a.y == b.y) {
+		slop = 0.0;
+		return true;
+	}
+	else {
+		slop = (a.y - b.y) / (a.x - b.x);
+		return true;
+	}
+}

@@ -1,5 +1,10 @@
 #include "voronoi_01.h"
 
+
+
+
+
+
 void Voronoi() {
 
 	int width = 1920 / 2;
@@ -18,8 +23,8 @@ void Voronoi() {
 		all_point.push_back(p1);
 
 	}
-
-
+	DECL::DECL decl;
+	Voronoi_01(all_point, decl);
 
 	//draw code begin
 	for (size_t i = 0; i < all_point.size(); i++)

@@ -17,3 +17,4 @@ IntersectionResult LineIntersectionCalulate(Line l1, Line l2);
 Polygon PolygonRandomGen(int width, int height, int size = 3, float miniAngle = 30);
 
 double VectorLengthSqr(cv::Point2d a, cv::Point2d b);
+bool VectorSlop(cv::Point2d a, cv::Point2d b, double& slop);
