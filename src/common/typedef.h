@@ -106,9 +106,11 @@ namespace DECL {
 	public:
 		int id;
 		HalfEdge* incident_edge;
+		class Site* incident_site;
 		Face(uint _id) {
 			id = _id;
 			incident_edge = nullptr;
+			incident_site = nullptr;
 		}
 	};
 

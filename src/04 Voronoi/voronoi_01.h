@@ -8,7 +8,7 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 	//Incremental Construction
 
 	auto Incremental_construction = [](const cv::Point& site, DECL::DECL& decl) {
-		
+
 		//step 1: find the face that is closest to the new site, use kd_tree better
 		double min_dis = Infinity;
 		const DECL::Site* pSite;
@@ -23,10 +23,24 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 		DECL::Face* closest_face = pSite->incident_face;
 
 		//step 1: bisector b and Let {v, u} = b  Cell(q)
-		HEEdge current = g[f].edge;//该面起点边
-		HEEdge start = current;
-		
-		decl.InsertVertex(site);
+		double slop;
+		cv::Point2d bisector_l;
+		cv::Point2d bisector_r;
+		if (VectorSlop(closest_face->incident_site->position, site, slop)) {
+			if (slop == 0.0) {
+
+			}
+			else {
+
+			}
+		}
+		DECL::HalfEdge* current = closest_face->incident_edge;//该面起点边
+		do {
+
+		} while (current != closest_face->incident_edge)
+
+
+			//decl.InsertVertex(site);
 		};
 
 	for (const auto& site : all_point) {
