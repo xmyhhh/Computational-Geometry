@@ -15,7 +15,7 @@ void Voronoi() {
 	std::vector<Edge_Index> all_edge;
 
 
-	int size = 3;
+	int size = 2;
 	for (int i = 0; i < size; i++)
 	{
 
@@ -27,7 +27,7 @@ void Voronoi() {
 	decl.boundary = cv::Point2d(width, height);
 	Voronoi_01(all_point, decl);
 
-	for (size_t i = 0; i < decl.site_list.size(); i++)
+	for (size_t i = 1; i < decl.site_list.size(); i++)
 	{
 		auto site = decl.site_list[i];
 		auto face = decl.site_list[i].incident_face;
@@ -36,7 +36,7 @@ void Voronoi() {
 		auto start_edge = face->incident_edge;
 
 		do {
-			draw_line_origin_buttom_left(width, height, img, start_edge->origin->position, start_edge->end->position, WHITE, 5);
+			draw_line_origin_buttom_left(width, height, img, start_edge->origin->position, start_edge->end->position, BLUE, 5);
 			start_edge = start_edge->succ;
 		} while (face->incident_edge != start_edge);
 

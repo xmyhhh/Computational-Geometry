@@ -16,8 +16,6 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 	};
 	std::vector<newRecord> record_list;
 
-
-
 	auto Incremental_construction = [&](const cv::Point2d site, DECL::DECL& decl) {
 		if (decl.site_list.size() == 0) {
 			decl.AddSite(site);
@@ -161,20 +159,11 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 
 
 		//update record, del/add and merge
-		bool first_recode = true;
-
 		std::vector<DECL::HalfEdge*> edge_added_list;
 
 
 		for (int i = 0; i < record_list.size(); i++) {
 			auto& record = record_list[i];
-			newRecord record_last;
-			if (i == 0) {
-				record_last = *(record_list.end() - 1);
-			}
-			else {
-				record_last = record_list[i - 1];
-			}
 
 			DECL::Vertex* vt_to_add = new DECL::Vertex(record.position);
 			decl.AddVertex(vt_to_add);
@@ -186,36 +175,23 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 			//Step 1: split half edge and del the close newsite part
 			DECL::HalfEdge* origin_half_edge = record.half_edge;
 
-			if (!record.half_edge->isBorder) {
-				delete(vt_close_to_new_site);
-			}
-
 			if (vt_close_to_new_site == origin_half_edge->origin) {
 				origin_half_edge->origin = vt_to_add;
 				origin_half_edge->twin->end = vt_to_add;
 			}
 			else {
 				origin_half_edge->end = vt_to_add;
-				origin_half_edge->twin->end = vt_to_add;
+				origin_half_edge->twin->origin = vt_to_add;
 			}
 
 			//Step 2: add new half edge
 			{
-				if (i == 0) {
-					continue;
-				}
-
 				if (record.half_edge->isBorder) {
 					DECL::HalfEdge* edge_to_add_border;
 					DECL::HalfEdge* edge_to_add_twin_border;
-					if (vt_close_to_new_site == origin_half_edge->origin) {
-						edge_to_add_border = new DECL::HalfEdge(vt_to_add, origin_half_edge->origin);
-						edge_to_add_twin_border = new DECL::HalfEdge(origin_half_edge->origin, vt_to_add);
-					}
-					else {
-						edge_to_add_border = new DECL::HalfEdge(vt_to_add, origin_half_edge->origin);
-						edge_to_add_twin_border = new DECL::HalfEdge(origin_half_edge->origin, vt_to_add);
-					}
+
+					edge_to_add_border = new DECL::HalfEdge(vt_to_add, vt_close_to_new_site);
+					edge_to_add_twin_border = new DECL::HalfEdge(vt_close_to_new_site, vt_to_add);
 
 					edge_to_add_border->twin = edge_to_add_twin_border;
 					edge_to_add_twin_border->twin = edge_to_add_border;
@@ -224,13 +200,18 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 					edge_added_list.push_back(edge_to_add_border);
 					edge_added_list.push_back(edge_to_add_twin_border);
 				}
-
-				DECL::HalfEdge* edge_to_add = new DECL::HalfEdge(vt_to_add, *(decl.vertex_list.end() - 1));
-				DECL::HalfEdge* edge_to_add_twin = new DECL::HalfEdge(*(decl.vertex_list.end() - 1), vt_to_add);
-				edge_to_add->twin = edge_to_add_twin;
-				edge_to_add_twin->twin = edge_to_add;
-				edge_added_list.push_back(edge_to_add);
-				edge_added_list.push_back(edge_to_add_twin);
+				else {
+					decl.DelVertex(vt_close_to_new_site);
+					delete(vt_close_to_new_site);
+				}
+				if (i > 0) {
+					DECL::HalfEdge* edge_to_add = new DECL::HalfEdge(vt_to_add, *(decl.vertex_list.end() - 1));
+					DECL::HalfEdge* edge_to_add_twin = new DECL::HalfEdge(*(decl.vertex_list.end() - 1), vt_to_add);
+					edge_to_add->twin = edge_to_add_twin;
+					edge_to_add_twin->twin = edge_to_add;
+					edge_added_list.push_back(edge_to_add);
+					edge_added_list.push_back(edge_to_add_twin);
+				}
 
 				if (i == record_list.size() - 1) {
 					DECL::HalfEdge* edge_to_add_last = new DECL::HalfEdge(*(decl.vertex_list.end() - 1), vt_to_add);
@@ -253,7 +234,7 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 
 		//step 4: set edge pred and succ(inner face around new site)
 		for (int i = 0; i < edge_added_list.size(); i += 2) {
-			auto &edge = edge_added_list[i];
+			auto& edge = edge_added_list[i];
 			if (i == 0) {
 				edge->pred = edge_added_list[edge_added_list.size() - 2];
 				edge->succ = edge_added_list[2];
@@ -279,7 +260,7 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 				}
 				DECL::HalfEdge* edge_to_add;
 				if (i == 0) {
-					edge_to_add = edge_added_list[edge_added_list.size()  - 1];
+					edge_to_add = edge_added_list[edge_added_list.size() - 1];
 				}
 				else {
 					edge_to_add = edge_added_list[i * 2 - 1 + boader_acc];
