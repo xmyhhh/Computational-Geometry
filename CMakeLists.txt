@@ -28,5 +28,4 @@ FILE(COPY
     ${Opencv_Dll} 
     DESTINATION 
     ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-    
 )

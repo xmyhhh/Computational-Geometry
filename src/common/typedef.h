@@ -1,6 +1,7 @@
 #pragma once
 #include "opencv2/opencv.hpp"
 #include <vector>
+#include <set>
 #include <random>
 
 
@@ -72,12 +73,11 @@ namespace DECL {
 		uint id;
 		cv::Point2d position;
 		class HalfEdge* incident_edge;
-		Vertex(uint _id, cv::Point2d _position) {
-			id = _id;
+		Vertex(cv::Point2d _position) {
 			position = _position;
 			incident_edge = nullptr;
 		}
-
+		Vertex(){}
 	};
 
 	class HalfEdge
@@ -89,9 +89,9 @@ namespace DECL {
 		HalfEdge* succ;
 		Vertex* origin, * end;
 		class Face* incident_face;
+		bool isBorder = false;
+		HalfEdge(Vertex* _origin, Vertex* _end) {
 
-		HalfEdge(uint _id, Vertex* _origin, Vertex* _end) {
-			id = _id;
 			origin = _origin;
 			end = _end;
 			incident_face = nullptr;
@@ -107,8 +107,7 @@ namespace DECL {
 		int id;
 		HalfEdge* incident_edge;
 		class Site* incident_site;
-		Face(uint _id) {
-			id = _id;
+		Face() {
 			incident_edge = nullptr;
 			incident_site = nullptr;
 		}
@@ -116,32 +115,40 @@ namespace DECL {
 
 	class Site {
 	public:
-		uint id;
 		cv::Point2d position;
 		Face* incident_face;
-		Site(uint _id, cv::Point2d _position) {
-			id = _id;
+		Site(cv::Point2d _position) {
 			position = _position;
 		}
 	};
 
 	class DECL {
 	public:
-		std::vector<Face> face_list;
-		std::vector<HalfEdge> halfEdge_list;
-		std::vector<Vertex> vertex_list;
+
+		std::vector<Vertex*> vertex_list;
 		std::vector<Site>site_list;
 
-		void InsertSite(cv::Point2d position) {
-			site_list.push_back({ site_list.size(), position });
+		cv::Point2d boundary;
+
+		void AddSite(cv::Point2d s) {
+			site_list.push_back(s);
 		}
 
-		void InsertVertex(cv::Point2d position) {
-			vertex_list.push_back({ vertex_list.size(), position });
+		void AddVertex(Vertex* v) {
+			vertex_list.push_back(v);
 		}
-		void InsertHalfEdge() {
-
+		void DelVertex(Vertex* v) {
+			for (auto iter = vertex_list.begin(); iter != vertex_list.end(); iter++) {
+				if (*iter == v) {
+					vertex_list.erase(iter);
+					break;
+				}
+			}
 		}
 
+		DECL() {
+			vertex_list.reserve(300);
+			site_list.reserve(100);
+		}
 	};
 }

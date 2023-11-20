@@ -15,7 +15,7 @@ void Voronoi() {
 	std::vector<Edge_Index> all_edge;
 
 
-	int size = 30;
+	int size = 3;
 	for (int i = 0; i < size; i++)
 	{
 
@@ -24,18 +24,22 @@ void Voronoi() {
 
 	}
 	DECL::DECL decl;
+	decl.boundary = cv::Point2d(width, height);
 	Voronoi_01(all_point, decl);
 
-	//draw code begin
-	for (size_t i = 0; i < all_point.size(); i++)
+	for (size_t i = 0; i < decl.site_list.size(); i++)
 	{
-		circle(img, all_point[i], 2, RED, 2);
-	}
+		auto site = decl.site_list[i];
+		auto face = decl.site_list[i].incident_face;
 
-	for (size_t i = 0; i < all_edge.size(); i++)
-	{
+		draw_circle_origin_buttom_left(width, height, img, site.position, 2, RED, 2);
+		auto start_edge = face->incident_edge;
 
-		line(img, all_point[all_edge[i].p1], all_point[all_edge[i].p2], WHITE, 1);
+		do {
+			draw_line_origin_buttom_left(width, height, img, start_edge->origin->position, start_edge->end->position, WHITE, 5);
+			start_edge = start_edge->succ;
+		} while (face->incident_edge != start_edge);
+
 	}
 
 #define Grid_Size 10

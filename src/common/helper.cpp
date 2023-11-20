@@ -23,11 +23,28 @@ bool ToLeft(cv::Point& p1, cv::Point& p2, cv::Point& s)
 
 
 IntersectionResult LineIntersectionCalulate(Line l1, Line l2) {
-	double k1 = (l1.p1.y - l1.p2.y) / (l1.p1.x - l1.p2.x);
-	double k2 = (l2.p1.y - l2.p2.y) / (l2.p1.x - l2.p2.x);
+	double inter_x;
+	double inter_y;
 
-	double inter_x = (k1 * l1.p1.x - k2 * l2.p1.x - l1.p1.y + l2.p1.y) / (k1 - k2);
-	double inter_y = k2 * (inter_x - l2.p1.x) + l2.p1.y;
+	if (l1.p1.x != l1.p2.x && l2.p1.x != l2.p2.x) {
+		double k1 = (l1.p1.y - l1.p2.y) / (l1.p1.x - l1.p2.x);
+		double k2 = (l2.p1.y - l2.p2.y) / (l2.p1.x - l2.p2.x);
+
+		inter_x = (k1 * l1.p1.x - k2 * l2.p1.x - l1.p1.y + l2.p1.y) / (k1 - k2);
+		inter_y = k2 * (inter_x - l2.p1.x) + l2.p1.y;
+	}
+	else {
+		if (l1.p1.x == l1.p2.x) {
+			inter_x = l1.p1.x;
+			double k2 = (l2.p1.y - l2.p2.y) / (l2.p1.x - l2.p2.x);
+			inter_y = k2 * (inter_x - l2.p1.x) + l2.p1.y;
+		}
+		else {
+			inter_x = l2.p1.x;
+			double k1 = (l1.p1.y - l1.p2.y) / (l1.p1.x - l1.p2.x);
+			inter_y = k1 * (inter_x - l1.p1.x) + l1.p1.y;
+		}
+	}
 	return  { l1 ,l2 ,{inter_x, inter_y} };
 }
 
@@ -135,7 +152,22 @@ bool VectorSlop(cv::Point2d a, cv::Point2d b, double& slop) {
 		return true;
 	}
 	else {
-		slop = (a.y - b.y) / (a.x - b.x);
+		slop = -(a.x - b.x) / (a.y - b.y);
 		return true;
 	}
+}
+
+
+void draw_line_origin_buttom_left(uint width, uint height, cv::InputOutputArray img, cv::Point pt1, cv::Point pt2, const cv::Scalar& color,
+	int thickness, int lineType, int shift) {
+	pt1.y = height - pt1.y;
+	pt2.y = height - pt2.y;
+	cv::line(img, pt1, pt2, color, thickness);
+}
+
+void draw_circle_origin_buttom_left(uint width, uint height, cv::InputOutputArray img, cv::Point center, int radius,
+	const cv::Scalar& color, int thickness, int lineType, int shift) {
+	center.y = height - center.y;
+
+	cv::circle(img, center, radius, color, thickness);
 }
