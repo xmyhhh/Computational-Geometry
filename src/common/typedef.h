@@ -2,9 +2,10 @@
 #include "opencv2/opencv.hpp"
 #include <vector>
 #include <set>
+#include <assert.h>
 #include <random>
 
-
+#define ASSERT(condition) assert(condition)
 #define  WHITE cv::Scalar(255, 255, 255)
 #define  RED cv::Scalar(0, 0, 255)
 #define  GREEN cv::Scalar(0, 255, 0)

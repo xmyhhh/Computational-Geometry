@@ -27,7 +27,7 @@ void Voronoi() {
 	decl.boundary = cv::Point2d(width, height);
 	Voronoi_01(all_point, decl);
 
-	for (size_t i = 1; i < decl.site_list.size(); i++)
+	for (size_t i = 0; i < decl.site_list.size(); i++)
 	{
 		auto site = decl.site_list[i];
 		auto face = decl.site_list[i].incident_face;

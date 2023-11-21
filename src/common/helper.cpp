@@ -22,6 +22,14 @@ bool ToLeft(cv::Point& p1, cv::Point& p2, cv::Point& s)
 }
 
 
+bool ToLeft(cv::Point2d& p1, cv::Point2d& p2, cv::Point2d& s)
+{
+	double value = p1.x * p2.y - p1.y * p2.x
+		+ p2.x * s.y - p2.y * s.x
+		+ s.x * p1.y - s.y * p1.x;
+	return value > 0.0;
+}
+
 IntersectionResult LineIntersectionCalulate(Line l1, Line l2) {
 	double inter_x;
 	double inter_y;

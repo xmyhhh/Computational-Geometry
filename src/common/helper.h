@@ -2,7 +2,7 @@
 #include "typedef.h"
 bool InTriangleTest(cv::Point& p1, cv::Point& p2, cv::Point& p3, cv::Point& s);
 bool ToLeft(cv::Point& p1, cv::Point& p2, cv::Point& p3);
-
+bool ToLeft(cv::Point2d& p1, cv::Point2d& p2, cv::Point2d& s);
 template<typename PointT >
 double Area2(PointT& p1, PointT& p2, PointT& s) {
 	double value = p1.x * p2.y - p1.y * p2.x
