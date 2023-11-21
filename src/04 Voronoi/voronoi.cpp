@@ -15,7 +15,7 @@ void Voronoi() {
 	std::vector<Edge_Index> all_edge;
 
 
-	int size = 2;
+	int size = 3;
 	for (int i = 0; i < size; i++)
 	{
 

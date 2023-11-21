@@ -4,6 +4,8 @@
 #include <set>
 #include <assert.h>
 #include <random>
+#include <iostream>
+#include <string>
 
 #define ASSERT(condition) assert(condition)
 #define  WHITE cv::Scalar(255, 255, 255)

@@ -179,3 +179,12 @@ void draw_circle_origin_buttom_left(uint width, uint height, cv::InputOutputArra
 
 	cv::circle(img, center, radius, color, thickness);
 }
+
+void debug_cout(std::string msg, bool on)
+{
+	std::cout << msg << "\n";
+}
+
+std::string vector_to_string(cv::Point2d site) {
+	return "(" + std::to_string(site.x) + ", " + std::to_string(site.y) + ")";
+}

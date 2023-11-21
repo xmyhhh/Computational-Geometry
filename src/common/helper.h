@@ -25,3 +25,7 @@ void draw_line_origin_buttom_left(uint width, uint height, cv::InputOutputArray 
 
 void draw_circle_origin_buttom_left(uint width, uint height, cv::InputOutputArray img, cv::Point center, int radius,
 	const cv::Scalar& color, int thickness = 1, int lineType = cv::LINE_8, int shift = 0);
+
+void debug_cout(std::string msg, bool on = true);
+
+std::string vector_to_string(cv::Point2d site);
