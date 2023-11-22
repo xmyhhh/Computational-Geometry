@@ -29,9 +29,8 @@ void Voronoi() {
 
 
 	debug_cout("\n*********start draw*********");
-	for (size_t i = 1; i < decl.site_list.size()-1 ; i++)
+	for (size_t i = 0; i < decl.site_list.size() - 2; i++)
 	{
-
 		auto site = decl.site_list[i];
 		auto face = decl.site_list[i].incident_face;
 
