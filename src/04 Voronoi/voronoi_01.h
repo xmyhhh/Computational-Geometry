@@ -14,7 +14,18 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 		cv::Point2d position;
 		DECL::HalfEdge* half_edge;
 	};
+	auto create_pari_edge = [](DECL::Vertex* f, DECL::Vertex* t) {
+		DECL::HalfEdge* edge;
+		DECL::HalfEdge* edge_twin;
 
+		edge = new DECL::HalfEdge(f, t);
+		edge_twin = new DECL::HalfEdge(t, f);
+
+		edge->twin = edge_twin;
+		edge_twin->twin = edge;
+
+		return edge;
+		};
 
 	auto Incremental_construction = [&](const cv::Point2d site, DECL::DECL& decl) {
 		if (decl.site_list.size() == 0) {
@@ -88,8 +99,7 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 
 			return;
 		}
-		debug_cout("\n");
-		debug_cout("*********start with site:" + vector_to_string(site));
+
 
 		std::vector<newRecord> record_list;
 		//step 1: find the face that is closest to the new site, use kd_tree better
@@ -355,14 +365,11 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 				if ((i + 1) % 2 == 0) {
 					auto last_vertex = *(decl.vertex_list.end() - 2);
 
-					DECL::HalfEdge* edge_to_add_last = new DECL::HalfEdge(last_vertex, vt_to_add);
-					DECL::HalfEdge* edge_to_add_twin_last = new DECL::HalfEdge(vt_to_add, last_vertex);
+					DECL::HalfEdge* edge_to_add_last = create_pari_edge(last_vertex, vt_to_add);
+					DECL::HalfEdge* edge_to_add_twin_last = edge_to_add_last->twin;
 
 					edge_to_add_last->isBorder = false;
 					edge_to_add_twin_last->isBorder = false;
-
-					edge_to_add_last->twin = edge_to_add_twin_last;
-					edge_to_add_twin_last->twin = edge_to_add_twin_last;
 
 					edge_to_add_last->incident_face = face_to_add;
 					edge_to_add_twin_last->incident_face = closest_face;
@@ -378,7 +385,8 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 					auto border_e2_twin = edge_added_list[edge_added_list.size() - 3 - 6 * (i / 2)];
 					auto origin_half_edge_e2 = origin_half_edge;
 
-					if (ToLeft(last_vertex->position, vt_to_add->position, site_to_add->position))
+					bool ccw = ToLeft(last_vertex->position, vt_to_add->position, site_to_add->position);
+					if (ccw)
 					{
 						//if intersection is ccw
 						//inner
@@ -418,6 +426,7 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 						border_e1_twin->pred = origin_half_edge_e1->succ->twin;
 						origin_half_edge_e1->succ->twin->succ = border_e1_twin;
 
+						//set edge pred and succ(inner face around new site)
 						edge_to_add_last->succ = border_e1;
 						border_e1->pred = edge_to_add_last;
 						edge_to_add_last->pred = border_e2;
@@ -432,31 +441,30 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 					}
 				}
 			}
-			//set edge pred and succ(inner face around new site)
+
 
 		}
 		else {
 			//non-border alne with border intersection
+
 			uint first_border_intersection_index = -1;
+			uint last_border_intersection_index = -1;
+
 			for (int i = 0; i < record_list.size(); i++) {
 				auto& record = record_list[i];
 				if (record.half_edge->isBorder) {
-					first_border_intersection_index = i;
-					break;
+					if (first_border_intersection_index == -1)
+						first_border_intersection_index = i;
+					else
+						last_border_intersection_index = i;
 				}
 			}
 
-			auto create_pari_edge = [](DECL::Vertex* f, DECL::Vertex* t) {
-				DECL::HalfEdge* edge;
-				DECL::HalfEdge* edge_twin;
+			auto start_point = record_list[last_border_intersection_index - 1].position;
+			auto next_point = record_list[last_border_intersection_index].position; \
+				bool ccw = ToLeft(start_point, next_point, site_to_add->position);
 
-				edge = new DECL::HalfEdge(f, t);
-				edge_twin = new DECL::HalfEdge(t, f);
-				edge->twin = edge_twin;
-				edge_twin = edge;
-				return edge;
-				};
-			//create non-border edge (e.g. b->e->e->-e>->b)(e.g. e->e->b->-e>->b)
+			//create edge, record possiblely like(e.g. b->e->e->-e>->b)(e.g. e->e->b->-e>->b)
 			{
 				for (int i = first_border_intersection_index; i >= 0; i--) {
 					auto& record = record_list[i];
@@ -466,49 +474,120 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 					DECL::Vertex* vt_close_to_new_site =
 						VectorLengthSqr(record.half_edge->origin->position, site) < VectorLengthSqr(record.half_edge->end->position, site) ?
 						record.half_edge->origin : record.half_edge->end;
-
 					//Step 1: split half edge and del the close newsite part
 					DECL::HalfEdge* origin_half_edge = record.half_edge;
 
-					//create border edge
+					//create first border edge
+					if (i == first_border_intersection_index)
 					{
+						//Step 1: split half edge and del the close newsite part
+						DECL::HalfEdge* origin_half_edge = record.half_edge;
+
 						DECL::HalfEdge* edge_to_add_border;
 						DECL::HalfEdge* edge_to_add_twin_border;
 
-						edge_to_add_border = new DECL::HalfEdge(vt_to_add, vt_close_to_new_site);
-						edge_to_add_twin_border = new DECL::HalfEdge(vt_close_to_new_site, vt_to_add);
+						edge_to_add_border = create_pari_edge(vt_to_add, vt_close_to_new_site);
+						edge_to_add_twin_border = edge_to_add_border->twin;
+
 						edge_to_add_border->isBorder = true;
 						edge_to_add_twin_border->isBorder = true;
 
-						edge_to_add_border->twin = edge_to_add_twin_border;
-						edge_to_add_twin_border->twin = edge_to_add_border;
 						edge_to_add_border->incident_face = face_to_add;
 						edge_to_add_twin_border->incident_face = face_to_add;
 
 						edge_added_list.push_back(edge_to_add_border);
 						edge_added_list.push_back(edge_to_add_twin_border);
+
+						//update pred and succ
+						cv::Point2d succ_point_position;
+						if (first_border_intersection_index == 0)
+						{
+							succ_point_position = record_list[1].position;
+						}
+						else {
+							succ_point_position = record_list[first_border_intersection_index - 1].position;
+						}
+						if (ccw) {
+							bool tri_cuts = (
+								Area2(vt_to_add->position, succ_point_position, record.half_edge->succ->origin->position)
+								*
+								Area2(vt_to_add->position, succ_point_position, record.half_edge->succ->end->position)
+								) < 0;
+
+							if (tri_cuts) {
+								edge_to_add_border->succ = record.half_edge->succ->twin->succ;
+								record.half_edge->succ->twin->succ->pred = edge_to_add_border;
+
+								edge_to_add_twin_border->pred = record.half_edge->succ->twin->succ->twin;
+								record.half_edge->succ->twin->succ->twin->succ = edge_to_add_twin_border;
+							}
+							else {
+								edge_to_add_border->pred = record.half_edge->pred;
+								record.half_edge->pred->succ = edge_to_add_border;
+
+								edge_to_add_twin_border->succ = record.half_edge->pred->twin;
+								record.half_edge->pred->twin->pred = edge_to_add_twin_border;
+							}
+
+						}
+						else {
+							bool tri_cuts = (
+								Area2(vt_to_add->position, succ_point_position, record.half_edge->pred->origin->position)
+								*
+								Area2(vt_to_add->position, succ_point_position, record.half_edge->pred->end->position)
+								) < 0;
+
+							if (tri_cuts) {
+								edge_to_add_border->pred = record.half_edge->pred->twin->pred;
+								record.half_edge->pred->twin->pred->succ = edge_to_add_border;
+
+								edge_to_add_twin_border->succ = record.half_edge->pred->twin->pred->twin;
+								record.half_edge->pred->twin->pred->twin->pred = edge_to_add_twin_border;
+							}
+							else {
+								edge_to_add_border->succ = record.half_edge->succ;
+								record.half_edge->succ->pred = edge_to_add_border;
+
+								edge_to_add_twin_border->pred = record.half_edge->succ->twin;
+								record.half_edge->succ->twin->succ = edge_to_add_twin_border;
+							}
+
+						}
+
+						//move origin border edge veertex
+						if (vt_close_to_new_site == origin_half_edge->origin) {
+							origin_half_edge->origin = vt_to_add;
+							origin_half_edge->twin->end = vt_to_add;
+						}
+						else {
+							origin_half_edge->end = vt_to_add;
+							origin_half_edge->twin->origin = vt_to_add;
+						}
 					}
 
 					//create non-border edge
-					if (vt_close_to_new_site == origin_half_edge->origin) {
-						origin_half_edge->origin = vt_to_add;
-						origin_half_edge->twin->end = vt_to_add;
-					}
-					else {
-						origin_half_edge->end = vt_to_add;
-						origin_half_edge->twin->origin = vt_to_add;
-					}
-
 					if (i > 0) {
 						auto& record_succ = record_list[i - 1];
 						DECL::Vertex* vt_to_add_succ = new DECL::Vertex(record_succ.position);
 						decl.AddVertex(vt_to_add_succ);
+
 						auto new_edge = create_pari_edge(vt_to_add, vt_to_add_succ);
 						new_edge->incident_face = face_to_add;
 						new_edge->twin->incident_face = record.half_edge->incident_face;
 						edge_added_list.push_back(new_edge);
 						edge_added_list.push_back(new_edge->twin);
+
+						//move origin border edge vertex
+						if (vt_close_to_new_site == origin_half_edge->origin) {
+							origin_half_edge->origin = vt_to_add;
+							origin_half_edge->twin->end = vt_to_add;
+						}
+						else {
+							origin_half_edge->end = vt_to_add;
+							origin_half_edge->twin->origin = vt_to_add;
+						}
 					}
+
 				}
 
 				for (int i = first_border_intersection_index + 1; i < record_list.size(); i++) {
@@ -524,61 +603,219 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 					//Step 1: split half edge and del the close newsite part
 					DECL::HalfEdge* origin_half_edge = record.half_edge;
 
-					if (i > 0) {
-						newRecord record_succ;
-						if (i == first_border_intersection_index + 1)
-							record_succ = record_list[0];
-						else
-							record_succ = record_list[i - 1];
 
-						DECL::Vertex* vt_to_add_succ = new DECL::Vertex(record_succ.position);
-						decl.AddVertex(vt_to_add_succ);
-						auto new_edge = create_pari_edge(vt_to_add, vt_to_add_succ);
-						new_edge->incident_face = face_to_add;
-						new_edge->twin->incident_face = record.half_edge->incident_face;
-						edge_added_list.push_back(new_edge);
-						edge_added_list.push_back(new_edge->twin);
+					newRecord record_succ;
+					if (i == first_border_intersection_index + 1)
+						record_succ = record_list[0];
+					else
+						record_succ = record_list[i - 1];
+
+					DECL::Vertex* vt_to_add_succ = new DECL::Vertex(record_succ.position);
+					decl.AddVertex(vt_to_add_succ);
+					DECL::HalfEdge* non_border_edge = create_pari_edge(vt_to_add, vt_to_add_succ);
+
+					//create non-border edge
+					{
+						non_border_edge->incident_face = face_to_add;
+						non_border_edge->twin->incident_face = record.half_edge->incident_face;
+						edge_added_list.push_back(non_border_edge);
+						edge_added_list.push_back(non_border_edge->twin);
+
+						//move origin border edge vertex
+						if (vt_close_to_new_site == origin_half_edge->origin) {
+							origin_half_edge->origin = vt_to_add;
+							origin_half_edge->twin->end = vt_to_add;
+						}
+						else {
+							origin_half_edge->end = vt_to_add;
+							origin_half_edge->twin->origin = vt_to_add;
+						}
 					}
+
+					//create last border edge
 					if (i == record_list.size() - 1) {
-						//create border edge
-						DECL::HalfEdge* edge_to_add_border;
-						DECL::HalfEdge* edge_to_add_twin_border;
+						{
+							DECL::HalfEdge* edge_to_add_border;
+							DECL::HalfEdge* edge_to_add_twin_border;
 
-						edge_to_add_border = new DECL::HalfEdge(vt_to_add, vt_close_to_new_site);
-						edge_to_add_twin_border = new DECL::HalfEdge(vt_close_to_new_site, vt_to_add);
-						edge_to_add_border->isBorder = true;
-						edge_to_add_twin_border->isBorder = true;
+							{
+								edge_to_add_border = create_pari_edge(vt_to_add, vt_close_to_new_site);
+								edge_to_add_twin_border = edge_to_add_border->twin;
 
-						edge_to_add_border->twin = edge_to_add_twin_border;
-						edge_to_add_twin_border->twin = edge_to_add_border;
-						edge_to_add_border->incident_face = face_to_add;
-						edge_to_add_twin_border->incident_face = face_to_add;
+								edge_to_add_border->isBorder = true;
+								edge_to_add_twin_border->isBorder = true;
 
-						edge_added_list.push_back(edge_to_add_border);
-						edge_added_list.push_back(edge_to_add_twin_border);
+								edge_to_add_border->incident_face = face_to_add;
+								edge_to_add_twin_border->incident_face = face_to_add;
 
+								edge_added_list.push_back(edge_to_add_border);
+								edge_added_list.push_back(edge_to_add_twin_border);
+							}
+
+							//set pred and succ
+							if (ccw) {
+								bool tri_cuts = (
+									Area2(vt_to_add->position, vt_to_add_succ->position, record.half_edge->succ->origin->position)
+									*
+									Area2(vt_to_add->position, vt_to_add_succ->position, record.half_edge->succ->end->position)
+									) < 0;
+
+								if (tri_cuts) {
+									edge_to_add_border->succ = record.half_edge->succ->twin->succ;
+									record.half_edge->succ->twin->succ->pred = edge_to_add_border;
+
+									edge_to_add_twin_border->pred = record.half_edge->succ->twin->succ->twin;
+									record.half_edge->succ->twin->succ->twin->succ = edge_to_add_twin_border;
+								}
+								else {
+									edge_to_add_border->pred = record.half_edge->pred;
+									record.half_edge->pred->succ = edge_to_add_border;
+
+									edge_to_add_twin_border->succ = record.half_edge->pred->twin;
+									record.half_edge->pred->twin->pred = edge_to_add_twin_border;
+								}
+
+							}
+							else {
+								bool tri_cuts = (
+									Area2(vt_to_add->position, vt_to_add_succ->position, record.half_edge->pred->origin->position)
+									*
+									Area2(vt_to_add->position, vt_to_add_succ->position, record.half_edge->pred->end->position)
+									) < 0;
+
+								if (tri_cuts) {
+									edge_to_add_border->pred = record.half_edge->pred->twin->pred;
+									record.half_edge->pred->twin->pred->succ = edge_to_add_border;
+
+									edge_to_add_twin_border->succ = record.half_edge->pred->twin->pred->twin;
+									record.half_edge->pred->twin->pred->twin->pred = edge_to_add_twin_border;
+								}
+								else {
+									edge_to_add_border->succ = record.half_edge->succ;
+									record.half_edge->succ->pred = edge_to_add_border;
+
+									edge_to_add_twin_border->pred = record.half_edge->succ->twin;
+									record.half_edge->succ->twin->succ = edge_to_add_twin_border;
+								}
+
+
+							}
+
+							//move origin border edge vertex
+							if (vt_close_to_new_site == origin_half_edge->origin) {
+								origin_half_edge->origin = vt_to_add;
+								origin_half_edge->twin->end = vt_to_add;
+							}
+							else {
+								origin_half_edge->end = vt_to_add;
+								origin_half_edge->twin->origin = vt_to_add;
+							}
+						}
 					}
+
+					//update pred and succ(outter face)
+	/*				if (ccw) {
+						record.half_edge->succ = non_border_edge->twin;
+						non_border_edge->twin->pred = record.half_edge;
+
+						record_succ_same_face_edge->pred = non_border_edge->twin;
+						non_border_edge->twin->succ = record_succ_same_face_edge;
+					}
+					else {
+						record.half_edge->pred = non_border_edge->twin;
+						non_border_edge->twin->succ = record.half_edge;
+
+						record_succ_same_face_edge->succ = non_border_edge->twin;
+						non_border_edge->twin->pred = record_succ_same_face_edge;
+					}*/
+				}
+			}
+
+			//update pred and succ(inner)
+			for (int i = 2; i < edge_added_list.size(); i += 2) {
+
+				auto edge = edge_added_list[i];
+				DECL::HalfEdge* edge_last = edge_added_list[i - 2];
+
+
+				//inner
+				if (ccw) {
+					edge->pred = edge_last;
+					edge->twin->succ = edge_last->twin;
+					edge_last->succ = edge;
+					edge_last->twin->pred = edge->twin;
+				}
+				else {
+					edge->succ = edge_last;
+					edge->twin->pred = edge_last->twin;
+					edge_last->pred = edge;
+					edge_last->twin->succ = edge->twin;
 				}
 
 			}
 
-			//update pred and succ
-			for (int i = 1; i < edge_added_list.size(); i++) {
-				auto edge = edge_added_list[i];
-				DECL::HalfEdge* edge_last = edge_added_list[i - 1];
+			//update pred and succ(outter)
+			{
+				for (int i = first_border_intersection_index; i > 0; i--) {
 
-				auto common_point = edge_added_list[0]->origin == edge_added_list[3]->origin ? edge_added_list[0]->origin : edge_added_list[0]->end;
-				auto non_common_point = edge_added_list[0]->origin == edge_added_list[3]->origin ? edge_added_list[0]->end : edge_added_list[0]->origin;
+					auto& record = record_list[i];
+					newRecord record_succ;
+					record_succ = record_list[i - 1];
+					DECL::HalfEdge* record_succ_same_face_edge = record_succ.half_edge;
+					{
+						if (record_succ.half_edge->incident_face != record.half_edge->incident_face) {
+							record_succ_same_face_edge = record_succ.half_edge->twin;
+						}
+					}
 
-				bool ccw = ToLeft(non_common_point->position, common_point->position, site_to_add->position);
+					auto& non_border_edge = edge_added_list[(first_border_intersection_index - i) * 2];
 
-				if (ccw) {
-					edge->pred = edge_last;
-					edge_last->succ = edge;
+					if (ccw) {
+						record.half_edge->succ = non_border_edge->twin;
+						non_border_edge->twin->pred = record.half_edge;
+
+						record_succ_same_face_edge->pred = non_border_edge->twin;
+						non_border_edge->twin->succ = record_succ_same_face_edge;
+					}
+					else {
+						record.half_edge->pred = non_border_edge->twin;
+						non_border_edge->twin->succ = record.half_edge;
+
+						record_succ_same_face_edge->succ = non_border_edge->twin;
+						non_border_edge->twin->pred = record_succ_same_face_edge;
+					}
 				}
-				else {
-					edge->succ = edge_last;
-					edge_last->pred = edge;
+
+				for (int i = first_border_intersection_index + 1; i < record_list.size(); i++) {
+					auto& record = record_list[i];
+					newRecord record_succ;
+					if (i == first_border_intersection_index + 1)
+						record_succ = record_list[0];
+					else
+						record_succ = record_list[i - 1];
+					DECL::HalfEdge* record_succ_same_face_edge = record_succ.half_edge;
+					{
+						if (record_succ.half_edge->incident_face != record.half_edge->incident_face) {
+							record_succ_same_face_edge = record_succ.half_edge->twin;
+						}
+					}
+
+					auto& non_border_edge = edge_added_list[i * 2];
+
+					if (ccw) {
+						record.half_edge->succ = non_border_edge->twin;
+						non_border_edge->twin->pred = record.half_edge;
+
+						record_succ_same_face_edge->pred = non_border_edge->twin;
+						non_border_edge->twin->succ = record_succ_same_face_edge;
+					}
+					else {
+						record.half_edge->pred = non_border_edge->twin;
+						non_border_edge->twin->succ = record.half_edge;
+
+						record_succ_same_face_edge->succ = non_border_edge->twin;
+						non_border_edge->twin->pred = record_succ_same_face_edge;
+					}
 				}
 			}
 
@@ -611,8 +848,6 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 				}
 				edge->incident_face = face_to_add;
 			}
-
-
 
 			//step 4: check if need del halfedge which is surround by new site's cell(outter face around new site)
 			{
@@ -664,7 +899,10 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 		};
 
 	for (const auto& site : all_point) {
+		debug_cout("\n");
+		debug_cout("*********start with site:" + vector_to_string(site));
 		Incremental_construction(site, decl);
+		debug_cout("*********end with site:" + vector_to_string(site));
 	}
 
 

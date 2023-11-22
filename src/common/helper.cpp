@@ -168,6 +168,7 @@ bool VectorSlop(cv::Point2d a, cv::Point2d b, double& slop) {
 
 void draw_line_origin_buttom_left(uint width, uint height, cv::InputOutputArray img, cv::Point pt1, cv::Point pt2, const cv::Scalar& color,
 	int thickness, int lineType, int shift) {
+	debug_cout("*********draw_line_origin_buttom_left: *form" + vector_to_string(pt1) + " *to" + vector_to_string(pt2));
 	pt1.y = height - pt1.y;
 	pt2.y = height - pt2.y;
 	cv::line(img, pt1, pt2, color, thickness);

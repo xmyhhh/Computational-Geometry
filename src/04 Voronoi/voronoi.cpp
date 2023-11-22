@@ -27,11 +27,15 @@ void Voronoi() {
 	decl.boundary = cv::Point2d(width, height);
 	Voronoi_01(all_point, decl);
 
-	for (size_t i = 0; i < decl.site_list.size(); i++)
+
+	debug_cout("\n*********start draw*********");
+	for (size_t i = 1; i < decl.site_list.size()-1 ; i++)
 	{
+
 		auto site = decl.site_list[i];
 		auto face = decl.site_list[i].incident_face;
 
+		debug_cout("draw site:" + vector_to_string(site.position));
 		draw_circle_origin_buttom_left(width, height, img, site.position, 2, RED, 2);
 		auto start_edge = face->incident_edge;
 
