@@ -15,7 +15,7 @@ void Voronoi() {
 	std::vector<Edge_Index> all_edge;
 
 
-	int size = 3;
+	int size = 4;
 	for (int i = 0; i < size; i++)
 	{
 
@@ -29,7 +29,7 @@ void Voronoi() {
 
 
 	debug_cout("\n*********start draw*********");
-	for (size_t i = 0; i < decl.site_list.size() - 2; i++)
+	for (size_t i = 0; i < decl.site_list.size(); i++)
 	{
 		auto site = decl.site_list[i];
 		auto face = decl.site_list[i].incident_face;

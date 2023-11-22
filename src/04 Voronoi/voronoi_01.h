@@ -493,6 +493,7 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 					DECL::HalfEdge* origin_half_edge = record.half_edge;
 
 					decl.AddVertex(vt_to_add);
+
 					//create first border edge
 					if (i == first_border_intersection_index)
 					{
@@ -671,7 +672,7 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 								edge_added_list.push_back(edge_to_add_twin_border);
 							}
 
-							//set pred and succ
+							//set pred and succ(inner)
 							if (ccw) {
 								bool tri_cuts = (
 									Area2(vt_to_add->position, vt_to_add_succ->position, record.half_edge->succ->origin->position)
@@ -696,11 +697,13 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 
 							}
 							else {
+								//TODO:<=是不是可以优化，因为等于0实际上相交于端点
 								bool tri_cuts = (
 									Area2(vt_to_add->position, vt_to_add_succ->position, record.half_edge->pred->origin->position)
 									*
 									Area2(vt_to_add->position, vt_to_add_succ->position, record.half_edge->pred->end->position)
-									) < 0;
+									) <= 0;
+								
 
 								if (tri_cuts) {
 									edge_to_add_border->pred = record.half_edge->pred->twin->pred;
@@ -716,22 +719,9 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 									edge_to_add_twin_border->pred = record.half_edge->succ->twin;
 									record.half_edge->succ->twin->succ = edge_to_add_twin_border;
 								}
-
-
-							}
-
-							//move origin border edge vertex
-							if (vt_close_to_new_site == origin_half_edge->origin) {
-								origin_half_edge->origin = vt_to_add;
-								origin_half_edge->twin->end = vt_to_add;
-							}
-							else {
-								origin_half_edge->end = vt_to_add;
-								origin_half_edge->twin->origin = vt_to_add;
 							}
 						}
 					}
-
 					//update pred and succ(outter face)
 					/*				if (ccw) {
 										record.half_edge->succ = non_border_edge->twin;
@@ -839,9 +829,6 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 					}
 				}
 			}
-
-
-
 		}
 
 		//step 3: set face
@@ -915,7 +902,6 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 				}
 
 			}
-
 		}
 		};
 
