@@ -132,6 +132,7 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 		bool first_both_border = false;
 		int count = 0;
 		do {
+			debug_cout("intersection test with site: " + vector_to_string(current_site->position));
 			//step 1: get bisector and {v, u} from closet site
 			double slop;
 			cv::Point2d bisector_l;
@@ -173,7 +174,7 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 					}
 					count++;
 					record_list.push_back({ {intersectionResults[0].intersectionPoint}, current_edge });
-					debug_cout("found intersection with position: " + vector_to_string(intersectionResults[0].intersectionPoint));
+					debug_cout("!!found intersection with position: " + vector_to_string(intersectionResults[0].intersectionPoint));
 				}
 				current_edge = current_edge->succ;
 
@@ -201,7 +202,7 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 					closet_site_intersect_edge_0 = nullptr;
 				}
 				else {
-					current_site = closet_site;
+					goto after_all_intersection_record_find;
 				}
 			}
 			else {
@@ -508,7 +509,7 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 							edge_to_add_twin_border->isBorder = true;
 
 							edge_to_add_border->incident_face = face_to_add;
-							edge_to_add_twin_border->incident_face = face_to_add;
+							edge_to_add_twin_border->incident_face = nullptr;
 
 							edge_added_list.push_back(edge_to_add_border);
 							edge_added_list.push_back(edge_to_add_twin_border);
@@ -516,25 +517,33 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 
 						//update pred and succ
 						//first we have to find which edge we need as pred/succ
-						cv::Point2d succ_point_position;
+						newRecord record_succ;
 						{
 							if (first_border_intersection_index == 0)
 							{
-								succ_point_position = record_list[1].position;
+								record_succ = record_list[1];
 							}
 							else {
-								succ_point_position = record_list[first_border_intersection_index - 1].position;
+								record_succ = record_list[first_border_intersection_index - 1];
 							}
 						}
 
-						if (ccw) {
-							bool tri_cuts = (
-								Area2(vt_to_add->position, succ_point_position, record.half_edge->succ->origin->position)
-								*
-								Area2(vt_to_add->position, succ_point_position, record.half_edge->succ->end->position)
-								) < 0;
+						DECL::HalfEdge** edge_to_add_border_attach_dir;
+						{
+							if (
+								vt_to_add->position.y < vt_close_to_new_site->position.y ||
+								vt_to_add->position.x < vt_close_to_new_site->position.x
+								) {
+								edge_to_add_border_attach_dir = &edge_to_add_border->pred;
+							}
+							else {
+								edge_to_add_border_attach_dir = &edge_to_add_border->succ;
+							}
+						}
 
-							if (tri_cuts) {
+						//TODO:ERROR
+						if (ccw) {
+							if (true) {
 								edge_to_add_border->succ = record.half_edge->succ->twin->succ;
 								record.half_edge->succ->twin->succ->pred = edge_to_add_border;
 
@@ -551,13 +560,7 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 
 						}
 						else {
-							bool tri_cuts = (
-								Area2(vt_to_add->position, succ_point_position, record.half_edge->pred->origin->position)
-								*
-								Area2(vt_to_add->position, succ_point_position, record.half_edge->pred->end->position)
-								) < 0;
-
-							if (tri_cuts) {
+							if (true) {
 								edge_to_add_border->pred = record.half_edge->pred->twin->pred;
 								record.half_edge->pred->twin->pred->succ = edge_to_add_border;
 
@@ -703,7 +706,7 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL::DECL& decl) {
 									*
 									Area2(vt_to_add->position, vt_to_add_succ->position, record.half_edge->pred->end->position)
 									) <= 0;
-								
+
 
 								if (tri_cuts) {
 									edge_to_add_border->pred = record.half_edge->pred->twin->pred;

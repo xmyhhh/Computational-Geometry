@@ -25,7 +25,7 @@ int main() {
 
 	//Polygon();
 	//Monotonicity();
-	Voronoi();
-	//Delaunay();
+	//Voronoi();
+	Delaunay();
 	return 0;
 }
