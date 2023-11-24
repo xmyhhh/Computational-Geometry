@@ -311,7 +311,9 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 		//Step 2: process possible_bad_edge_list
 		while (possible_bad_edge_list.size()) {
 			DECL_Delaunay::HalfEdge* possible_bad_edge = possible_bad_edge_list[possible_bad_edge_list.size() - 1];
-			possible_bad_edge_list.pop_back()
+			possible_bad_edge_list.pop_back();
+
+
 		}
 		};
 
