@@ -68,3 +68,101 @@ struct PSLG {
 
 
 
+namespace DECL_Delaunay {
+	//doubly connected edge list (DCEL), https://github.com/AnkurRyder/DCEL
+
+	class Vertex
+	{
+	public:
+		uint id;
+		cv::Point2d position;
+		class HalfEdge* incident_edge;
+		Vertex(cv::Point2d _position) {
+			position = _position;
+			incident_edge = nullptr;
+		}
+		Vertex() {}
+	};
+
+	class HalfEdge
+	{
+	public:
+		uint id;
+		HalfEdge* twin;
+		HalfEdge* pred;
+		HalfEdge* succ;
+		Vertex* origin, * end;
+		class Face* incident_face;
+		bool isBorder = false;
+		HalfEdge(Vertex* _origin, Vertex* _end) {
+			origin = _origin;
+			end = _end;
+			incident_face = nullptr;
+			twin = nullptr;
+			pred = nullptr;
+			succ = nullptr;
+		}
+	};
+
+	class Face
+	{
+	public:
+		int id;
+		HalfEdge* incident_edge;
+		Face() {
+			incident_edge = nullptr;
+		}
+	};
+
+	class DECL {
+	public:
+		std::vector<Vertex*> vertex_list;
+		std::vector<Face*> face_list;
+		std::vector<HalfEdge*> edge_list;
+
+		cv::Point2d boundary;
+
+		void AddVertex(Vertex* v) {
+			vertex_list.push_back(v);
+		}
+		void DelVertex(Vertex* v) {
+			for (auto iter = vertex_list.begin(); iter != vertex_list.end(); iter++) {
+				if (*iter == v) {
+					vertex_list.erase(iter);
+					break;
+				}
+			}
+		}
+
+		void AddFace(Face* v) {
+			face_list.push_back(v);
+		}
+		void DelFace(Face* v) {
+			for (auto iter = face_list.begin(); iter != face_list.end(); iter++) {
+				if (*iter == v) {
+					face_list.erase(iter);
+					break;
+				}
+			}
+		}
+
+		void AddEdge(HalfEdge* v) {
+			edge_list.push_back(v);
+		}
+		void DelEdge(HalfEdge* v) {
+			for (auto iter = edge_list.begin(); iter != edge_list.end(); iter++) {
+				if (*iter == v) {
+					edge_list.erase(iter);
+					break;
+				}
+			}
+		}
+
+		DECL() {
+			vertex_list.reserve(300);
+			face_list.reserve(300);
+			edge_list.reserve(300);
+		}
+	};
+}
+

@@ -1,5 +1,5 @@
+#include "non_delaunay_01.h"
 #include "delaunay_01.h"
-
 
 void Delaunay() {
 
@@ -20,8 +20,8 @@ void Delaunay() {
 	}
 
 	decl.boundary = cv::Point2d(width, height);
+	//Non_Delaunay_01(all_point, decl);
 	Delaunay_01(all_point, decl);
-
 
 	//draw code begin
 	debug_cout("\n*********start draw*********");

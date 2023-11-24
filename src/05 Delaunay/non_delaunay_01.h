@@ -6,8 +6,8 @@
 
 
 
-void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
-	//Delaunay Triangulation
+void Non_Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
+	//Dlaunay Triangulation
 	//Bowyer-Watson Algorithm
 
 	auto create_pari_edge = [](DECL_Delaunay::Vertex* f, DECL_Delaunay::Vertex* t) {
@@ -320,3 +320,6 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 
 
 }
+
+
+
