@@ -1,10 +1,6 @@
 #include "voronoi_01.h"
 
 
-
-
-
-
 void Voronoi() {
 
 	int width = 1920 / 2;
@@ -23,7 +19,7 @@ void Voronoi() {
 		all_point.push_back(p1);
 
 	}
-	DECL::DECL decl;
+	DECL_Voronoi::DECL decl;
 	decl.boundary = cv::Point2d(width, height);
 	Voronoi_01(all_point, decl);
 

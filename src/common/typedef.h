@@ -6,6 +6,7 @@
 #include <random>
 #include <iostream>
 #include <string>
+#include <cmath>
 
 #define ASSERT(condition) assert(condition)
 #define  WHITE cv::Scalar(255, 255, 255)
@@ -67,91 +68,3 @@ struct PSLG {
 
 
 
-namespace DECL {
-	//doubly connected edge list (DCEL), https://github.com/AnkurRyder/DCEL
-
-	class Vertex
-	{
-	public:
-		uint id;
-		cv::Point2d position;
-		class HalfEdge* incident_edge;
-		Vertex(cv::Point2d _position) {
-			position = _position;
-			incident_edge = nullptr;
-		}
-		Vertex(){}
-	};
-
-	class HalfEdge
-	{
-	public:
-		uint id;
-		HalfEdge* twin;
-		HalfEdge* pred;
-		HalfEdge* succ;
-		Vertex* origin, * end;
-		class Face* incident_face;
-		bool isBorder = false;
-		HalfEdge(Vertex* _origin, Vertex* _end) {
-
-			origin = _origin;
-			end = _end;
-			incident_face = nullptr;
-			twin = nullptr;
-			pred = nullptr;
-			succ = nullptr;
-		}
-	};
-
-	class Face
-	{
-	public:
-		int id;
-		HalfEdge* incident_edge;
-		class Site* incident_site;
-		Face() {
-			incident_edge = nullptr;
-			incident_site = nullptr;
-		}
-	};
-
-	class Site {
-	public:
-		cv::Point2d position;
-		Face* incident_face;
-		Site(cv::Point2d _position) {
-			position = _position;
-		}
-	};
-
-	class DECL {
-	public:
-
-		std::vector<Vertex*> vertex_list;
-		std::vector<Site>site_list;
-
-		cv::Point2d boundary;
-
-		void AddSite(cv::Point2d s) {
-			site_list.push_back(s);
-		}
-
-		void AddVertex(Vertex* v) {
-			vertex_list.push_back(v);
-		}
-		void DelVertex(Vertex* v) {
-			for (auto iter = vertex_list.begin(); iter != vertex_list.end(); iter++) {
-				if (*iter == v) {
-					vertex_list.erase(iter);
-					break;
-				}
-			}
-		}
-
-		DECL() {
-			vertex_list.reserve(300);
-			site_list.reserve(100);
-		}
-	};
-}

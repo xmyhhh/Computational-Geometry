@@ -3,37 +3,48 @@
 
 void Delaunay() {
 
-	int width = 1920 / 2;
-	int height = 1920 / 2;
+	int width = 1920 ;
+	int height = 1080;
 	cv::Mat img = cv::Mat::zeros(cv::Size(width, height), CV_8UC3);
 
 	std::vector<cv::Point> all_point;
-	std::vector<Edge_Index> all_edge;
+	DECL_Delaunay::DECL decl;
 
+	srand(12);
 
-	int size = 30;
+	int size = 20;
 	for (int i = 0; i < size; i++)
 	{
-
 		auto p1 = cv::Point(rand() % width, rand() % height);
 		all_point.push_back(p1);
-
 	}
 
-	Delaunay_01(all_point, all_edge);
+	decl.boundary = cv::Point2d(width, height);
+	Delaunay_01(all_point, decl);
 
 
 	//draw code begin
-	for (size_t i = 0; i < all_point.size(); i++)
-	{
-		circle(img, all_point[i], 2, RED, 2);
+	debug_cout("\n*********start draw*********");
+
+	for (size_t i = 0; i < decl.face_list.size(); i++) {
+
+		auto face = decl.face_list[i];
+		auto start_edge = face->incident_edge;
+		do {
+			draw_line_origin_buttom_left(width, height, img, start_edge->origin->position, start_edge->end->position, GREEN, 1);
+			start_edge = start_edge->succ;
+		} while (face->incident_edge != start_edge);
 	}
 
-	for (size_t i = 0; i < all_edge.size(); i++)
+	for (size_t i = 0; i < decl.vertex_list.size(); i++)
 	{
-
-		line(img, all_point[all_edge[i].p1], all_point[all_edge[i].p2], WHITE, 1);
+		auto site = *decl.vertex_list[i];
+		debug_cout("draw site:" + vector_to_string(site.position));
+		draw_circle_origin_buttom_left(width, height, img, site.position, 2, RED, 2);
 	}
+
+
+
 
 #define Grid_Size 10
 #define Show_Grid 0

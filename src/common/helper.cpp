@@ -4,16 +4,9 @@ extern void Intersection_01(std::vector<Line>& all_lines, std::vector <Intersect
 
 
 
-bool InTriangleTest(cv::Point& p1, cv::Point& p2, cv::Point& p3, cv::Point& s)
-{
-	bool b1 = ToLeft(p1, p2, s);
-	bool b2 = ToLeft(p2, p3, s);
-	bool b3 = ToLeft(p3, p1, s);
 
-	return (b1 == b2) && (b2 == b3);
-}
 
-bool ToLeft(cv::Point& p1, cv::Point& p2, cv::Point& s)
+bool ToLeft(const cv::Point& p1, const cv::Point& p2, const cv::Point& s)
 {
 	double value = p1.x * p2.y - p1.y * p2.x
 		+ p2.x * s.y - p2.y * s.x
@@ -22,7 +15,7 @@ bool ToLeft(cv::Point& p1, cv::Point& p2, cv::Point& s)
 }
 
 
-bool ToLeft(cv::Point2d& p1, cv::Point2d& p2, cv::Point2d& s)
+bool ToLeft(const cv::Point2d& p1, const cv::Point2d& p2, const cv::Point2d& s)
 {
 	double value = p1.x * p2.y - p1.y * p2.x
 		+ p2.x * s.y - p2.y * s.x
@@ -163,6 +156,32 @@ bool VectorSlop(cv::Point2d a, cv::Point2d b, double& slop) {
 		slop = -(a.x - b.x) / (a.y - b.y);
 		return true;
 	}
+}
+
+double DistanceToPoint(Line line, cv::Point2d point)
+{
+	if (line.p1.x == line.p2.x) {
+		//have no slop
+		return Abs(point.x - line.p2.x);
+	}
+	if (line.p1.y == line.p2.y) {
+		return Abs(point.y - line.p2.y);
+	}
+	double slop = (line.p1.y - line.p2.y) / (line.p1.x - line.p2.x);
+	double a = -slop;
+	double b = 1;
+	double c = slop * line.p1.x - line.p1.y;
+
+
+	return Abs(a * point.x + b * point.y + c) / std::sqrt(a * a + b * b);
+}
+
+double Abs(double in)
+{
+	if (in < 0) {
+		return -in;
+	}
+	return in;
 }
 
 
