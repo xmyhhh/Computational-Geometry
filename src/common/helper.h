@@ -4,6 +4,8 @@
 bool ToLeft(const cv::Point& p1, const cv::Point& p2, const cv::Point& p3);
 bool ToLeft(const cv::Point2d& p1, const cv::Point2d& p2, const cv::Point2d& s);
 
+bool InCircle2D(const cv::Point& p1, const cv::Point& p2, const cv::Point& p3, const cv::Point& s);
+
 //geo tesl
 template<typename PointT >
 bool InTriangleTest(PointT& p1, PointT& p2, PointT& p3, const PointT& s) {

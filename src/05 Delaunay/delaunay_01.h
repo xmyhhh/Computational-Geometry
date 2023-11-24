@@ -100,7 +100,7 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 			return;
 		}
 
-		//find out which face the new vtx in
+		//Step 1: find out which face the new vtx in and slip it(minewhile set possible_bad_edge_list)
 		DECL_Delaunay::Face* inside_face = nullptr;
 		{
 			for (auto face : decl.face_list) {
@@ -118,6 +118,7 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 			}
 		}
 
+		std::vector<DECL_Delaunay::HalfEdge*> possible_bad_edge_list;
 		if (inside_face) {
 			debug_cout("inside_face");
 			//link split one tri to three tri
@@ -245,6 +246,10 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 			}
 
 			decl.DelFace(inside_face);
+
+			possible_bad_edge_list.push_back(p_edge0);
+			possible_bad_edge_list.push_back(p_edge1);
+			possible_bad_edge_list.push_back(p_edge2);
 		}
 		else {
 			//find the closet edge
@@ -299,8 +304,15 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 				}
 			}
 
+			possible_bad_edge_list.push_back(minEdge);
+
 		}
 
+		//Step 2: process possible_bad_edge_list
+		while (possible_bad_edge_list.size()) {
+			DECL_Delaunay::HalfEdge* possible_bad_edge = possible_bad_edge_list[possible_bad_edge_list.size() - 1];
+			possible_bad_edge_list.pop_back()
+		}
 		};
 
 

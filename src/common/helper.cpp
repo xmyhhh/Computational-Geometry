@@ -23,6 +23,27 @@ bool ToLeft(const cv::Point2d& p1, const cv::Point2d& p2, const cv::Point2d& s)
 	return value > 0.0;
 }
 
+bool InCircle2D(const cv::Point& p1, const cv::Point& p2, const cv::Point& p3, const cv::Point& s)
+{
+	double value = 0;
+	value += (p1.x - s.x) *
+		(
+			(p2.y - s.y) * (std::pow(p3.x - s.x, 2) + std::pow(p3.y - s.y, 2)) -
+			(p3.y - s.y) * (std::pow(p2.x - s.x, 2) + std::pow(p2.y - s.y, 2))
+			);
+
+	value += -(p1.y - s.y) *
+		(
+			(p2.x - s.x) * (std::pow(p3.x - s.x, 2) + std::pow(p3.y - s.y, 2)) -
+			(p3.x - s.x) * (std::pow(p2.x - s.x, 2) + std::pow(p2.y - s.y, 2))
+			);
+
+	value += (p2.x - s.x) * (p3.y - s.y) - (p2.y - s.y) * (p3.x - s.x);
+
+	return value > 0.0;
+};
+
+
 IntersectionResult LineIntersectionCalulate(Line l1, Line l2) {
 	double inter_x;
 	double inter_y;
