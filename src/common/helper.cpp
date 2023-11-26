@@ -23,22 +23,26 @@ bool ToLeft(const cv::Point2d& p1, const cv::Point2d& p2, const cv::Point2d& s)
 	return value > 0.0;
 }
 
-bool InCircle2D(const cv::Point& p1, const cv::Point& p2, const cv::Point& p3, const cv::Point& s)
+bool InCircle2D(const cv::Point2d& p1, const cv::Point2d& p2, const cv::Point2d& p3, const cv::Point2d& s)
 {
-	double value = 0;
-	value += (p1.x - s.x) *
-		(
-			(p2.y - s.y) * (std::pow(p3.x - s.x, 2) + std::pow(p3.y - s.y, 2)) -
-			(p3.y - s.y) * (std::pow(p2.x - s.x, 2) + std::pow(p2.y - s.y, 2))
-			);
 
-	value += -(p1.y - s.y) *
-		(
-			(p2.x - s.x) * (std::pow(p3.x - s.x, 2) + std::pow(p3.y - s.y, 2)) -
-			(p3.x - s.x) * (std::pow(p2.x - s.x, 2) + std::pow(p2.y - s.y, 2))
-			);
+	double a11, a12, a13;
+	double a21, a22, a23;
+	double a31, a32, a33;
 
-	value += (p2.x - s.x) * (p3.y - s.y) - (p2.y - s.y) * (p3.x - s.x);
+	a11 = p1.x - s.x;
+	a12 = p1.y - s.y;
+	a13 = std::pow((p1.x - s.x), 2) + std::pow((p1.y - s.y), 2);
+
+	a21 = p2.x - s.x;
+	a22 = p2.y - s.y;
+	a23 = std::pow((p2.x - s.x), 2) + std::pow((p2.y - s.y), 2);
+
+	a31 = p3.x - s.x;
+	a32 = p3.y - s.y;
+	a33 = std::pow((p3.x - s.x), 2) + std::pow((p3.y - s.y), 2);
+
+	double value = a11 * a22 * a33 + a12 * a23 * a31 + a13 * a21 * a32 - a31 * a22 * a13 - a32 * a23 * a11 - a21 * a12 * a33;
 
 	return value > 0.0;
 };

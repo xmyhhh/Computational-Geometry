@@ -277,7 +277,12 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 
 			//form face 0
 			DECL_Delaunay::Face* p_face = new DECL_Delaunay::Face();
+			new_edge0->incident_face = p_face;
+			new_edge1->incident_face = p_face;
+			minEdge->incident_face = p_face;
+
 			decl.AddFace(p_face);
+
 			p_face->incident_edge = minEdge;
 			{
 				bool ccw = ToLeft(minEdge->origin->position, minEdge->end->position, vertex_position);
@@ -312,7 +317,47 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 		while (possible_bad_edge_list.size()) {
 			DECL_Delaunay::HalfEdge* possible_bad_edge = possible_bad_edge_list[possible_bad_edge_list.size() - 1];
 			possible_bad_edge_list.pop_back();
+			if (possible_bad_edge->twin->incident_face != nullptr) {
+				auto test_vertex = possible_bad_edge->twin->succ->end;
+				auto con_test_vertex = possible_bad_edge->succ->end;
+				bool is_in_circle = InCircle2D(possible_bad_edge->origin->position, possible_bad_edge->end->position, possible_bad_edge->pred->origin->position, test_vertex->position);
+				if (is_in_circle) {
+					//flip
 
+					auto origin_face_a = possible_bad_edge->incident_face;
+					auto origin_face_a_edge_0 = possible_bad_edge->succ;
+					auto origin_face_a_edge_1 = possible_bad_edge->pred;
+
+					auto origin_face_b = possible_bad_edge->twin->incident_face;
+					auto origin_face_b_edge_0 = possible_bad_edge->twin->pred;
+					auto origin_face_b_edge_1 = possible_bad_edge->twin->succ;
+
+					possible_bad_edge_list.push_back(origin_face_b_edge_0);
+					possible_bad_edge_list.push_back(origin_face_b_edge_1);
+
+					possible_bad_edge->origin = con_test_vertex;
+					possible_bad_edge->end = test_vertex;
+					possible_bad_edge->twin->origin = test_vertex;
+					possible_bad_edge->twin->end = con_test_vertex;
+
+					origin_face_a->incident_edge = possible_bad_edge;
+					origin_face_b->incident_edge = possible_bad_edge->twin;
+
+					possible_bad_edge->succ = origin_face_b_edge_0;
+					origin_face_b_edge_0->pred = possible_bad_edge;
+					possible_bad_edge->pred = origin_face_a_edge_0;
+					origin_face_a_edge_0->succ = possible_bad_edge;
+					origin_face_b_edge_0->succ = origin_face_a_edge_0;
+					origin_face_a_edge_0->pred = origin_face_b_edge_0;
+
+					possible_bad_edge->twin->succ = origin_face_a_edge_1;
+					origin_face_a_edge_1->pred = possible_bad_edge->twin;
+					possible_bad_edge->twin->pred = origin_face_b_edge_1;
+					origin_face_b_edge_1->succ = possible_bad_edge->twin;
+					origin_face_b_edge_1->pred = origin_face_a_edge_1;
+					origin_face_a_edge_1->succ = origin_face_b_edge_1;
+				}
+			}
 
 		}
 		};
