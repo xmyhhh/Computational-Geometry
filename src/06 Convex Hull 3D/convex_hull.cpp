@@ -57,7 +57,7 @@ public:
 
 	void preparePipelines() {
 		std::vector<VkPushConstantRange> pushConstantRanges = {
-			vks::initializers::pushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(PushBlock), 0),
+			vks::initializers::pushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(PushBlock), 0),
 		};
 		VkPipelineLayoutCreateInfo pipelineLayoutCI = vks::initializers::pipelineLayoutCreateInfo(&descriptorSetLayout, 1);;
 		pipelineLayoutCI.pushConstantRangeCount = 1;
@@ -137,7 +137,13 @@ public:
 
 
 			vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipline);
+			vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
 
+			sphere.pos = glm::vec3(0, 0, 0);
+			glm::mat4 model = glm::translate(glm::mat4(1.0f), sphere.pos);
+			model = glm::scale(model, sphere.size);
+			vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushBlock), &model);
+			sphere.model.draw(drawCmdBuffers[i]);
 
 			/*		for (auto& scene_object : scene.objects) {
 						glm::mat4 model = glm::translate(glm::mat4(1.0f), scene_object.pos);
