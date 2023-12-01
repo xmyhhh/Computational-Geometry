@@ -1,72 +1,57 @@
 
 #include "common/typedef.h"
-
 #include "convex_hull_01.h"
+#include "common/vulkan/VulkanExampleBase.h"
 
-void ConvexHull3D() {
+class  ConvexHull3D_Vulkan :public VulkanExampleBase
+{
+
+public:
+	ConvexHull3D_Vulkan() : VulkanExampleBase(true) {
+		title = "convex";
+		camera.type = Camera::CameraType::firstperson;
+		camera.setPosition(glm::vec3(10.0f, 13.0f, 1.8f));
+		camera.setRotation(glm::vec3(-62.5f, 90.0f, 0.0f));
+		camera.movementSpeed = 4.0f;
+		camera.setPerspective(60.0f, (float)width / (float)height, 0.1f, 256.0f);
+		camera.rotationSpeed = 0.25f;
+		paused = true;
+		timerSpeed *= 0.25f;
+	}
+
+	~ConvexHull3D_Vulkan()
+	{
+
+	}
+	void render() {}
+};
 
 
-	int width = 1920 / 2;
-	int height = 1920 / 2;
-	cv::Mat img = cv::Mat::zeros(cv::Size(width, height), CV_8UC3);
+LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
 
-	std::vector<cv::Point> all_dots;
-	std::vector<int> extreme_dots_index;
+	return (DefWindowProc(hWnd, uMsg, wParam, lParam));
+}
+
+void ConvexHull3D(HINSTANCE hInstance) {
+
+
+	int width = 1000;
+	int height = 1000;
+	int deepth = 1000;
+
+	std::vector<cv::Point3d> all_dots;
 
 	int size = 300;
 	for (int i = 0; i < size; i++)
 	{
-		all_dots.push_back(cv::Point(rand() % width, rand() % height));
-		extreme_dots_index.push_back(false);
-	}
-	{
-		/*all_dots.push_back(cv::Point(636, 27));
-		extreme_dots_index.push_back(false);
-		all_dots.push_back(cv::Point(305, 905));
-		extreme_dots_index.push_back(false);
-		all_dots.push_back(cv::Point(227,41));
-		extreme_dots_index.push_back(false);*/
+		all_dots.push_back(cv::Point3d(rand() % width, rand() % height, rand() % deepth));
 
 	}
-	//ConvexHull_01(all_dots, extreme_dots_index);
-	//ConvexHull_02(all_dots, extreme_dots_index);
-	//ConvexHull_03(all_dots, extreme_dots_index);
-	//ConvexHull_04(all_dots, extreme_dots_index);
-
-
-	//draw code begin
-	for (size_t i = 0; i < all_dots.size(); i++)
-	{
-		all_dots[i].y = height - all_dots[i].y;
-
-
-
-
-		if (extreme_dots_index[i]) {
-			circle(img, all_dots[i], 2, BLUE, 4);
-			//if (last_extreme_point_index != -1) {
-			//	line(img, cv::Point(all_dots[last_extreme_point_index].x, all_dots[last_extreme_point_index].y), cv::Point(all_dots[i].x, all_dots[i].y), WHITE, 2);
-			//}
-			//last_extreme_point_index = i;
-		}
-		else {
-			circle(img, all_dots[i], 2, RED, 2);
-		}
-	}
-
-#define Grid_Size 10
-	{
-		for (size_t i = 0; i < Grid_Size; i++)
-		{
-			line(img, cv::Point(width / Grid_Size * i, 0), cv::Point(width / Grid_Size * i, height), WHITE, 1);
-		}
-		for (size_t i = 0; i < Grid_Size; i++)
-		{
-			line(img, cv::Point(0, height / Grid_Size * i), cv::Point(width, height / Grid_Size * i), WHITE, 1);
-		}
-	}
-
-
-	imshow("ConvexHull", img);
-	cv::waitKey(0);
+	auto ConvexHull3D_Vulkan_app = new ConvexHull3D_Vulkan();
+	ConvexHull3D_Vulkan_app->initVulkan();
+	ConvexHull3D_Vulkan_app->setupWindow(hInstance, WndProc);
+	ConvexHull3D_Vulkan_app->prepare();
+	ConvexHull3D_Vulkan_app->renderLoop();
+	delete(ConvexHull3D_Vulkan_app);
 }

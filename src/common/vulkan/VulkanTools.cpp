@@ -31,7 +31,7 @@ const std::string getShaderBasePath()
 #elif defined(VK_EXAMPLE_SHADERS_DIR)
 	return VK_EXAMPLE_SHADERS_DIR;
 #else
-	return "./../src/shaders/";
+	return "./../shaders/";
 #endif
 }
 #endif

@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.19 FATAL_ERROR)
 
 project(CppGC VERSION 0.1.0)
 
+add_definitions(-DVK_EXAMPLE_ASSETS_DIR=\"${CMAKE_SOURCE_DIR}/asset/\")
+add_definitions(-DVK_EXAMPLE_SHADERS_DIR=\"${CMAKE_SOURCE_DIR}/shader/compile\")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_HOME_DIRECTORY}/bin")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -19,11 +21,15 @@ link_directories(${OpenCV_LIB_PATH})
 include_directories(src)
 include_directories(third/glm)
 include_directories(third/tinygltf)
+
 include_directories(third/ktx/include)
 include_directories(third/ktx/other_include)
-include_directories(third/imgui)
-
 link_directories(third/ktx/lib)
+
+include_directories(third/imgui)
+include_directories(third/glfw/include)
+link_directories(third/glfw/lib-vc2022)
+
 
 file(GLOB_RECURSE  SOURCE_FILES 
 	${PROJECT_SOURCE_DIR}/src/*.cpp
@@ -34,7 +40,7 @@ file(GLOB_RECURSE  IMGUI_SOURCE_FILES
 )
 
 add_executable(MAIN ${SOURCE_FILES} ${IMGUI_SOURCE_FILES})
-target_link_libraries(MAIN  ${OpenCV_LIBS} ${Vulkan_LIBRARY} ktx)
+target_link_libraries(MAIN  ${OpenCV_LIBS} ${Vulkan_LIBRARY} ktx glfw3)
 
 
 file(GLOB  Opencv_Dll 

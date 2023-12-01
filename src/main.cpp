@@ -1,11 +1,12 @@
 
+	
 
-
-//#pragma comment(linker, "/subsystem:windows")
+#pragma comment(linker, "/subsystem:windows")
 #include <windows.h>
 #include <fcntl.h>
 #include <io.h>
 #include <ShellScalingAPI.h>
+
 
 
 extern void ShowTriangle();
@@ -18,9 +19,9 @@ extern void Polygon();
 extern void Monotonicity();
 extern void Voronoi();
 extern void Delaunay();
+extern void ConvexHull3D(HINSTANCE hInstance);
 
-int main(){
-//int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
 	//opencv 左上角是（0，0）
 
@@ -33,6 +34,8 @@ int main(){
 	//Polygon();
 	//Monotonicity();
 	//Voronoi();
-	Delaunay();
+	//Delaunay();
+
+	ConvexHull3D( hInstance);
 	return 0;
 }

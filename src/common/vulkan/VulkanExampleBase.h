@@ -149,6 +149,8 @@ private:
 	void destroyCommandBuffers();
 	std::string shaderDir = "glsl";
 protected:
+
+
 	// Returns the path to the root of the glsl or hlsl shader directory.
 	std::string getShadersPath() const;
 
@@ -336,6 +338,7 @@ public:
 #if defined(_WIN32)
 	void setupConsole(std::string title);
 	void setupDPIAwareness();
+
 	HWND setupWindow(HINSTANCE hinstance, WNDPROC wndproc);
 	void handleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 #elif defined(VK_USE_PLATFORM_ANDROID_KHR)
