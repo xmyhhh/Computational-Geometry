@@ -13,7 +13,7 @@
 #include <QuartzCore/CAMetalLayer.h>
 #include <CoreVideo/CVDisplayLink.h>
 #endif
-#include <GLFW/glfw3.h>
+
 
 std::vector<const char*> VulkanExampleBase::args;
 

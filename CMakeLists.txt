@@ -27,8 +27,7 @@ include_directories(third/ktx/other_include)
 link_directories(third/ktx/lib)
 
 include_directories(third/imgui)
-include_directories(third/glfw/include)
-link_directories(third/glfw/lib-vc2022)
+
 
 
 file(GLOB_RECURSE  SOURCE_FILES 
@@ -40,7 +39,7 @@ file(GLOB_RECURSE  IMGUI_SOURCE_FILES
 )
 
 add_executable(MAIN ${SOURCE_FILES} ${IMGUI_SOURCE_FILES})
-target_link_libraries(MAIN  ${OpenCV_LIBS} ${Vulkan_LIBRARY} ktx glfw3)
+target_link_libraries(MAIN  ${OpenCV_LIBS} ${Vulkan_LIBRARY} ktx)
 
 
 file(GLOB  Opencv_Dll 
