@@ -1,6 +1,12 @@
 
 
 
+//#pragma comment(linker, "/subsystem:windows")
+#include <windows.h>
+#include <fcntl.h>
+#include <io.h>
+#include <ShellScalingAPI.h>
+
 
 extern void ShowTriangle();
 extern void ShowDot();
@@ -13,7 +19,8 @@ extern void Monotonicity();
 extern void Voronoi();
 extern void Delaunay();
 
-int main() {
+int main(){
+//int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
 	//opencv 左上角是（0，0）
 

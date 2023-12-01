@@ -11,6 +11,8 @@ Suppose the positions of $n$ distinct points $P_1 ... P_n$ in the planeare given
 * As before each contiguous pair of pointsis joined by a line that is an edge of some Delaunay simplexes.
 * The territorial boundary shared by the contiguous point pair is a convex polygon lying in the k - 1 dimensional hyperplane that bisects that edge.
 
+* Affinely independent： a set of points $\left \{p_1,...,p_n  \right \} \subseteq  \mathbb{R}^d$ is affinely independent if $ {\textstyle \sum_{n}^{i=1} \alpha_i p_i } $ implies that $\alpha_i = 0$ for all $i$
+
 ## 数据结构定义:
 In k dimensions each vertex will have k + 1 forming pointsand k + 1 neighbouring vertices opposite them.
 * Two lists, each of length three
@@ -22,9 +24,11 @@ In k dimensions each vertex will have k + 1 forming pointsand k + 1 neighbouring
 ### Adding Point
 假设我们要添加的点是Q
 ![Alt text](image/Bowyer.png)
-* 1：确定当前结构中将被新点（例如 V4）删除的顶点。这样的顶点是任何一个比其形成点更靠近新点的顶点。总是至少有一个这样的顶点，因为新点所在的 Delaunay 单纯形对应的顶点总是会被删除，而且 Delaunay 单纯形完全填充了当前包含点的凸壳
+* 1：确定当前结构中将被新点(point)（例如 V4）删除的顶点(vertex)。这样的顶点是任何一个比其形成点更靠近新点的顶点。总是至少有一个这样的顶点，因为新点所在的 Delaunay 单纯形对应的顶点总是会被删除，而且 Delaunay 单纯形完全填充了当前包含点的凸壳
 * 2：从被删除的顶点开始，在顶点结构中执行树状搜索，查找其他将被删除的顶点。如果数据的存储方式如表 1 所示，则这是一个简单的问题。结果将是新点 Q 删除的所有顶点的列表： {V4, V3, V5}
 * 3：与 Q 相连的点是构成被删除顶点的所有点： {P2，P5，P4，P3，P7}
 * 4：如果这两个点之间的所有顶点 {V4, V3} 都在删除顶点列表中，那么这两个点之间的旧连续点就会被删除（如 P2 - P4）
-* 5：在这种情况下，新点有五个与之相关的新顶点： {w1, w2, w3, w4, w5}。计算它们的形成点和相邻顶点。每个顶点的形成点将是点 Q 和与 Q 相邻的 k 个点。网格中的每条线都有 k 个点围绕着它（例如，线 V3- V2 是由 P3 和 P4 形成的）。新顶点及其邻近顶点的形成点可以通过考虑已删除顶点列表中的成员所指向的本身未被删除的顶点，并找到它们周围的点环来找到。因此，w5 从 Q 向外指向 V2，由 {P3, P4, Q) 形成
+* 5：在这种情况下，新点有五个与之相关的新顶点(new vertex)： {w1, w2, w3, w4, w5}。计算它们的形成点(forming points)和相邻顶点(neighbouring vertices)。每个顶点的形成点将是点 Q 和与 Q 相邻的 k 个点。
+网格(tessellation)中的每条线都有 k 个点(points)围绕着它（例如，线 V3- V2 是由 P3 和 P4 形成的）。
+新顶点及其邻近顶点的形成点(forming points)可以通过考虑已删除顶点列表中的成员所指向的本身未被删除的顶点，并找到它们周围的点环来找到。因此，w5 从 Q 向外指向 V2，由 {P3, P4, Q) 形成
 * 6：最后一步是复制一些新顶点，覆盖已删除顶点的条目，以节省空间
