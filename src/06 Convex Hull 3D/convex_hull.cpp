@@ -13,7 +13,6 @@ class  ConvexHull3D_Vulkan :public VulkanExampleBase
 
 	struct UBOMatrices {
 		glm::mat4 projection;
-		glm::mat4 model;
 		glm::mat4 view;
 		glm::vec3 camPos;
 	};
@@ -87,8 +86,6 @@ public:
 		pipelineCI.pStages = shaderStages.data();
 		pipelineCI.pVertexInputState = vkglTF::Vertex::getPipelineVertexInputState({ vkglTF::VertexComponent::Position, vkglTF::VertexComponent::Normal, vkglTF::VertexComponent::UV, vkglTF::VertexComponent::Tangent });
 
-
-		// PBR pipeline
 		rasterizationState.cullMode = VK_CULL_MODE_BACK_BIT;
 		shaderStages[0] = loadShader(getShadersPath() + "/object_vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 		shaderStages[1] = loadShader(getShadersPath() + "/object_frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -99,7 +96,6 @@ public:
 		VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipline));
 
 	}
-
 
 	void buildCommandBuffers()override {
 		VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::commandBufferBeginInfo();
@@ -140,6 +136,7 @@ public:
 			vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
 
 			sphere.pos = glm::vec3(0, 0, 0);
+			sphere.size = glm::vec3(1, 1, 1);
 			glm::mat4 model = glm::translate(glm::mat4(1.0f), sphere.pos);
 			model = glm::scale(model, sphere.size);
 			vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushBlock), &model);
@@ -214,9 +211,14 @@ public:
 		// 3D object
 		uboMatrices.projection = camera.matrices.perspective;
 		uboMatrices.view = camera.matrices.view;
-
 		uboMatrices.camPos = camera.position * -1.0f;
+
 		memcpy(UBO.mapped, &uboMatrices, sizeof(uboMatrices));
+	}
+
+	virtual void viewChanged()
+	{
+		updateUniformBuffers();
 	}
 
 	void render()override
