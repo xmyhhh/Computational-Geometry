@@ -1,5 +1,6 @@
 
 
+#include <cmath>
 
 
 extern void ShowTriangle();
@@ -17,7 +18,7 @@ int main() {
 
 	//opencv 左上角是（0，0）
 
-	//ShowTriangle();
+	ShowTriangle();
 	//ShowDot();
 	//ShowLine();
 	//ConvexHull();
@@ -26,6 +27,7 @@ int main() {
 	//Polygon();
 	//Monotonicity();
 	//Voronoi();
-	Delaunay();
+	//Delaunay();
 	return 0;
 }
+

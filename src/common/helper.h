@@ -29,6 +29,9 @@ IntersectionResult LineIntersectionCalulate(Line l1, Line l2);
 //geo cul
 Polygon PolygonRandomGen(int width, int height, int size = 3, float miniAngle = 30);
 
+template<typename PointT >
+void CalculateBoundingSphere(const PointT& p1, const PointT& p2, const PointT& p3, const PointT& p4, PointT& center, double& radius);
+
 double VectorLengthSqr(cv::Point2d a, cv::Point2d b);
 bool VectorSlop(cv::Point2d a, cv::Point2d b, double& slop);
 double DistanceToPoint(Line line, cv::Point2d point);
@@ -44,3 +47,37 @@ void draw_circle_origin_buttom_left(uint width, uint height, cv::InputOutputArra
 void debug_cout(std::string msg, bool on = true);
 
 std::string vector_to_string(cv::Point2d site);
+
+template<typename PointT>
+void CalculateBoundingSphere(const PointT& p1, const PointT& p2, const PointT& p3, const PointT& p4, PointT& center, double& radius)
+{
+	double a = p1.x - p2.x, b = p1.y - p2.y, c = p1.z - p2.z;
+	double a1 = p3.x - p4.x, b1 = p3.y - p4.y, c1 = p3.z - p3.z;
+	double a2 = p2.x - p3.x, b2 = p2.y - p3.y, c2 = p2.z - p3.z;
+	double A = p1.x * p1.x - p2.x * p2.x;
+	double B = p1.y * p1.y - p2.y * p2.y;
+	double C = p1.z * p1.z - p2.z * p2.z;
+	double A1 = p3.x * p3.x - p4.x * p4.x;
+	double B1 = p3.y * p3.y - p4.y * p4.y;
+	double C1 = p3.z * p3.z - p4.z * p4.z;
+	double A2 = p2.x * p2.x - p3.x * p3.x;
+	double B2 = p2.y * p2.y - p3.y * p3.y;
+	double C2 = p2.z * p2.z - p3.z * p3.z;
+	double P = (A + B + C) / 2;
+	double Q = (A1 + B1 + C1) / 2;
+	double R = (A2 + B2 + C2) / 2;
+
+	// D是系数行列式，利用克拉默法则
+	double D = a * b1 * c2 + a2 * b * c1 + c * a1 * b2 - (a2 * b1 * c + a1 * b * c2 + a * b2 * c1);
+	double Dx = P * b1 * c2 + b * c1 * R + c * Q * b2 - (c * b1 * R + P * c1 * b2 + Q * b * c2);
+	double Dy = a * Q * c2 + P * c1 * a2 + c * a1 * R - (c * Q * a2 + a * c1 * R + c2 * P * a1);
+	double Dz = a * b1 * R + b * Q * a2 + P * a1 * b2 - (a2 * b1 * P + a * Q * b2 + R * b * a1);
+
+
+	center.x = (Dx / D);
+	center.y = (Dy / D);
+	center.z = (Dz / D);
+	radius = std::sqrt((p1.x - center.x) * (p1.x - center.x) +
+		(p1.y - center.y) * (p1.y - center.y) +
+		(p1.z - center.z) * (p1.z - center.z));
+}

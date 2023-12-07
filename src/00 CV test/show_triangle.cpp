@@ -1,4 +1,5 @@
 #include "common/typedef.h"
+#include "common/helper.h"
 
 void ShowTriangle() {
 
@@ -22,13 +23,23 @@ void ShowTriangle() {
 	{
 		Triangle tri = all_triangles[i];
 
-		cv::Point points[3] = {cv::Point(tri.p1.x,tri.p1.y),cv::Point(tri.p2.x,tri.p2.y),cv::Point(tri.p3.x,tri.p3.y) };
+		cv::Point points[3] = { cv::Point(tri.p1.x,tri.p1.y),cv::Point(tri.p2.x,tri.p2.y),cv::Point(tri.p3.x,tri.p3.y) };
 		const cv::Point* ppt[1] = { points };
 
 		int npt[] = { 3 };
 		cv::Scalar color = cv::Scalar(rand() % 255, rand() % 255, rand() % 255, 100);
-		fillPoly(img, ppt , npt, 1, color);
+		fillPoly(img, ppt, npt, 1, color);
 	}
+
+	const auto p1 = cv::Point3d(-1, -1, -1);
+	const auto p2 = cv::Point3d(-1, 1, -1);
+	const auto p3 = cv::Point3d(-1, 1, 1);
+	const auto p4 = cv::Point3d(1, -1, 1);
+	cv::Point3d center;
+	double radius;
+
+	CalculateBoundingSphere(p1, p2, p3, p4, center, radius);
+
 
 
 	imshow("Triangle", img);
