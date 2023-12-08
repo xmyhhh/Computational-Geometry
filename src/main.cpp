@@ -19,22 +19,26 @@ extern void Polygon();
 extern void Monotonicity();
 extern void Voronoi();
 extern void Delaunay();
-extern void ConvexHull3D(HINSTANCE hInstance);
+extern void Delaunay3D(HINSTANCE hInstance);
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
-	//opencv 左上角是（0，0）
-
-	ShowTriangle();
+	//opencv test
+	//ShowTriangle();
 	//ShowDot();
 	//ShowLine();
+	
+	// 2D
 	//ConvexHull();
 	//Intersection();
-
 	//Polygon();
 	//Monotonicity();
 	//Voronoi();
-	Delaunay();
+	//Delaunay();
+
+	// 3D
+	Delaunay3D(hInstance);
+
 	return 0;
 }
 

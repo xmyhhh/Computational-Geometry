@@ -31,16 +31,6 @@ void ShowTriangle() {
 		fillPoly(img, ppt, npt, 1, color);
 	}
 
-	const auto p1 = cv::Point3d(-1, -1, -1);
-	const auto p2 = cv::Point3d(-1, 1, -1);
-	const auto p3 = cv::Point3d(-1, 1, 1);
-	const auto p4 = cv::Point3d(1, -1, 1);
-	cv::Point3d center;
-	double radius;
-
-	CalculateBoundingSphere(p1, p2, p3, p4, center, radius);
-
-
 
 	imshow("Triangle", img);
 	cv::waitKey(0);

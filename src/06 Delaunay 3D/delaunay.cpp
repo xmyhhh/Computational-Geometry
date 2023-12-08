@@ -1,38 +1,57 @@
 
 #include "common/typedef.h"
-#include "convex_hull_01.h"
+#include "delaunay_01.h"
 #include "common/vulkan/VulkanExampleBase.h"
 
-class  ConvexHull3D_Vulkan :public VulkanExampleBase
+class  Delaunay3D_Vulkan :public VulkanExampleBase
 {
-	struct PushBlock {
+	struct PushBlock_Point {
 		glm::mat4 mvp;
-		float roughness;
-		uint32_t numSamples = 32u;
-	} pushBlock;
+	};
+
+	struct PushBlock_Triangle {
+		glm::vec4 p1;
+		glm::vec4 p2;
+		glm::vec4 p3;
+	};
 
 	struct UBOMatrices {
 		glm::mat4 projection;
 		glm::mat4 view;
-		glm::vec3 camPos;
+		glm::vec4 camPos;
 	};
 
+
+
 public:
-	ConvexHull3D_Vulkan() : VulkanExampleBase(true) {
+	struct DrawData {
+		int numberOfPoint;
+		double* points; //location xyz(3 double) * numberOfPoint
+		int numberOfTriangle;
+		int* triangles;//index of triangle (3 int) * numberOfTriangle
+	};
+
+
+	Delaunay3D_Vulkan() : VulkanExampleBase(true) {
 		title = "convex";
 		camera.type = Camera::CameraType::firstperson;
 		camera.setPosition(glm::vec3(10.0f, 13.0f, 1.8f));
 		camera.setRotation(glm::vec3(-62.5f, 90.0f, 0.0f));
-		camera.movementSpeed = 4.0f;
+		camera.setMovementSpeed(20);
+
 		camera.setPerspective(60.0f, (float)width / (float)height, 0.1f, 256.0f);
-		camera.rotationSpeed = 0.25f;
+		camera.rotationSpeed = 0.55f;
 		paused = true;
 		timerSpeed *= 0.25f;
 	}
 
-	~ConvexHull3D_Vulkan()
+	~Delaunay3D_Vulkan()
 	{
 
+	}
+
+	void SetData(DrawData _data) {
+		data = _data;
 	}
 
 	void prepare()override {
@@ -45,7 +64,11 @@ public:
 		buildCommandBuffers();
 		prepared = true;
 	}
-
+	void getEnabledFeatures() {
+		enabledFeatures.fillModeNonSolid = true;
+		enabledFeatures.wideLines = true;
+		enabledFeatures.samplerAnisotropy = true;
+	}
 	void loadAssets()
 	{
 		const uint32_t glTFLoadingFlags = vkglTF::FileLoadingFlags::PreTransformVertices | vkglTF::FileLoadingFlags::PreMultiplyVertexColors | vkglTF::FileLoadingFlags::FlipY;
@@ -56,7 +79,7 @@ public:
 
 	void preparePipelines() {
 		std::vector<VkPushConstantRange> pushConstantRanges = {
-			vks::initializers::pushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(PushBlock), 0),
+			vks::initializers::pushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(PushBlock_Point), 0),
 		};
 		VkPipelineLayoutCreateInfo pipelineLayoutCI = vks::initializers::pipelineLayoutCreateInfo(&descriptorSetLayout, 1);;
 		pipelineLayoutCI.pushConstantRangeCount = 1;
@@ -94,6 +117,27 @@ public:
 		depthStencilState.depthWriteEnable = VK_TRUE;
 		depthStencilState.depthTestEnable = VK_TRUE;
 		VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipline));
+
+
+		//begin draw triangle pipline create
+		pushConstantRanges = {
+			vks::initializers::pushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(PushBlock_Triangle), 0),
+		};
+		VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pipelineLayoutCI, nullptr, &pipelineLayout_triangle));
+		rasterizationState = vks::initializers::pipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+
+		VkPipelineVertexInputStateCreateInfo vertexInputInfo{
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+			.vertexBindingDescriptionCount = 0,
+			.vertexAttributeDescriptionCount = 0,
+		};
+
+		pipelineCI.pVertexInputState = &vertexInputInfo;
+		pipelineCI.layout = pipelineLayout_triangle;
+		shaderStages[0] = loadShader(getShadersPath() + "/triangle_vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+		shaderStages[1] = loadShader(getShadersPath() + "/triangle_frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+
+		VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipline_triangle));
 
 	}
 
@@ -135,22 +179,37 @@ public:
 			vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipline);
 			vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
 
-			sphere.pos = glm::vec3(0, 0, 0);
-			sphere.size = glm::vec3(1, 1, 1);
-			glm::mat4 model = glm::translate(glm::mat4(1.0f), sphere.pos);
-			model = glm::scale(model, sphere.size);
-			vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushBlock), &model);
-			sphere.model.draw(drawCmdBuffers[i]);
-
-			/*		for (auto& scene_object : scene.objects) {
-						glm::mat4 model = glm::translate(glm::mat4(1.0f), scene_object.pos);
-						model = glm::scale(model, scene_object.size);
-						vkCmdPushConstants(drawCmdBuffers[i], offscreenPass.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushBlock), &model);
-						scene_object.model.draw(drawCmdBuffers[i]);
-					}*/
-
+			for (int j = 0; j < data.numberOfPoint; j++) {
+				sphere.pos = glm::vec3(data.points[j * 3], data.points[j * 3 + 1], data.points[j * 3 + 2]);
+				sphere.size = glm::vec3(1, 1, 1);
+				glm::mat4 model = glm::translate(glm::mat4(1.0f), sphere.pos);
+				model = glm::scale(model, sphere.size);
+				vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushBlock_Point), &model);
+				sphere.model.draw(drawCmdBuffers[i]);
+			}
 
 			drawUI(drawCmdBuffers[i]);
+
+			vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipline_triangle);
+
+
+			scissor = vks::initializers::rect2D(width, height, 0, 0);
+			vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);
+
+			vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout_triangle, 0, 1, &descriptorSet, 0, NULL);
+			for (int j = 0; j < data.numberOfTriangle; j++) {
+				auto tr = &data.triangles[j * 3];
+
+				glm::vec4 p1 = glm::vec4(data.points[tr[0] * 3], data.points[tr[0] * 3 + 1], data.points[tr[0] * 3 + 2], 1);
+				glm::vec4 p2 = glm::vec4(data.points[tr[1] * 3], data.points[tr[1] * 3 + 1], data.points[tr[1] * 3 + 2], 1);
+				glm::vec4 p3 = glm::vec4(data.points[tr[2] * 3], data.points[tr[2] * 3 + 1], data.points[tr[2] * 3 + 2], 1);
+				vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::vec4), &p1);
+				vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::vec4), sizeof(glm::vec4), &p2);
+				vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::vec4) * 2, sizeof(glm::vec4), &p3);
+				vkCmdDraw(drawCmdBuffers[i], 3, 1, 0, 0);
+			}
+
+
 
 			vkCmdEndRenderPass(drawCmdBuffers[i]);
 
@@ -173,7 +232,6 @@ public:
 		updateUniformBuffers();
 
 	}
-
 
 	void setupDescriptorSetLayout() {
 		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
@@ -211,7 +269,7 @@ public:
 		// 3D object
 		uboMatrices.projection = camera.matrices.perspective;
 		uboMatrices.view = camera.matrices.view;
-		uboMatrices.camPos = camera.position * -1.0f;
+		uboMatrices.camPos = glm::vec4(camera.position * -1.0f, 1.f);
 
 		memcpy(UBO.mapped, &uboMatrices, sizeof(uboMatrices));
 	}
@@ -234,16 +292,21 @@ public:
 	}
 protected:
 	SceneObject sphere;
-
+	DrawData data;
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorSet descriptorSet;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline pipline;
 
+
+	VkPipelineLayout pipelineLayout_triangle;
+	VkPipeline pipline_triangle;
+
 	vks::Buffer UBO;
 	UBOMatrices uboMatrices;
 };
-ConvexHull3D_Vulkan* ConvexHull3D_Vulkan_app;
+
+Delaunay3D_Vulkan* ConvexHull3D_Vulkan_app;
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	if (ConvexHull3D_Vulkan_app != NULL)
@@ -253,25 +316,45 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return (DefWindowProc(hWnd, uMsg, wParam, lParam));
 }
 
-void ConvexHull3D(HINSTANCE hInstance) {
-
-
-	int width = 1000;
-	int height = 1000;
-	int deepth = 1000;
+void Delaunay3D(HINSTANCE hInstance) {
+	int width = 100;
+	int height = 100;
+	int deepth = 100;
 
 	std::vector<cv::Point3d> all_dots;
 
-	int size = 300;
+	int size = 5;
 	for (int i = 0; i < size; i++)
 	{
 		all_dots.push_back(cv::Point3d(rand() % width, rand() % height, rand() % deepth));
 
 	}
-	ConvexHull3D_Vulkan_app = new ConvexHull3D_Vulkan();
+
+	Delaunay3D_Vulkan::DrawData data;
+	data.numberOfPoint = size;
+	data.points = (double*)malloc(size * 3 * sizeof(double));
+	for (int i = 0; i < size; i++) {
+		data.points[i * 3] = all_dots[i].x;
+		data.points[i * 3 + 1] = all_dots[i].y;
+		data.points[i * 3 + 2] = all_dots[i].z;
+	}
+
+	data.numberOfTriangle = 1;
+	data.triangles = (int*)malloc(data.numberOfTriangle * 3 * sizeof(int));
+	for (int i = 0; i < data.numberOfTriangle; i++) {
+		data.triangles[i * 3] = 0;
+		data.triangles[i * 3 + 1] = 1;
+		data.triangles[i * 3 + 2] = 2;
+	}
+
+
+	ConvexHull3D_Vulkan_app = new Delaunay3D_Vulkan();
+	ConvexHull3D_Vulkan_app->SetData(data);
 	ConvexHull3D_Vulkan_app->initVulkan();
 	ConvexHull3D_Vulkan_app->setupWindow(hInstance, WndProc);
 	ConvexHull3D_Vulkan_app->prepare();
 	ConvexHull3D_Vulkan_app->renderLoop();
+
+
 	delete(ConvexHull3D_Vulkan_app);
 }

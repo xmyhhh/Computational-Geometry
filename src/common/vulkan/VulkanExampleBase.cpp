@@ -1337,7 +1337,7 @@ void VulkanExampleBase::handleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
 	case WM_MOUSEWHEEL:
 	{
 		short wheelDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-		camera.translate(glm::vec3(0.0f, 0.0f, (float)wheelDelta * 0.005f));
+		camera.translate(glm::vec3(0.0f, 0.0f, (float)wheelDelta * 0.015f));
 		viewUpdated = true;
 		break;
 	}
