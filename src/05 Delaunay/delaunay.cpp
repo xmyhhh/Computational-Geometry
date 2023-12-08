@@ -9,11 +9,11 @@ void Delaunay() {
 	cv::Mat img = cv::Mat::zeros(cv::Size(width, height), CV_8UC3);
 
 	std::vector<cv::Point> all_point;
-	
+
 
 	srand(12);
 
-	int size = 20;
+	int size = 5;
 	for (int i = 0; i < size; i++)
 	{
 		auto p1 = cv::Point(rand() % width, rand() % height);
@@ -41,13 +41,26 @@ void Delaunay() {
 
 			auto face = decl.face_list[i];
 			auto start_edge = face->incident_edge;
+			//if (start_edge->origin->position == cv::Point2d(0, 0) || start_edge->end->position == cv::Point2d(0, 0))
+			//	continue;
+
+			//if (start_edge->origin->position == cv::Point2d(width, height) || start_edge->end->position == cv::Point2d(width, height))
+			//	continue;
+
+
+			//if (start_edge->origin->position == cv::Point2d(width, 0) || start_edge->end->position == cv::Point2d(width, 0))
+			//	continue;
+
+			//if (start_edge->origin->position == cv::Point2d(0, height) || start_edge->end->position == cv::Point2d(0, height))
+			//	continue;
+
 			do {
 				draw_line_origin_buttom_left(width, height, img, start_edge->origin->position, start_edge->end->position, GREEN, 1);
 				start_edge = start_edge->succ;
 			} while (face->incident_edge != start_edge);
 		}
 
-		for (size_t i = 0; i < decl.vertex_list.size(); i++)
+		for (size_t i = 4; i < decl.vertex_list.size(); i++)
 		{
 			auto site = *decl.vertex_list[i];
 			debug_cout("draw site:" + vector_to_string(site.position));
@@ -59,13 +72,15 @@ void Delaunay() {
 
 			auto simplice = bw_dt_struct.n_simplices_list[i];
 
+			if (simplice.index_p1 < 3 || simplice.index_p2 < 3 || simplice.index_p3 < 3)
+				continue;
 			draw_line_origin_buttom_left(width, height, img, bw_dt_struct.all_point[simplice.index_p1], bw_dt_struct.all_point[simplice.index_p2], GREEN, 1);
 			draw_line_origin_buttom_left(width, height, img, bw_dt_struct.all_point[simplice.index_p2], bw_dt_struct.all_point[simplice.index_p3], GREEN, 1);
 			draw_line_origin_buttom_left(width, height, img, bw_dt_struct.all_point[simplice.index_p1], bw_dt_struct.all_point[simplice.index_p3], GREEN, 1);
-		
+
 		}
 
-		for (size_t i = 0; i < bw_dt_struct.all_point.size(); i++)
+		for (size_t i = 3; i < bw_dt_struct.all_point.size(); i++)
 		{
 			auto site = bw_dt_struct.all_point[i];
 			debug_cout("draw site:" + vector_to_string(site));
