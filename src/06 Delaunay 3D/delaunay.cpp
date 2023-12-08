@@ -50,7 +50,7 @@ public:
 
 	}
 
-	void SetData(DrawData _data) {
+	void SetData(VulkanDrawData _data) {
 		data = _data;
 	}
 
@@ -292,7 +292,7 @@ public:
 	}
 protected:
 	SceneObject sphere;
-	DrawData data;
+	VulkanDrawData data;
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorSet descriptorSet;
 	VkPipelineLayout pipelineLayout;
@@ -329,27 +329,12 @@ void Delaunay3D(HINSTANCE hInstance) {
 		all_dots.push_back(cv::Point3d(rand() % width, rand() % height, rand() % deepth));
 
 	}
+	DelaunayTrianlgeResult res;
 
-	Delaunay3D_Vulkan::DrawData data;
-	data.numberOfPoint = size;
-	data.points = (double*)malloc(size * 3 * sizeof(double));
-	for (int i = 0; i < size; i++) {
-		data.points[i * 3] = all_dots[i].x;
-		data.points[i * 3 + 1] = all_dots[i].y;
-		data.points[i * 3 + 2] = all_dots[i].z;
-	}
-
-	data.numberOfTriangle = 1;
-	data.triangles = (int*)malloc(data.numberOfTriangle * 3 * sizeof(int));
-	for (int i = 0; i < data.numberOfTriangle; i++) {
-		data.triangles[i * 3] = 0;
-		data.triangles[i * 3 + 1] = 1;
-		data.triangles[i * 3 + 2] = 2;
-	}
-
+	Delaunay_3D_01(all_dots, res);
 
 	ConvexHull3D_Vulkan_app = new Delaunay3D_Vulkan();
-	ConvexHull3D_Vulkan_app->SetData(data);
+	ConvexHull3D_Vulkan_app->SetData(res.toVulkanDrawData());
 	ConvexHull3D_Vulkan_app->initVulkan();
 	ConvexHull3D_Vulkan_app->setupWindow(hInstance, WndProc);
 	ConvexHull3D_Vulkan_app->prepare();
