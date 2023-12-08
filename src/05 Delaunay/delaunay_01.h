@@ -8,7 +8,7 @@
 
 void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 	//Delaunay Triangulation
-	//Bowyer-Watson Algorithm
+	//Incremental insert + flip Algorithm
 
 	auto create_pari_edge = [](DECL_Delaunay::Vertex* f, DECL_Delaunay::Vertex* t) {
 		DECL_Delaunay::HalfEdge* edge;
@@ -23,7 +23,7 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 		return edge;
 		};
 
-	auto Incremental_construction = [&](const cv::Point2d vertex_position, DECL_Delaunay::DECL& decl) {
+	auto Incremental_insertion = [&](const cv::Point2d vertex_position, DECL_Delaunay::DECL& decl) {
 		DECL_Delaunay::Vertex* vertex_to_add = new DECL_Delaunay::Vertex(vertex_position);
 		decl.AddVertex(vertex_to_add);
 
@@ -363,15 +363,15 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 		};
 
 
-	Incremental_construction(cv::Point2d(decl.boundary.x, decl.boundary.y), decl);
-	Incremental_construction(cv::Point2d(0, 0), decl);
-	Incremental_construction(cv::Point2d(decl.boundary.x, 0), decl);
-	Incremental_construction(cv::Point2d(0, decl.boundary.y), decl);
+	Incremental_insertion(cv::Point2d(decl.boundary.x, decl.boundary.y), decl);
+	Incremental_insertion(cv::Point2d(0, 0), decl);
+	Incremental_insertion(cv::Point2d(decl.boundary.x, 0), decl);
+	Incremental_insertion(cv::Point2d(0, decl.boundary.y), decl);
 
 	for (const auto& point : all_point) {
 		debug_cout("\n");
 		debug_cout("*********start with site:" + vector_to_string(point));
-		Incremental_construction(point, decl);
+		Incremental_insertion(point, decl);
 		debug_cout("*********end with site:" + vector_to_string(point));
 		debug_cout("\n");
 	}

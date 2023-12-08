@@ -34,10 +34,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	//Polygon();
 	//Monotonicity();
 	//Voronoi();
-	//Delaunay();
+	Delaunay();
 
 	// 3D
-	Delaunay3D(hInstance);
+	//Delaunay3D(hInstance);
 
 	return 0;
 }

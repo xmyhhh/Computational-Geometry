@@ -1,12 +1,12 @@
 #pragma once
 #include "typedef.h"
 
+//geo tesl
 bool ToLeft(const cv::Point& p1, const cv::Point& p2, const cv::Point& p3);
 bool ToLeft(const cv::Point2d& p1, const cv::Point2d& p2, const cv::Point2d& s);
 
 bool InCircle2D(const cv::Point2d& p1, const cv::Point2d& p2, const cv::Point2d& p3, const cv::Point2d& s);
 
-//geo tesl
 template<typename PointT >
 bool InTriangleTest(PointT& p1, PointT& p2, PointT& p3, const PointT& s) {
 	bool b1 = ToLeft(p1, p2, s);
@@ -30,25 +30,6 @@ IntersectionResult LineIntersectionCalulate(Line l1, Line l2);
 Polygon PolygonRandomGen(int width, int height, int size = 3, float miniAngle = 30);
 
 template<typename PointT >
-void CalculateBoundingSphere(const PointT& p1, const PointT& p2, const PointT& p3, const PointT& p4, PointT& center, double& radius);
-
-double VectorLengthSqr(cv::Point2d a, cv::Point2d b);
-bool VectorSlop(cv::Point2d a, cv::Point2d b, double& slop);
-double DistanceToPoint(Line line, cv::Point2d point);
-double Abs(double in);
-//draw
-void draw_line_origin_buttom_left(uint width, uint height, cv::InputOutputArray img, cv::Point pt1, cv::Point pt2, const cv::Scalar& color,
-	int thickness = 1, int lineType = cv::LINE_8, int shift = 0);
-
-void draw_circle_origin_buttom_left(uint width, uint height, cv::InputOutputArray img, cv::Point center, int radius,
-	const cv::Scalar& color, int thickness = 1, int lineType = cv::LINE_8, int shift = 0);
-
-//debug
-void debug_cout(std::string msg, bool on = true);
-
-std::string vector_to_string(cv::Point2d site);
-
-template<typename PointT>
 void CalculateBoundingSphere(const PointT& p1, const PointT& p2, const PointT& p3, const PointT& p4, PointT& center, double& radius)
 {
 	double a = p1.x - p2.x, b = p1.y - p2.y, c = p1.z - p2.z;
@@ -67,7 +48,7 @@ void CalculateBoundingSphere(const PointT& p1, const PointT& p2, const PointT& p
 	double Q = (A1 + B1 + C1) / 2;
 	double R = (A2 + B2 + C2) / 2;
 
-	// D是系数行列式，利用克拉默法则
+
 	double D = a * b1 * c2 + a2 * b * c1 + c * a1 * b2 - (a2 * b1 * c + a1 * b * c2 + a * b2 * c1);
 	double Dx = P * b1 * c2 + b * c1 * R + c * Q * b2 - (c * b1 * R + P * c1 * b2 + Q * b * c2);
 	double Dy = a * Q * c2 + P * c1 * a2 + c * a1 * R - (c * Q * a2 + a * c1 * R + c2 * P * a1);
@@ -81,3 +62,41 @@ void CalculateBoundingSphere(const PointT& p1, const PointT& p2, const PointT& p
 		(p1.y - center.y) * (p1.y - center.y) +
 		(p1.z - center.z) * (p1.z - center.z));
 }
+
+template<typename PointT >
+void CalculateBoundingCircle(const PointT& p1, const PointT& p2, const PointT& p3, PointT& center, double& radius)
+{
+	// Calculating lengths of the sides of the triangle formed by the coordinates
+	double x1 = p1.x, y1 = p1.y, x2 = p2.x, y2 = p2.y, x3 = p3.x, y3 = p3.y;
+
+	double a = std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+	double b = std::sqrt((x3 - x1) * (x3 - x1) + (y3 - y1) * (y3 - y1));
+	double c = std::sqrt((x3 - x2) * (x3 - x2) + (y3 - y2) * (y3 - y2));
+
+	// Calculating the radius of the circumscribed circle using triangle sides
+	radius = (a * b * c) / (sqrt((a + b + c) * (b + c - a) * (c + a - b) * (a + b - c)));
+
+	// Calculating the coordinates of the center of the circumscribed circle (x, y)
+	double d = 2 * (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2));
+	center.x = ((x1 * x1 + y1 * y1) * (y2 - y3) + (x2 * x2 + y2 * y2) * (y3 - y1) + (x3 * x3 + y3 * y3) * (y1 - y2)) / d;
+	center.y = ((x1 * x1 + y1 * y1) * (x3 - x2) + (x2 * x2 + y2 * y2) * (x1 - x3) + (x3 * x3 + y3 * y3) * (x2 - x1)) / d;
+}
+
+
+double VectorLengthSqr(cv::Point2d a, cv::Point2d b);
+bool VectorSlop(cv::Point2d a, cv::Point2d b, double& slop);
+double DistanceToPoint(Line line, cv::Point2d point);
+double Abs(double in);
+
+//draw
+void draw_line_origin_buttom_left(uint width, uint height, cv::InputOutputArray img, cv::Point pt1, cv::Point pt2, const cv::Scalar& color,
+	int thickness = 1, int lineType = cv::LINE_8, int shift = 0);
+
+void draw_circle_origin_buttom_left(uint width, uint height, cv::InputOutputArray img, cv::Point center, int radius,
+	const cv::Scalar& color, int thickness = 1, int lineType = cv::LINE_8, int shift = 0);
+
+//debug
+void debug_cout(std::string msg, bool on = true);
+
+std::string vector_to_string(cv::Point2d site);
+
