@@ -143,7 +143,7 @@ public:
 		VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::commandBufferBeginInfo();
 
 		VkClearValue clearValues[2];
-		clearValues[0].color = { 0.025f, 0.025f, 0.025f, 1.0f };
+		clearValues[0].color = { 0.25f, 0.25f, 0.25f, 1.0f };
 		clearValues[1].color = { 1.0f, 0 };
 
 		VkViewport viewport;

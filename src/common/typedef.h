@@ -254,13 +254,13 @@ namespace Interpolation4D_datastruct {
 				vulkan_data.attr[i * vulkan_data.numberOfPointAttr + vulkan_data.numberOfPointAttr - 1] = 0;
 			}
 
-			offset = numberOfPoint * vulkan_data.numberOfPointAttr - 1;
+			
 
-			for (int i = 0; i < numberOfQueryPoints; i++) {
+			for (int i = numberOfPoint; i < numberOfPoint + numberOfQueryPoints; i++) {
 				for (int j = 0; j < numberOfAttr; j++) {
-					vulkan_data.attr[offset + i * vulkan_data.numberOfPointAttr + j] = queryPoints[i * (3 + numberOfAttr) + 3 + j];
+					vulkan_data.attr[i * vulkan_data.numberOfPointAttr + j] = queryPoints[i * (3 + numberOfAttr) + 3 + j];
 				}
-				vulkan_data.attr[offset + i * vulkan_data.numberOfPointAttr + vulkan_data.numberOfPointAttr - 1] = 1;
+				vulkan_data.attr[i * vulkan_data.numberOfPointAttr + vulkan_data.numberOfPointAttr - 1] = 1;
 			}
 
 			auto aaa = vulkan_data.attr[399];
