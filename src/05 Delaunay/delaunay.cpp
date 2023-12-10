@@ -11,9 +11,9 @@ void Delaunay() {
 	std::vector<cv::Point> all_point;
 
 
-	srand(12);
+	srand(13);
 
-	int size = 5;
+	int size = 6;
 	for (int i = 0; i < size; i++)
 	{
 		auto p1 = cv::Point(rand() % width, rand() % height);
@@ -41,26 +41,22 @@ void Delaunay() {
 
 			auto face = decl.face_list[i];
 			auto start_edge = face->incident_edge;
-			//if (start_edge->origin->position == cv::Point2d(0, 0) || start_edge->end->position == cv::Point2d(0, 0))
-			//	continue;
 
-			//if (start_edge->origin->position == cv::Point2d(width, height) || start_edge->end->position == cv::Point2d(width, height))
-			//	continue;
-
-
-			//if (start_edge->origin->position == cv::Point2d(width, 0) || start_edge->end->position == cv::Point2d(width, 0))
-			//	continue;
-
-			//if (start_edge->origin->position == cv::Point2d(0, height) || start_edge->end->position == cv::Point2d(0, height))
-			//	continue;
 
 			do {
-				draw_line_origin_buttom_left(width, height, img, start_edge->origin->position, start_edge->end->position, GREEN, 1);
+		/*		if (start_edge->origin->position == cv::Point2d(0, 0) || start_edge->end->position == cv::Point2d(0, 0))
+					;
+				else if (start_edge->origin->position == cv::Point2d(width*2, 0) || start_edge->end->position == cv::Point2d(width * 2, 0))
+					;
+				else if (start_edge->origin->position == cv::Point2d(0, height * 2) || start_edge->end->position == cv::Point2d(0, height * 2))
+					;
+				else*/
+					draw_line_origin_buttom_left(width, height, img, start_edge->origin->position, start_edge->end->position, GREEN, 1);
 				start_edge = start_edge->succ;
 			} while (face->incident_edge != start_edge);
 		}
 
-		for (size_t i = 4; i < decl.vertex_list.size(); i++)
+		for (size_t i = 3; i < decl.vertex_list.size(); i++)
 		{
 			auto site = *decl.vertex_list[i];
 			debug_cout("draw site:" + vector_to_string(site.position));

@@ -1,9 +1,9 @@
 
 #include "common/typedef.h"
-#include "delaunay_01.h"
+#include "interpolation_01.h"
 #include "common/vulkan/VulkanExampleBase.h"
 
-class  Delaunay3D_Vulkan :public VulkanExampleBase
+class  Interpolation4D_Vulkan :public VulkanExampleBase
 {
 	struct PushBlock_Point {
 		glm::mat4 mvp;
@@ -21,8 +21,6 @@ class  Delaunay3D_Vulkan :public VulkanExampleBase
 		glm::vec4 camPos;
 	};
 
-
-
 public:
 	struct DrawData {
 		int numberOfPoint;
@@ -32,7 +30,7 @@ public:
 	};
 
 
-	Delaunay3D_Vulkan() : VulkanExampleBase(true) {
+	Interpolation4D_Vulkan() : VulkanExampleBase(true) {
 		title = "convex";
 		camera.type = Camera::CameraType::firstperson;
 		camera.setPosition(glm::vec3(10.0f, 13.0f, 1.8f));
@@ -45,7 +43,7 @@ public:
 		timerSpeed *= 0.25f;
 	}
 
-	~Delaunay3D_Vulkan()
+	~Interpolation4D_Vulkan()
 	{
 
 	}
@@ -76,7 +74,6 @@ public:
 		sphere.model.loadFromFile(getAssetPath() + "sphere.gltf", vulkanDevice, queue, glTFLoadingFlags);
 
 	}
-
 	void preparePipelines() {
 		std::vector<VkPushConstantRange> pushConstantRanges = {
 			vks::initializers::pushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(PushBlock_Point), 0),
@@ -140,7 +137,6 @@ public:
 		VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipline_triangle));
 
 	}
-
 	void buildCommandBuffers()override {
 		VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::commandBufferBeginInfo();
 
@@ -216,7 +212,6 @@ public:
 			VK_CHECK_RESULT(vkEndCommandBuffer(drawCmdBuffers[i]));
 		}
 	}
-
 	void prepareUniformBuffers()
 	{
 		// Object vertex shader uniform buffer
@@ -232,7 +227,6 @@ public:
 		updateUniformBuffers();
 
 	}
-
 	void setupDescriptorSetLayout() {
 		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
 			vks::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT , 0)
@@ -249,7 +243,6 @@ public:
 
 		VK_CHECK_RESULT(vkCreateDescriptorPool(device, &descriptorPoolInfo, nullptr, &descriptorPool));
 	}
-
 	void setupDescriptorSets() {
 		VkDescriptorSetAllocateInfo allocInfo =
 			vks::initializers::descriptorSetAllocateInfo(descriptorPool, &descriptorSetLayout, 1);
@@ -263,7 +256,6 @@ public:
 		};
 		vkUpdateDescriptorSets(device, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, NULL);
 	}
-
 	void updateUniformBuffers()
 	{
 		// 3D object
@@ -273,12 +265,10 @@ public:
 
 		memcpy(UBO.mapped, &uboMatrices, sizeof(uboMatrices));
 	}
-
 	virtual void viewChanged()
 	{
 		updateUniformBuffers();
 	}
-
 	void render()override
 	{
 		if (!prepared)
@@ -298,7 +288,6 @@ protected:
 	VkPipelineLayout pipelineLayout;
 	VkPipeline pipline;
 
-
 	VkPipelineLayout pipelineLayout_triangle;
 	VkPipeline pipline_triangle;
 
@@ -306,17 +295,17 @@ protected:
 	UBOMatrices uboMatrices;
 };
 
-Delaunay3D_Vulkan* ConvexHull3D_Vulkan_app;
-LRESULT CALLBACK Delaunay3D_WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+Interpolation4D_Vulkan* Interpolation4D_Vulkan_app;
+LRESULT CALLBACK Interpolation4D_WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	if (ConvexHull3D_Vulkan_app != NULL)
+	if (Interpolation4D_Vulkan_app != NULL)
 	{
-		ConvexHull3D_Vulkan_app->handleMessages(hWnd, uMsg, wParam, lParam);
+		Interpolation4D_Vulkan_app->handleMessages(hWnd, uMsg, wParam, lParam);
 	}
 	return (DefWindowProc(hWnd, uMsg, wParam, lParam));
 }
 
-void Delaunay3D(HINSTANCE hInstance) {
+void Interpolation4D(HINSTANCE hInstance) {
 	int width = 100;
 	int height = 100;
 	int deepth = 100;
@@ -327,19 +316,17 @@ void Delaunay3D(HINSTANCE hInstance) {
 	for (int i = 0; i < size; i++)
 	{
 		all_dots.push_back(cv::Point3d(rand() % width, rand() % height, rand() % deepth));
-
 	}
-	DelaunayTrianlgeResult res;
+	Interpolation4D_datastruct::Interpolation4DResult res;
 
-	Delaunay_3D_01(all_dots, res);
+	Interpolation4D_01(all_dots, res);
 
-	ConvexHull3D_Vulkan_app = new Delaunay3D_Vulkan();
-	ConvexHull3D_Vulkan_app->SetData(res.toVulkanDrawData());
-	ConvexHull3D_Vulkan_app->initVulkan();
-	ConvexHull3D_Vulkan_app->setupWindow(hInstance, Delaunay3D_WndProc);
-	ConvexHull3D_Vulkan_app->prepare();
-	ConvexHull3D_Vulkan_app->renderLoop();
+	Interpolation4D_Vulkan_app = new Interpolation4D_Vulkan();
+	Interpolation4D_Vulkan_app->SetData(res.toVulkanDrawData());
+	Interpolation4D_Vulkan_app->initVulkan();
+	Interpolation4D_Vulkan_app->setupWindow(hInstance, Interpolation4D_WndProc);
+	Interpolation4D_Vulkan_app->prepare();
+	Interpolation4D_Vulkan_app->renderLoop();
 
-
-	delete(ConvexHull3D_Vulkan_app);
+	delete(Interpolation4D_Vulkan_app);
 }

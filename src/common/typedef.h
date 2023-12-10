@@ -63,6 +63,9 @@ struct VulkanDrawData {
 	double* points; //location xyz(3 double) * numberOfPoint
 	int numberOfTriangle = 0;
 	int* triangles;//index of triangle (3 int) * numberOfTriangle
+	int numberOfPointAttr = 0;
+	double* attr; //each point to size of(double * numberOfPoint)
+
 };
 
 
@@ -208,6 +211,36 @@ namespace Delaunay3D_datastruct {
 		}
 	};
 
+
+
+}
+
+
+namespace Interpolation4D_datastruct {
+	struct Interpolation4DResult {
+		int numberOfPoint;
+		double* points; //location xyz(4 double) * numberOfPoint
+
+		VulkanDrawData toVulkanDrawData() {
+			VulkanDrawData data;
+
+			data.numberOfPoint = numberOfPoint;
+			data.points = (double*)malloc(data.numberOfPoint * 3 * sizeof(double));
+			for (int i = 0; i < numberOfPoint; i++) {
+				data.points[i * 3] = points[i * 4];
+				data.points[i * 3 + 1] = points[i * 4 + 1];
+				data.points[i * 3 + 2] = points[i * 4 + 2];
+			}
+
+			data.numberOfPointAttr = 1;
+			data.attr = (double*)malloc(data.numberOfPoint * sizeof(double));
+			for (int i = 0; i < numberOfPoint; i++) {
+				data.attr[i] = points[i * 4 + 3];
+
+			}
+			return data;
+		}
+	};
 
 
 }

@@ -10,7 +10,7 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 	//Delaunay Triangulation
 	//Incremental insert + flip Algorithm
 
-	auto create_pari_edge = [](DECL_Delaunay::Vertex* f, DECL_Delaunay::Vertex* t) {
+	auto create_pair_edge = [](DECL_Delaunay::Vertex* f, DECL_Delaunay::Vertex* t) {
 		DECL_Delaunay::HalfEdge* edge;
 		DECL_Delaunay::HalfEdge* edge_twin;
 
@@ -40,14 +40,14 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 			bool ccw = ToLeft(decl.vertex_list[0]->position, decl.vertex_list[1]->position, decl.vertex_list[2]->position);
 
 			if (ccw) {
-				e01 = create_pari_edge(decl.vertex_list[0], decl.vertex_list[1]);
-				e12 = create_pari_edge(decl.vertex_list[1], decl.vertex_list[2]);
-				e20 = create_pari_edge(decl.vertex_list[2], decl.vertex_list[0]);
+				e01 = create_pair_edge(decl.vertex_list[0], decl.vertex_list[1]);
+				e12 = create_pair_edge(decl.vertex_list[1], decl.vertex_list[2]);
+				e20 = create_pair_edge(decl.vertex_list[2], decl.vertex_list[0]);
 			}
 			else {
-				e01 = create_pari_edge(decl.vertex_list[1], decl.vertex_list[0]);
-				e12 = create_pari_edge(decl.vertex_list[2], decl.vertex_list[1]);
-				e20 = create_pari_edge(decl.vertex_list[0], decl.vertex_list[2]);
+				e01 = create_pair_edge(decl.vertex_list[1], decl.vertex_list[0]);
+				e12 = create_pair_edge(decl.vertex_list[2], decl.vertex_list[1]);
+				e20 = create_pair_edge(decl.vertex_list[0], decl.vertex_list[2]);
 			}
 
 			{
@@ -119,199 +119,87 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 		}
 
 		std::vector<DECL_Delaunay::HalfEdge*> possible_bad_edge_list;
-		if (inside_face) {
-			debug_cout("inside_face");
-			//link split one tri to three tri
-			auto p_edge0 = inside_face->incident_edge;
-			auto p_edge1 = inside_face->incident_edge->succ;
-			auto p_edge2 = inside_face->incident_edge->succ->succ;
+		ASSERT(inside_face);
 
-			//add edge 0
-			DECL_Delaunay::HalfEdge* new_edge0 = create_pari_edge(vertex_to_add, p_edge0->origin);
-			decl.AddEdge(new_edge0);
-			decl.AddEdge(new_edge0->twin);
+		//link split one tri to three tri
+		auto p_edge0 = inside_face->incident_edge;
+		auto p_edge1 = inside_face->incident_edge->succ;
+		auto p_edge2 = inside_face->incident_edge->succ->succ;
 
-			//add edge 1
-			DECL_Delaunay::HalfEdge* new_edge1 = create_pari_edge(p_edge0->end, vertex_to_add);
-			decl.AddEdge(new_edge1);
-			decl.AddEdge(new_edge1->twin);
+		//add edge 0
+		DECL_Delaunay::HalfEdge* new_edge0 = create_pair_edge(vertex_to_add, p_edge0->origin);
+		decl.AddEdge(new_edge0);
+		decl.AddEdge(new_edge0->twin);
 
-			//form face 0
-			DECL_Delaunay::Face* p_face0 = new DECL_Delaunay::Face();
-			decl.AddFace(p_face0);
-			p_face0->incident_edge = p_edge0;
+		//add edge 1
+		DECL_Delaunay::HalfEdge* new_edge1 = create_pair_edge(p_edge0->end, vertex_to_add);
+		decl.AddEdge(new_edge1);
+		decl.AddEdge(new_edge1->twin);
 
-			{
-				bool ccw = ToLeft(p_edge0->origin->position, p_edge0->end->position, vertex_position);
-				if (ccw) {
-					p_edge0->succ = new_edge1;
-					new_edge1->pred = p_edge0;
+		//form face 0
+		DECL_Delaunay::Face* p_face0 = new DECL_Delaunay::Face();
+		decl.AddFace(p_face0);
+		p_face0->incident_edge = p_edge0;
+		p_edge0->incident_face = p_face0;
+		new_edge0->incident_face = p_face0;
+		new_edge1->incident_face = p_face0;
 
-					p_edge0->pred = new_edge0;
-					new_edge0->succ = p_edge0;
+		{
+			p_edge0->succ = new_edge1;
+			new_edge1->pred = p_edge0;
 
-					new_edge1->succ = new_edge0;
-					new_edge0->pred = new_edge1;
+			p_edge0->pred = new_edge0;
+			new_edge0->succ = p_edge0;
 
-				}
-				else {
-					p_edge0->pred = new_edge1;
-					new_edge1->succ = p_edge0;
-
-					p_edge0->succ = new_edge0;
-					new_edge0->pred = p_edge0;
-
-					new_edge1->pred = new_edge0;
-					new_edge0->succ = new_edge1;
-				}
-			}
-
-			auto diffrent_v = p_edge1->end;
-			auto same_v = p_edge1->origin;
-			{
-				if (p_edge0->origin == p_edge1->end || p_edge0->end == p_edge1->end) {
-					diffrent_v = p_edge1->origin;
-				}
-				if (diffrent_v == p_edge1->origin) {
-					same_v = p_edge1->end;
-				}
-			}
-
-			//add edge 2
-			DECL_Delaunay::HalfEdge* new_edge2 = create_pari_edge(diffrent_v, vertex_to_add);
-			decl.AddEdge(new_edge2);
-			decl.AddEdge(new_edge2->twin);
-
-			//form face 1
-			DECL_Delaunay::Face* p_face1 = new DECL_Delaunay::Face();
-			decl.AddFace(p_face1);
-			p_face1->incident_edge = p_edge1;
-
-			{
-				bool ccw = ToLeft(p_edge1->origin->position, p_edge1->end->position, vertex_position);
-				if (ccw) {
-					//TODO??
-					p_edge1->succ = new_edge2;
-					new_edge2->pred = p_edge1;
-
-					p_edge1->pred = new_edge1->twin;
-					new_edge1->twin->succ = p_edge1;
-
-					new_edge2->succ = new_edge1->twin;
-					new_edge1->twin->pred = new_edge2;
-
-				}
-				else {
-					p_edge1->pred = new_edge2;
-					new_edge2->succ = p_edge1;
-
-					p_edge1->succ = new_edge1->twin;
-					new_edge1->twin->pred = p_edge1;
-
-					new_edge2->pred = new_edge1->twin;
-					new_edge1->twin->succ = new_edge2;
-				}
-			}
-
-
-			//form face 2
-			DECL_Delaunay::Face* p_face2 = new DECL_Delaunay::Face();
-			decl.AddFace(p_face2);
-			p_face2->incident_edge = p_edge2;
-
-			{
-				bool ccw = ToLeft(p_edge2->origin->position, p_edge2->end->position, vertex_position);
-				if (ccw) {
-					p_edge2->succ = new_edge0->twin;
-					new_edge0->twin->pred = p_edge2;
-
-					p_edge2->pred = new_edge2->twin;
-					new_edge2->twin->succ = p_edge2;
-
-					new_edge0->twin->succ = new_edge2->twin;
-					new_edge2->twin->pred = new_edge0->twin;
-
-				}
-				else {
-					p_edge2->pred = new_edge0->twin;
-					new_edge0->twin->succ = p_edge2;
-
-					p_edge2->succ = new_edge2->twin;
-					new_edge2->twin->pred = p_edge2;
-
-					new_edge0->twin->pred = new_edge2->twin;
-					new_edge2->twin->succ = new_edge0->twin;
-				}
-
-			}
-
-			decl.DelFace(inside_face);
-
-			possible_bad_edge_list.push_back(p_edge0);
-			possible_bad_edge_list.push_back(p_edge1);
-			possible_bad_edge_list.push_back(p_edge2);
+			new_edge1->succ = new_edge0;
+			new_edge0->pred = new_edge1;
 		}
-		else {
-			//find the closet edge
-			DECL_Delaunay::HalfEdge* minEdge;
-			{
-				double distance = Infinity;
-				for (auto& edge : decl.edge_list) {
-					double dis = DistanceToPoint({ edge->origin->position, edge->end->position }, vertex_position);
-					if (distance > dis) {
-						distance = dis;
-						minEdge = edge->twin;
-					}
-				}
-			}
+		auto diffrent_v = p_edge1->end;
+		//add edge 2
+		DECL_Delaunay::HalfEdge* new_edge2 = create_pair_edge(vertex_to_add, diffrent_v);
+		decl.AddEdge(new_edge2);
+		decl.AddEdge(new_edge2->twin);
 
-			//add edge 0
-			DECL_Delaunay::HalfEdge* new_edge0 = create_pari_edge(vertex_to_add, minEdge->origin);
-			decl.AddEdge(new_edge0);
-			decl.AddEdge(new_edge0->twin);
+		//form face 1
+		DECL_Delaunay::Face* p_face1 = new DECL_Delaunay::Face();
+		decl.AddFace(p_face1);
+		p_face1->incident_edge = p_edge1;
+		p_edge1->incident_face = p_face1;
+		new_edge2->twin->incident_face = p_face1;
+		new_edge1->twin->incident_face = p_face1;
+		{
+			p_edge1->succ = new_edge2->twin;
+			new_edge2->twin->pred = p_edge1;
 
-			//add edge 1
-			DECL_Delaunay::HalfEdge* new_edge1 = create_pari_edge(minEdge->end, vertex_to_add);
-			decl.AddEdge(new_edge1);
-			decl.AddEdge(new_edge1->twin);
+			p_edge1->pred = new_edge1->twin;
+			new_edge1->twin->succ = p_edge1;
 
-			//form face 0
-			DECL_Delaunay::Face* p_face = new DECL_Delaunay::Face();
-			new_edge0->incident_face = p_face;
-			new_edge1->incident_face = p_face;
-			minEdge->incident_face = p_face;
-
-			decl.AddFace(p_face);
-
-			p_face->incident_edge = minEdge;
-			{
-				bool ccw = ToLeft(minEdge->origin->position, minEdge->end->position, vertex_position);
-				if (ccw) {
-					minEdge->succ = new_edge1;
-					new_edge1->pred = minEdge;
-
-					minEdge->pred = new_edge0;
-					new_edge0->succ = minEdge;
-
-					new_edge0->pred = new_edge1;
-					new_edge1->succ = new_edge0;
-
-				}
-				else {
-					minEdge->pred = new_edge1;
-					new_edge1->succ = minEdge;
-
-					minEdge->succ = new_edge0;
-					new_edge0->pred = minEdge;
-
-					new_edge0->succ = new_edge1;
-					new_edge1->pred = new_edge0;
-				}
-			}
-
-			possible_bad_edge_list.push_back(minEdge);
-
+			new_edge2->twin->succ = new_edge1->twin;
+			new_edge1->twin->pred = new_edge2->twin;
 		}
+
+		//form face 2
+		DECL_Delaunay::Face* p_face2 = new DECL_Delaunay::Face();
+		decl.AddFace(p_face2);
+		p_face2->incident_edge = p_edge2;
+		p_edge2->incident_face = p_face2;
+		new_edge2->incident_face = p_face2;
+		new_edge0->twin->incident_face = p_face2;
+		{
+			p_edge2->succ = new_edge0->twin;
+			new_edge0->twin->pred = p_edge2;
+
+			p_edge2->pred = new_edge2;
+			new_edge2->succ = p_edge2;
+
+			new_edge0->twin->succ = new_edge2;
+			new_edge2->pred = new_edge0->twin;
+		}
+		decl.DelFace(inside_face);
+		possible_bad_edge_list.push_back(p_edge0);
+		possible_bad_edge_list.push_back(p_edge1);
+		possible_bad_edge_list.push_back(p_edge2);
+
 
 		//Step 2: process possible_bad_edge_list
 		while (possible_bad_edge_list.size()) {
@@ -363,10 +251,10 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 		};
 
 
-	Incremental_insertion(cv::Point2d(decl.boundary.x, decl.boundary.y), decl);
+
 	Incremental_insertion(cv::Point2d(0, 0), decl);
-	Incremental_insertion(cv::Point2d(decl.boundary.x, 0), decl);
-	Incremental_insertion(cv::Point2d(0, decl.boundary.y), decl);
+	Incremental_insertion(cv::Point2d(decl.boundary.x * 2, 0), decl);
+	Incremental_insertion(cv::Point2d(0, decl.boundary.y * 2), decl);
 
 	for (const auto& point : all_point) {
 		debug_cout("\n");
