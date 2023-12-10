@@ -7,6 +7,7 @@ class  Interpolation4D_Vulkan :public VulkanExampleBase
 {
 	struct PushBlock_Point {
 		glm::mat4 mvp;
+		glm::vec4 color;
 	};
 
 	struct PushBlock_Triangle {
@@ -72,6 +73,7 @@ public:
 		const uint32_t glTFLoadingFlags = vkglTF::FileLoadingFlags::PreTransformVertices | vkglTF::FileLoadingFlags::PreMultiplyVertexColors | vkglTF::FileLoadingFlags::FlipY;
 
 		sphere.model.loadFromFile(getAssetPath() + "sphere.gltf", vulkanDevice, queue, glTFLoadingFlags);
+		cube.model.loadFromFile(getAssetPath() + "cube.gltf", vulkanDevice, queue, glTFLoadingFlags);
 
 	}
 	void preparePipelines() {
@@ -174,14 +176,30 @@ public:
 
 			vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipline);
 			vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
-
+			ASSERT(data.numberOfPointAttr == 4);
 			for (int j = 0; j < data.numberOfPoint; j++) {
-				sphere.pos = glm::vec3(data.points[j * 3], data.points[j * 3 + 1], data.points[j * 3 + 2]);
+				sphere.pos = glm::vec3(data.points[j * (3 + data.numberOfPointAttr)], data.points[j * (3 + data.numberOfPointAttr) + 1], data.points[j * (3 + data.numberOfPointAttr) + 2]);
 				sphere.size = glm::vec3(1, 1, 1);
-				glm::mat4 model = glm::translate(glm::mat4(1.0f), sphere.pos);
-				model = glm::scale(model, sphere.size);
-				vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushBlock_Point), &model);
-				sphere.model.draw(drawCmdBuffers[i]);
+				PushBlock_Point pushblock;
+				pushblock.mvp = glm::translate(glm::mat4(1.0f), sphere.pos);
+				pushblock.mvp = glm::scale(pushblock.mvp, sphere.size);
+				pushblock.color = glm::vec4(
+					data.attr[j * (data.numberOfPointAttr)],
+					data.attr[j * (data.numberOfPointAttr) + 1],
+					data.attr[j * (data.numberOfPointAttr) + 2],
+					data.attr[j * (data.numberOfPointAttr) + 3]
+				);
+				vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushBlock_Point), (void*)&pushblock);
+				if (data.attr[j * (data.numberOfPointAttr) + 3] == 0) {
+					sphere.model.draw(drawCmdBuffers[i]);
+				}
+				else if (data.attr[j * (data.numberOfPointAttr) + 3] == 1) {
+					cube.model.draw(drawCmdBuffers[i]);
+				}
+				else {
+					ASSERT(false);
+				}
+
 			}
 
 			drawUI(drawCmdBuffers[i]);
@@ -282,6 +300,7 @@ public:
 	}
 protected:
 	SceneObject sphere;
+	SceneObject cube;
 	VulkanDrawData data;
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorSet descriptorSet;
@@ -310,19 +329,35 @@ void Interpolation4D(HINSTANCE hInstance) {
 	int height = 100;
 	int deepth = 100;
 
-	std::vector<cv::Point3d> all_dots;
 
-	int size = 5;
-	for (int i = 0; i < size; i++)
+	Interpolation4D_datastruct::Interpolation4DIO io;
+	io.numberOfPoint = 100;
+	io.points = (double*)malloc(sizeof(double*) * io.numberOfPoint * (3 + io.numberOfAttr));
+	io.numberOfQueryPoints = 5;
+	io.queryPoints = (double*)malloc(sizeof(double*) * io.numberOfQueryPoints * (3 + io.numberOfAttr));
+
+	for (int i = 0; i < io.numberOfPoint; i++)
 	{
-		all_dots.push_back(cv::Point3d(rand() % width, rand() % height, rand() % deepth));
-	}
-	Interpolation4D_datastruct::Interpolation4DResult res;
+		io.points[i * (3 + io.numberOfAttr)] = rand() % width;
+		io.points[i * (3 + io.numberOfAttr) + 1] = rand() % height;
+		io.points[i * (3 + io.numberOfAttr) + 2] = rand() % deepth;
+		for (int j = io.numberOfAttr; j < io.numberOfAttr + 3; j++) {
+			io.points[i * (3 + io.numberOfAttr) + j] = rand() % 255;
+		}
 
-	Interpolation4D_01(all_dots, res);
+	}
+	for (int i = 0; i < io.numberOfQueryPoints; i++)
+	{
+		io.queryPoints[i * (3 + io.numberOfAttr)] = rand() % width;
+		io.queryPoints[i * (3 + io.numberOfAttr) + 1] = rand() % height;
+		io.queryPoints[i * (3 + io.numberOfAttr) + 2] = rand() % deepth;
+	}
+
+
+	Interpolation4D_01(io);
 
 	Interpolation4D_Vulkan_app = new Interpolation4D_Vulkan();
-	Interpolation4D_Vulkan_app->SetData(res.toVulkanDrawData());
+	Interpolation4D_Vulkan_app->SetData(io.toVulkanDrawData());
 	Interpolation4D_Vulkan_app->initVulkan();
 	Interpolation4D_Vulkan_app->setupWindow(hInstance, Interpolation4D_WndProc);
 	Interpolation4D_Vulkan_app->prepare();

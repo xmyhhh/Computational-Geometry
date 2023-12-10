@@ -7,6 +7,7 @@ class  Delaunay3D_Vulkan :public VulkanExampleBase
 {
 	struct PushBlock_Point {
 		glm::mat4 mvp;
+		glm::vec4 color = glm::vec4(1);
 	};
 
 	struct PushBlock_Triangle {

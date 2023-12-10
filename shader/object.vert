@@ -14,10 +14,11 @@ layout (binding = 0) uniform UBO
 
 layout(push_constant) uniform PushConsts {
 	mat4 model;
+	vec4 color;
 }pushConsts;
 
 layout (location = 0) out vec3 outNormal;
-layout (location = 1) out vec3 outColor;
+layout (location = 1) out vec4 outColor;
 
 void main() 
 {
@@ -27,9 +28,7 @@ void main()
     vec4 pos = pushConsts.model * vec4(inPos, 1.0);  //world space pos
 
     outNormal = normalize(mat3(pushConsts.model) * inNormal);   //world space normal
-	outColor = inColor;
- 
-
+	outColor = pushConsts.color;
 }
 
 

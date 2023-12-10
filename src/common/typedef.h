@@ -64,7 +64,7 @@ struct VulkanDrawData {
 	int numberOfTriangle = 0;
 	int* triangles;//index of triangle (3 int) * numberOfTriangle
 	int numberOfPointAttr = 0;
-	double* attr; //each point to size of(double * numberOfPoint)
+	double* attr; //each point to size of((numberOfPointAttr double) * numberOfPoint)
 
 };
 
@@ -217,30 +217,60 @@ namespace Delaunay3D_datastruct {
 
 
 namespace Interpolation4D_datastruct {
-	struct Interpolation4DResult {
+	struct Interpolation4DIO {
 		int numberOfPoint;
-		double* points; //location xyz(4 double) * numberOfPoint
+		double* points; //location xyz and one attr(3+numberOfAttr double) * numberOfPoint
+
+		int numberOfQueryPoints;
+		double* queryPoints; //location xyz and one attr(3+numberOfAttr double) * numberOfPoint
+
+		int numberOfAttr = 3;
 
 		VulkanDrawData toVulkanDrawData() {
-			VulkanDrawData data;
+			VulkanDrawData vulkan_data;
 
-			data.numberOfPoint = numberOfPoint;
-			data.points = (double*)malloc(data.numberOfPoint * 3 * sizeof(double));
+			vulkan_data.numberOfPoint = numberOfPoint + numberOfQueryPoints;
+			vulkan_data.points = (double*)malloc(vulkan_data.numberOfPoint * 3 * sizeof(double));
+
+			//point
 			for (int i = 0; i < numberOfPoint; i++) {
-				data.points[i * 3] = points[i * 4];
-				data.points[i * 3 + 1] = points[i * 4 + 1];
-				data.points[i * 3 + 2] = points[i * 4 + 2];
+				for (int j = 0; j < 3; j++) {
+					vulkan_data.points[i * 3 + j] = points[i * (3 + numberOfAttr) + j];
+				}
+			}
+			int offset = numberOfPoint * (3 + numberOfAttr) - 1;
+			for (int i = 0; i < numberOfQueryPoints; i++) {
+				for (int j = 0; j < 3; j++) {
+					vulkan_data.points[offset + i * 3 + j] = queryPoints[i * (3 + numberOfAttr) + j];
+				}
+			}
+			//attr
+			vulkan_data.numberOfPointAttr = numberOfAttr + 1;//first is type and then is real attr, type 0 is know point and type 1 is est point
+			vulkan_data.attr = (double*)malloc(vulkan_data.numberOfPoint * vulkan_data.numberOfPointAttr * sizeof(double));
+			for (int i = 0; i < numberOfPoint; i++) {
+				for (int j = 0; j < numberOfAttr; j++) {
+					vulkan_data.attr[i * vulkan_data.numberOfPointAttr + j] = points[i * (3 + numberOfAttr) + 3 + j];
+				}
+				vulkan_data.attr[i * vulkan_data.numberOfPointAttr + vulkan_data.numberOfPointAttr - 1] = 0;
 			}
 
-			data.numberOfPointAttr = 1;
-			data.attr = (double*)malloc(data.numberOfPoint * sizeof(double));
-			for (int i = 0; i < numberOfPoint; i++) {
-				data.attr[i] = points[i * 4 + 3];
+			offset = numberOfPoint * vulkan_data.numberOfPointAttr - 1;
 
+			for (int i = 0; i < numberOfQueryPoints; i++) {
+				for (int j = 0; j < numberOfAttr; j++) {
+					vulkan_data.attr[offset + i * vulkan_data.numberOfPointAttr + j] = queryPoints[i * (3 + numberOfAttr) + 3 + j];
+				}
+				vulkan_data.attr[offset + i * vulkan_data.numberOfPointAttr + vulkan_data.numberOfPointAttr - 1] = 1;
 			}
-			return data;
+
+			auto aaa = vulkan_data.attr[399];
+			auto bbb = (numberOfPoint - 1) * vulkan_data.numberOfPointAttr + vulkan_data.numberOfPointAttr - 1;
+
+			return vulkan_data;
 		}
 	};
+
+
 
 
 }
