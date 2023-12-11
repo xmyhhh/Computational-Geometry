@@ -194,7 +194,7 @@ void Voronoi_01(std::vector<cv::Point>& all_point, DECL_Voronoi::DECL& decl) {
 
 		DECL_Voronoi::Site* closet_site;
 		{
-			double min_dis = Infinity;
+			double min_dis = _Infinity;
 			for (auto& site_item : decl.site_list) {
 				auto r = VectorLengthSqr(site_item.position, site);
 				if (r < min_dis) {

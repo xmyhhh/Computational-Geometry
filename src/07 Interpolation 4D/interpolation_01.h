@@ -71,7 +71,7 @@ void Interpolation4D_01(Interpolation4DIO& io) {
 			io.vulkan_tri[i * (num_results * 3) + j * 3 + 2] = io.numberOfPoint + i;
 		}
 	}
-	int aaa = 0;
+
 
 	//std::cout << "knnSearch(nn=" << num_results << "): \n";
 	//for (size_t i = 0; i < resultSet.size(); i++)

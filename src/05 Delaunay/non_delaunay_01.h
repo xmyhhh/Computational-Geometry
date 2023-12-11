@@ -250,7 +250,7 @@ void Non_Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& dec
 			//find the closet edge
 			DECL_Delaunay::HalfEdge* minEdge;
 			{
-				double distance = Infinity;
+				double distance = _Infinity;
 				for (auto& edge : decl.edge_list) {
 					double dis = DistanceToPoint({ edge->origin->position, edge->end->position }, vertex_position);
 					if (distance > dis) {

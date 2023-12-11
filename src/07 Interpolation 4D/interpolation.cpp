@@ -1,6 +1,7 @@
 
 #include "common/typedef.h"
 #include "interpolation_01.h"
+#include "interpolation_02.h"
 #include "common/vulkan/VulkanExampleBase.h"
 
 class  Interpolation4D_Vulkan :public VulkanExampleBase
@@ -179,7 +180,7 @@ public:
 			ASSERT(data.numberOfPointAttr == 4);
 			for (int j = 0; j < data.numberOfPoint; j++) {
 				auto pos = glm::vec3(data.points[j * (3)], data.points[j * (3) + 1], data.points[j * (3) + 2]);
-				auto size = glm::vec3(2, 2, 2);
+				auto size = glm::vec3(1, 1, 1);
 				PushBlock_Point pushblock;
 				pushblock.mvp = glm::translate(glm::mat4(1.0f), pos);
 				pushblock.mvp = glm::scale(pushblock.mvp, size);
@@ -330,35 +331,63 @@ void Interpolation4D(HINSTANCE hInstance) {
 	int deepth = 100;
 
 	Interpolation4D_datastruct::Interpolation4DIO io;
-	io.numberOfPoint = 30;
+	io.numberOfPoint = 40;
 	io.points = (double*)malloc(sizeof(double*) * io.numberOfPoint * (3 + io.numberOfAttr));
-	io.numberOfQueryPoints = 40;
+	io.numberOfQueryPoints = 1000;
 	io.queryPoints = (double*)malloc(sizeof(double*) * io.numberOfQueryPoints * (3 + io.numberOfAttr));
 	srand(15);
 	for (int i = 0; i < io.numberOfPoint; i++)
 	{
-		io.points[i * (3 + io.numberOfAttr)] = rand() % width;
-		io.points[i * (3 + io.numberOfAttr) + 1] = rand() % height;
-		io.points[i * (3 + io.numberOfAttr) + 2] = rand() % deepth;
+		io.points[i * (3 + io.numberOfAttr)] = rand() % width - width / 2;
+		io.points[i * (3 + io.numberOfAttr) + 1] = rand() % height - height / 2;
+		io.points[i * (3 + io.numberOfAttr) + 2] = rand() % deepth - deepth / 2;
 		for (int j = io.numberOfAttr; j < io.numberOfAttr + 3; j++) {
 			io.points[i * (3 + io.numberOfAttr) + j] = rand() % 255;
 		}
 
 	}
-
-	for (int i = 0; i < io.numberOfQueryPoints; i++)
-	{
-		io.queryPoints[i * (3 + io.numberOfAttr)] = rand() % width;
-		io.queryPoints[i * (3 + io.numberOfAttr) + 1] = rand() % height;
-		io.queryPoints[i * (3 + io.numberOfAttr) + 2] = rand() % deepth;
+#define RandomQuery false
+	if (RandomQuery) {
+		for (int i = 0; i < io.numberOfQueryPoints; i++)
+		{
+			io.queryPoints[i * (3 + io.numberOfAttr)] = rand() % width - width / 2;
+			io.queryPoints[i * (3 + io.numberOfAttr) + 1] = rand() % height - height / 2;
+			io.queryPoints[i * (3 + io.numberOfAttr) + 2] = rand() % deepth - deepth / 2;
+		}
 	}
+	else {
+		int  query_gird_num = std::pow(io.numberOfQueryPoints, 0.33);
+		double query_grid_distance = deepth / query_gird_num;
+
+		for (int i = 0; i < query_gird_num; i++) {
+			for (int j = 0; j < query_gird_num; j++) {
+				for (int k = 0; k < query_gird_num; k++) {
+					int index = i * query_gird_num * query_gird_num + j * query_gird_num + k;
+					io.queryPoints[index * (3 + io.numberOfAttr)] = i * query_grid_distance - deepth / 2;
+					io.queryPoints[index * (3 + io.numberOfAttr) + 1] = j * query_grid_distance - deepth / 2;
+					io.queryPoints[index * (3 + io.numberOfAttr) + 2] = k * query_grid_distance - deepth / 2;
+				}
+			}
+		}
+	}
+
+
+
 	//{
 	//	io.queryPoints[0 * (3 + io.numberOfAttr)] = 45;
 	//	io.queryPoints[0 * (3 + io.numberOfAttr) + 1] = 1;
 	//	io.queryPoints[0 * (3 + io.numberOfAttr) + 2] = 280;
 	//}
 
-	Interpolation4D_01(io);
+	//Interpolation4D_01(io);//IDW
+#define Show_KNN false
+	if (!Show_KNN)
+		io.vulkan_tri_num = 0;
+
+
+	Interpolation4D_02(io);//RBF
+
+
 
 	Interpolation4D_Vulkan_app = new Interpolation4D_Vulkan();
 	Interpolation4D_Vulkan_app->SetData(io.toVulkanDrawData());

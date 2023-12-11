@@ -16,7 +16,7 @@
 #define  YELLOW cv::Scalar(0, 255, 255)
 
 
-#define  Infinity  std::numeric_limits<double>::infinity() 
+#define  _Infinity  std::numeric_limits<double>::infinity() 
 
 struct Triangle {
 	cv::Point p1;
