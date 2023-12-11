@@ -216,8 +216,8 @@ namespace Delaunay3D_datastruct {
 }
 
 
-namespace Interpolation4D_datastruct {
-	struct Interpolation4DIO {
+namespace Interpolation3D_datastruct {
+	struct Interpolation3DIO {
 		int numberOfPoint;
 		double* points; //location xyz and one attr(3+numberOfAttr double) * numberOfPoint
 

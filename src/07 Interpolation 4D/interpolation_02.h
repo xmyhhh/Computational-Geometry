@@ -3,11 +3,9 @@
 
 #include "Eigen/Dense"
 
-using namespace Interpolation4D_datastruct;
+using namespace Interpolation3D_datastruct;
 
-typedef std::vector<std::vector<double>> vector_of_vectors_double;
-
-void Interpolation4D_02(Interpolation4DIO& io) {
+void Interpolation4D_02(Interpolation3DIO& io) {
 	//RBF-3d
 
 	auto inverse_multiquadric = [](double r) {

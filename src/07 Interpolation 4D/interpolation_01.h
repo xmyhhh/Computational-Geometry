@@ -3,11 +3,11 @@
 #include "KDTreeVectorOfVectorsAdaptor.h"
 
 
-using namespace Interpolation4D_datastruct;
+using namespace Interpolation3D_datastruct;
 
 typedef std::vector<std::vector<double>> vector_of_vectors_double;
 
-void Interpolation4D_01(Interpolation4DIO& io) {
+void Interpolation4D_01(Interpolation3DIO& io) {
 	//IDW-3d
 	//init kd-tree
 	vector_of_vectors_double samples;

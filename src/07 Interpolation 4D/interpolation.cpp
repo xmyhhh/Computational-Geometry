@@ -2,6 +2,7 @@
 #include "common/typedef.h"
 #include "interpolation_01.h"
 #include "interpolation_02.h"
+#include "interpolation_03.h"
 #include "common/vulkan/VulkanExampleBase.h"
 
 class  Interpolation4D_Vulkan :public VulkanExampleBase
@@ -330,7 +331,7 @@ void Interpolation4D(HINSTANCE hInstance) {
 	int height = 100;
 	int deepth = 100;
 
-	Interpolation4D_datastruct::Interpolation4DIO io;
+	Interpolation3D_datastruct::Interpolation3DIO io;
 	io.numberOfPoint = 40;
 	io.points = (double*)malloc(sizeof(double*) * io.numberOfPoint * (3 + io.numberOfAttr));
 	io.numberOfQueryPoints = 1000;
@@ -371,8 +372,6 @@ void Interpolation4D(HINSTANCE hInstance) {
 		}
 	}
 
-
-
 	//{
 	//	io.queryPoints[0 * (3 + io.numberOfAttr)] = 45;
 	//	io.queryPoints[0 * (3 + io.numberOfAttr) + 1] = 1;
@@ -386,8 +385,6 @@ void Interpolation4D(HINSTANCE hInstance) {
 
 
 	Interpolation4D_02(io);//RBF
-
-
 
 	Interpolation4D_Vulkan_app = new Interpolation4D_Vulkan();
 	Interpolation4D_Vulkan_app->SetData(io.toVulkanDrawData());
