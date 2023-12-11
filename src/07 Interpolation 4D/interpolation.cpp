@@ -178,11 +178,11 @@ public:
 			vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
 			ASSERT(data.numberOfPointAttr == 4);
 			for (int j = 0; j < data.numberOfPoint; j++) {
-				sphere.pos = glm::vec3(data.points[j * (3 + data.numberOfPointAttr)], data.points[j * (3 + data.numberOfPointAttr) + 1], data.points[j * (3 + data.numberOfPointAttr) + 2]);
-				sphere.size = glm::vec3(1, 1, 1);
+				auto pos = glm::vec3(data.points[j * (3)], data.points[j * (3) + 1], data.points[j * (3) + 2]);
+				auto size = glm::vec3(2, 2, 2);
 				PushBlock_Point pushblock;
-				pushblock.mvp = glm::translate(glm::mat4(1.0f), sphere.pos);
-				pushblock.mvp = glm::scale(pushblock.mvp, sphere.size);
+				pushblock.mvp = glm::translate(glm::mat4(1.0f), pos);
+				pushblock.mvp = glm::scale(pushblock.mvp, size);
 				pushblock.color = glm::vec4(
 					data.attr[j * (data.numberOfPointAttr)],
 					data.attr[j * (data.numberOfPointAttr) + 1],
@@ -329,13 +329,12 @@ void Interpolation4D(HINSTANCE hInstance) {
 	int height = 100;
 	int deepth = 100;
 
-
 	Interpolation4D_datastruct::Interpolation4DIO io;
-	io.numberOfPoint = 100;
+	io.numberOfPoint = 30;
 	io.points = (double*)malloc(sizeof(double*) * io.numberOfPoint * (3 + io.numberOfAttr));
-	io.numberOfQueryPoints = 5;
+	io.numberOfQueryPoints = 40;
 	io.queryPoints = (double*)malloc(sizeof(double*) * io.numberOfQueryPoints * (3 + io.numberOfAttr));
-
+	srand(15);
 	for (int i = 0; i < io.numberOfPoint; i++)
 	{
 		io.points[i * (3 + io.numberOfAttr)] = rand() % width;
@@ -346,13 +345,18 @@ void Interpolation4D(HINSTANCE hInstance) {
 		}
 
 	}
+
 	for (int i = 0; i < io.numberOfQueryPoints; i++)
 	{
 		io.queryPoints[i * (3 + io.numberOfAttr)] = rand() % width;
 		io.queryPoints[i * (3 + io.numberOfAttr) + 1] = rand() % height;
 		io.queryPoints[i * (3 + io.numberOfAttr) + 2] = rand() % deepth;
 	}
-
+	//{
+	//	io.queryPoints[0 * (3 + io.numberOfAttr)] = 45;
+	//	io.queryPoints[0 * (3 + io.numberOfAttr) + 1] = 1;
+	//	io.queryPoints[0 * (3 + io.numberOfAttr) + 2] = 280;
+	//}
 
 	Interpolation4D_01(io);
 

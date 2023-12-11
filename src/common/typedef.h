@@ -226,8 +226,18 @@ namespace Interpolation4D_datastruct {
 
 		int numberOfAttr = 3;
 
+
+		//use for debug 
+		int vulkan_tri_num = 0;
+		int* vulkan_tri;
+
 		VulkanDrawData toVulkanDrawData() {
 			VulkanDrawData vulkan_data;
+
+			vulkan_data.numberOfTriangle = vulkan_tri_num;
+			vulkan_data.triangles = (int*)malloc(sizeof(int) * 3 * vulkan_tri_num);
+			memcpy(vulkan_data.triangles, vulkan_tri, sizeof(int) * 3 * vulkan_tri_num);
+
 
 			vulkan_data.numberOfPoint = numberOfPoint + numberOfQueryPoints;
 			vulkan_data.points = (double*)malloc(vulkan_data.numberOfPoint * 3 * sizeof(double));
@@ -238,7 +248,7 @@ namespace Interpolation4D_datastruct {
 					vulkan_data.points[i * 3 + j] = points[i * (3 + numberOfAttr) + j];
 				}
 			}
-			int offset = numberOfPoint * (3 + numberOfAttr) - 1;
+			int offset = numberOfPoint * 3;
 			for (int i = 0; i < numberOfQueryPoints; i++) {
 				for (int j = 0; j < 3; j++) {
 					vulkan_data.points[offset + i * 3 + j] = queryPoints[i * (3 + numberOfAttr) + j];
@@ -254,17 +264,14 @@ namespace Interpolation4D_datastruct {
 				vulkan_data.attr[i * vulkan_data.numberOfPointAttr + vulkan_data.numberOfPointAttr - 1] = 0;
 			}
 
-			
+			offset = numberOfPoint * vulkan_data.numberOfPointAttr;
 
-			for (int i = numberOfPoint; i < numberOfPoint + numberOfQueryPoints; i++) {
+			for (int i = 0; i < numberOfQueryPoints; i++) {
 				for (int j = 0; j < numberOfAttr; j++) {
-					vulkan_data.attr[i * vulkan_data.numberOfPointAttr + j] = queryPoints[i * (3 + numberOfAttr) + 3 + j];
+					vulkan_data.attr[offset + i * vulkan_data.numberOfPointAttr + j] = queryPoints[i * (3 + numberOfAttr) + 3 + j];
 				}
-				vulkan_data.attr[i * vulkan_data.numberOfPointAttr + vulkan_data.numberOfPointAttr - 1] = 1;
+				vulkan_data.attr[offset + i * vulkan_data.numberOfPointAttr + vulkan_data.numberOfPointAttr - 1] = 1;
 			}
-
-			auto aaa = vulkan_data.attr[399];
-			auto bbb = (numberOfPoint - 1) * vulkan_data.numberOfPointAttr + vulkan_data.numberOfPointAttr - 1;
 
 			return vulkan_data;
 		}

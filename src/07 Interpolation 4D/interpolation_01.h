@@ -8,6 +8,7 @@ using namespace Interpolation4D_datastruct;
 typedef std::vector<std::vector<double>> vector_of_vectors_double;
 
 void Interpolation4D_01(Interpolation4DIO& io) {
+	//IDW-3d
 	//init kd-tree
 	vector_of_vectors_double samples;
 	samples.resize(io.numberOfPoint);
@@ -25,11 +26,15 @@ void Interpolation4D_01(Interpolation4DIO& io) {
 
 	// Query point:
 	static std::vector<double> query_pt(3);
-	const size_t        num_results = 3;
+	size_t        num_results = 5;
+	if (num_results > io.numberOfPoint)
+		num_results = io.numberOfPoint;
 	std::vector<size_t> ret_indexes(num_results);
 	std::vector<double> out_dists_sqr(num_results);
-	nanoflann::KNNResultSet<double> resultSet(num_results);
-	resultSet.init(&ret_indexes[0], &out_dists_sqr[0]);
+
+
+	io.vulkan_tri = (int*)malloc(sizeof(int) * num_results * 3 * io.numberOfQueryPoints);
+	io.vulkan_tri_num = num_results * io.numberOfQueryPoints;
 
 	for (size_t i = 0; i < io.numberOfQueryPoints; i++) {
 		query_pt[0] = io.queryPoints[i * (io.numberOfAttr + 3)];
@@ -37,24 +42,36 @@ void Interpolation4D_01(Interpolation4DIO& io) {
 		query_pt[2] = io.queryPoints[i * (io.numberOfAttr + 3) + 2];
 
 		// do a knn search
-		mat_index.index->findNeighbors(resultSet, &query_pt[0]);
+		num_results = mat_index.index->knnSearch(&query_pt[0], num_results, &ret_indexes[0], &out_dists_sqr[0]);
 
-		double total_dis = 0.0;
+		double inverse_sum = 0.0;
+		for (int j = 0; j < num_results; j++) {
+			inverse_sum += 1.0 / (out_dists_sqr[j]);
 
-		for (int j = 0; j < resultSet.size(); j++) {
-			total_dis += out_dists_sqr[j];
 		}
+
+		std::vector<double> W_i;
+		W_i.resize(num_results);
+		for (int j = 0; j < num_results; j++) {
+			W_i[j] = (1 / (out_dists_sqr[j] + 0.00001)) / inverse_sum;
+		}
+
 
 		for (int j = 0; j < io.numberOfAttr; j++) {
 			double est_value = 0.0;
-			for (int k = 0; k < resultSet.size(); k++) {
-				est_value += (out_dists_sqr[k] / total_dis) * io.points[ret_indexes[k] * (io.numberOfAttr + 3) + 3 + j];//scale * attr
+			for (int k = 0; k < num_results; k++) {
+				est_value += W_i[k] * io.points[ret_indexes[k] * (io.numberOfAttr + 3) + 3 + j];//scale * attr
 			}
 			io.queryPoints[i * (io.numberOfAttr + 3) + 3 + j] = est_value;
 		}
 
+		for (int j = 0; j < num_results; j++) {
+			io.vulkan_tri[i * (num_results * 3) + j * 3] = ret_indexes[j];
+			io.vulkan_tri[i * (num_results * 3) + j * 3 + 1] = ret_indexes[j];
+			io.vulkan_tri[i * (num_results * 3) + j * 3 + 2] = io.numberOfPoint + i;
+		}
 	}
-
+	int aaa = 0;
 
 	//std::cout << "knnSearch(nn=" << num_results << "): \n";
 	//for (size_t i = 0; i < resultSet.size(); i++)
