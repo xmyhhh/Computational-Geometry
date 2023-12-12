@@ -12,6 +12,7 @@
 extern void ShowTriangle();
 extern void ShowDot();
 extern void ShowLine();
+extern void FileConvert();
 
 extern void ConvexHull();
 extern void Intersection();
@@ -28,6 +29,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	//ShowTriangle();
 	//ShowDot();
 	//ShowLine();
+	FileConvert();
+
 
 	// 2D
 	//ConvexHull();
@@ -40,7 +43,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	// 3D
 	//Delaunay3D(hInstance);
 
-	Interpolation4D(hInstance);
+	//Interpolation4D(hInstance);
 
 	return 0;
 }

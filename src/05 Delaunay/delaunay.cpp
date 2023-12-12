@@ -42,7 +42,6 @@ void Delaunay() {
 			auto face = decl.face_list[i];
 			auto start_edge = face->incident_edge;
 
-
 			do {
 		/*		if (start_edge->origin->position == cv::Point2d(0, 0) || start_edge->end->position == cv::Point2d(0, 0))
 					;
