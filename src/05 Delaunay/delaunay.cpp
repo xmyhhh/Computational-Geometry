@@ -9,8 +9,6 @@ void Delaunay() {
 	cv::Mat img = cv::Mat::zeros(cv::Size(width, height), CV_8UC3);
 
 	std::vector<cv::Point> all_point;
-
-
 	srand(13);
 
 	int size = 6;
