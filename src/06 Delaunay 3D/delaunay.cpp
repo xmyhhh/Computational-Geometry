@@ -337,12 +337,17 @@ void Delaunay3D(HINSTANCE hInstance) {
 
 	std::vector<cv::Point3d> all_dots;
 
-	int size = 5;
-	for (int i = 0; i < size; i++)
-	{
-		all_dots.push_back(cv::Point3d(rand() % width + 1, rand() % height + 1, rand() % deepth + 1));
 
+#define use_random_point 1
+
+	if (use_random_point) {
+		int size = 5;
+		for (int i = 0; i < size; i++)
+		{
+			all_dots.push_back(cv::Point3d(rand() % width + 1, rand() % height + 1, rand() % deepth + 1));
+		}
 	}
+
 	Delaunay3D_01_datastruct::BW_DT_struct res;
 
 	Delaunay_3D_01(all_dots, res);
