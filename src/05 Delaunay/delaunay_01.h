@@ -218,6 +218,12 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 					origin_face_a->incident_edge = possible_bad_edge;
 					origin_face_b->incident_edge = possible_bad_edge->twin;
 
+					origin_face_a_edge_0->incident_face = origin_face_a;
+					origin_face_b_edge_0->incident_face = origin_face_a;
+
+					origin_face_a_edge_1->incident_face = origin_face_b;
+					origin_face_b_edge_1->incident_face = origin_face_b;
+
 					possible_bad_edge->succ = origin_face_b_edge_0;
 					origin_face_b_edge_0->pred = possible_bad_edge;
 					possible_bad_edge->pred = origin_face_a_edge_0;
@@ -233,7 +239,6 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 					origin_face_a_edge_1->succ = origin_face_b_edge_1;
 				}
 			}
-
 		}
 		};
 

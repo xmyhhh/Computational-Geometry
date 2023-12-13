@@ -11,13 +11,13 @@ void Delaunay() {
 	std::vector<cv::Point> all_point;
 	srand(13);
 
-	int size = 6;
+	int size = 20;
 	for (int i = 0; i < size; i++)
 	{
 		auto p1 = cv::Point(rand() % width, rand() % height);
 		all_point.push_back(p1);
 	}
-	bool use_alg_bw = false;
+	bool use_alg_bw =1;
 
 	DECL_Delaunay::DECL decl;
 	BW_DT_struct bw_dt_struct;
@@ -41,13 +41,13 @@ void Delaunay() {
 			auto start_edge = face->incident_edge;
 
 			do {
-		/*		if (start_edge->origin->position == cv::Point2d(0, 0) || start_edge->end->position == cv::Point2d(0, 0))
+				if (start_edge->origin->position == cv::Point2d(0, 0) || start_edge->end->position == cv::Point2d(0, 0))
 					;
-				else if (start_edge->origin->position == cv::Point2d(width*2, 0) || start_edge->end->position == cv::Point2d(width * 2, 0))
+				else if (start_edge->origin->position == cv::Point2d(width * 2, 0) || start_edge->end->position == cv::Point2d(width * 2, 0))
 					;
 				else if (start_edge->origin->position == cv::Point2d(0, height * 2) || start_edge->end->position == cv::Point2d(0, height * 2))
 					;
-				else*/
+				else
 					draw_line_origin_buttom_left(width, height, img, start_edge->origin->position, start_edge->end->position, GREEN, 1);
 				start_edge = start_edge->succ;
 			} while (face->incident_edge != start_edge);
@@ -86,7 +86,7 @@ void Delaunay() {
 
 
 #define Grid_Size 10
-#define Show_Grid 0
+#define Show_Grid 1
 	{
 		if (Show_Grid) {
 			for (size_t i = 0; i < Grid_Size; i++)
