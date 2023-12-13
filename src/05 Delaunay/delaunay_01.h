@@ -59,39 +59,26 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 				decl.AddEdge(e20);
 				decl.AddEdge(e20->twin);
 
-				bool ccw = ToLeft(decl.vertex_list[1]->position, decl.vertex_list[0]->position, decl.vertex_list[2]->position);
 				if (ccw) {
-					e01->pred = e12;
-					e12->succ = e01;
+					e01->succ = e12;
+					e12->pred = e01;
 					e01->twin->succ = e12->twin;
 					e12->twin->pred = e01->twin;
 
-					e01->succ = e20;
-					e20->pred = e01;
-					e01->twin->pred = e20->twin;
-					e20->twin->succ = e01->twin;
-
-					e12->pred = e20;
-					e20->succ = e12;
-					e12->twin->succ = e20->twin;
-					e20->twin->pred = e12->twin;
-
-				}
-				else {
 					e01->pred = e20;
 					e20->succ = e01;
 					e01->twin->succ = e20->twin;
 					e20->twin->pred = e01->twin;
 
-					e01->succ = e12;
-					e12->pred = e01;
-					e01->twin->pred = e12->twin;
-					e12->twin->succ = e01->twin;
-
-					e20->pred = e12;
 					e12->succ = e20;
-					e20->twin->succ = e12->twin;
+					e20->pred = e12;
 					e12->twin->pred = e20->twin;
+					e20->twin->succ = e12->twin;
+
+				}
+				else {
+					//TODO:add code here
+					ASSERT(false);
 				}
 				e01->incident_face = face;
 				e12->incident_face = face;
@@ -111,6 +98,7 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 				ASSERT(p1 != p2);
 				ASSERT(p1 != p3);
 				ASSERT(p3 != p2);
+
 				if (InTriangleTest(p1->position, p2->position, p3->position, vertex_position)) {
 					inside_face = face;
 					break;
@@ -200,7 +188,6 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 		possible_bad_edge_list.push_back(p_edge1);
 		possible_bad_edge_list.push_back(p_edge2);
 
-
 		//Step 2: process possible_bad_edge_list
 		while (possible_bad_edge_list.size()) {
 			DECL_Delaunay::HalfEdge* possible_bad_edge = possible_bad_edge_list[possible_bad_edge_list.size() - 1];
@@ -208,10 +195,10 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 			if (possible_bad_edge->twin->incident_face != nullptr) {
 				auto test_vertex = possible_bad_edge->twin->succ->end;
 				auto con_test_vertex = possible_bad_edge->succ->end;
+				ASSERT(test_vertex != con_test_vertex);
 				bool is_in_circle = InCircle2D(possible_bad_edge->origin->position, possible_bad_edge->end->position, possible_bad_edge->pred->origin->position, test_vertex->position);
 				if (is_in_circle) {
 					//flip
-
 					auto origin_face_a = possible_bad_edge->incident_face;
 					auto origin_face_a_edge_0 = possible_bad_edge->succ;
 					auto origin_face_a_edge_1 = possible_bad_edge->pred;
