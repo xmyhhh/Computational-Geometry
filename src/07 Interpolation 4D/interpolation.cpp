@@ -384,10 +384,10 @@ void Interpolation4D(HINSTANCE hInstance) {
 		io.vulkan_tri_num = 0;
 
 
-	//Interpolation4D_02(io);//RBF
+	Interpolation4D_02(io);//RBF
 
 
-	Interpolation4D_03;//Kriging
+	//Interpolation4D_03;//Kriging
 
 	Interpolation4D_Vulkan_app = new Interpolation4D_Vulkan();
 	Interpolation4D_Vulkan_app->SetData(io.toVulkanDrawData());

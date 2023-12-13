@@ -29,7 +29,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	//ShowTriangle();
 	//ShowDot();
 	//ShowLine();
-	FileConvert();
+	//FileConvert();
 
 
 	// 2D
@@ -43,7 +43,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	// 3D
 	//Delaunay3D(hInstance);
 
-	//Interpolation4D(hInstance);
+	Interpolation4D(hInstance);
 
 	return 0;
 }
