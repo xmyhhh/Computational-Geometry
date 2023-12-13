@@ -19,8 +19,8 @@ void Delaunay() {
 	}
 	bool use_alg_bw =1;
 
-	DECL_Delaunay::DECL decl;
-	BW_DT_struct bw_dt_struct;
+	delaunay_01_datastruct::DECL decl;
+	delaunay_02_datastruct::BW_DT_struct bw_dt_struct;
 
 	if (!use_alg_bw) {
 		decl.boundary = cv::Point2d(width, height);

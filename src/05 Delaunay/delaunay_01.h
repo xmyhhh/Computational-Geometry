@@ -4,18 +4,115 @@
 #include "common/helper.h"
 
 
+namespace delaunay_01_datastruct {
+	//doubly connected edge list (DCEL), https://github.com/AnkurRyder/DCEL
 
+	class Vertex
+	{
+	public:
+		uint id;
+		cv::Point2d position;
+		class HalfEdge* incident_edge;
+		Vertex(cv::Point2d _position) {
+			position = _position;
+			incident_edge = nullptr;
+		}
+		Vertex() {}
+	};
 
-void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
+	class HalfEdge
+	{
+	public:
+		uint id;
+		HalfEdge* twin;
+		HalfEdge* pred;
+		HalfEdge* succ;
+		Vertex* origin, * end;
+		class Face* incident_face;
+		bool isBorder = false;
+		HalfEdge(Vertex* _origin, Vertex* _end) {
+			origin = _origin;
+			end = _end;
+			incident_face = nullptr;
+			twin = nullptr;
+			pred = nullptr;
+			succ = nullptr;
+		}
+	};
+
+	class Face
+	{
+	public:
+		int id;
+		HalfEdge* incident_edge;
+		Face() {
+			incident_edge = nullptr;
+		}
+	};
+
+	class DECL {
+	public:
+		std::vector<Vertex*> vertex_list;
+		std::vector<Face*> face_list;
+		std::vector<HalfEdge*> edge_list;
+
+		cv::Point2d boundary;
+
+		void AddVertex(Vertex* v) {
+			vertex_list.push_back(v);
+		}
+		void DelVertex(Vertex* v) {
+			for (auto iter = vertex_list.begin(); iter != vertex_list.end(); iter++) {
+				if (*iter == v) {
+					vertex_list.erase(iter);
+					break;
+				}
+			}
+		}
+
+		void AddFace(Face* v) {
+			face_list.push_back(v);
+		}
+		void DelFace(Face* v) {
+			for (auto iter = face_list.begin(); iter != face_list.end(); iter++) {
+				if (*iter == v) {
+					face_list.erase(iter);
+					break;
+				}
+			}
+		}
+
+		void AddEdge(HalfEdge* v) {
+			edge_list.push_back(v);
+		}
+		void DelEdge(HalfEdge* v) {
+			for (auto iter = edge_list.begin(); iter != edge_list.end(); iter++) {
+				if (*iter == v) {
+					edge_list.erase(iter);
+					break;
+				}
+			}
+		}
+
+		DECL() {
+			vertex_list.reserve(300);
+			face_list.reserve(300);
+			edge_list.reserve(300);
+		}
+	};
+}
+
+void Delaunay_01(std::vector<cv::Point>& all_point, delaunay_01_datastruct::DECL& decl) {
 	//Delaunay Triangulation
 	//Incremental insert + flip Algorithm
 
-	auto create_pair_edge = [](DECL_Delaunay::Vertex* f, DECL_Delaunay::Vertex* t) {
-		DECL_Delaunay::HalfEdge* edge;
-		DECL_Delaunay::HalfEdge* edge_twin;
+	using namespace delaunay_01_datastruct;
+	auto create_pair_edge = [](Vertex* f, Vertex* t) {
+		HalfEdge* edge;
+		HalfEdge* edge_twin;
 
-		edge = new DECL_Delaunay::HalfEdge(f, t);
-		edge_twin = new DECL_Delaunay::HalfEdge(t, f);
+		edge = new  HalfEdge(f, t);
+		edge_twin = new  HalfEdge(t, f);
 
 		edge->twin = edge_twin;
 		edge_twin->twin = edge;
@@ -23,8 +120,8 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 		return edge;
 		};
 
-	auto Incremental_insertion = [&](const cv::Point2d vertex_position, DECL_Delaunay::DECL& decl) {
-		DECL_Delaunay::Vertex* vertex_to_add = new DECL_Delaunay::Vertex(vertex_position);
+	auto Incremental_insertion = [&](const cv::Point2d vertex_position, DECL& decl) {
+		Vertex* vertex_to_add = new  Vertex(vertex_position);
 		decl.AddVertex(vertex_to_add);
 
 		if (decl.vertex_list.size() < 3) {
@@ -32,11 +129,11 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 		}
 
 		if (decl.vertex_list.size() == 3) {
-			DECL_Delaunay::Face* face = new DECL_Delaunay::Face();
+			Face* face = new  Face();
 			decl.AddFace(face);
-			DECL_Delaunay::HalfEdge* e01;
-			DECL_Delaunay::HalfEdge* e12;
-			DECL_Delaunay::HalfEdge* e20;
+			HalfEdge* e01;
+			HalfEdge* e12;
+			HalfEdge* e20;
 			bool ccw = ToLeft(decl.vertex_list[0]->position, decl.vertex_list[1]->position, decl.vertex_list[2]->position);
 
 			if (ccw) {
@@ -88,7 +185,7 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 		}
 
 		//Step 1: find out which face the new vtx in and slip it(minewhile set possible_bad_edge_list)
-		DECL_Delaunay::Face* inside_face = nullptr;
+		Face* inside_face = nullptr;
 		{
 			for (auto face : decl.face_list) {
 				auto& p1 = face->incident_edge->origin;
@@ -106,7 +203,7 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 			}
 		}
 
-		std::vector<DECL_Delaunay::HalfEdge*> possible_bad_edge_list;
+		std::vector< HalfEdge*> possible_bad_edge_list;
 		ASSERT(inside_face);
 
 		//link split one tri to three tri
@@ -115,17 +212,17 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 		auto p_edge2 = inside_face->incident_edge->succ->succ;
 
 		//add edge 0
-		DECL_Delaunay::HalfEdge* new_edge0 = create_pair_edge(vertex_to_add, p_edge0->origin);
+		HalfEdge* new_edge0 = create_pair_edge(vertex_to_add, p_edge0->origin);
 		decl.AddEdge(new_edge0);
 		decl.AddEdge(new_edge0->twin);
 
 		//add edge 1
-		DECL_Delaunay::HalfEdge* new_edge1 = create_pair_edge(p_edge0->end, vertex_to_add);
+		HalfEdge* new_edge1 = create_pair_edge(p_edge0->end, vertex_to_add);
 		decl.AddEdge(new_edge1);
 		decl.AddEdge(new_edge1->twin);
 
 		//form face 0
-		DECL_Delaunay::Face* p_face0 = new DECL_Delaunay::Face();
+		Face* p_face0 = new  Face();
 		decl.AddFace(p_face0);
 		p_face0->incident_edge = p_edge0;
 		p_edge0->incident_face = p_face0;
@@ -144,12 +241,12 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 		}
 		auto diffrent_v = p_edge1->end;
 		//add edge 2
-		DECL_Delaunay::HalfEdge* new_edge2 = create_pair_edge(vertex_to_add, diffrent_v);
+		HalfEdge* new_edge2 = create_pair_edge(vertex_to_add, diffrent_v);
 		decl.AddEdge(new_edge2);
 		decl.AddEdge(new_edge2->twin);
 
 		//form face 1
-		DECL_Delaunay::Face* p_face1 = new DECL_Delaunay::Face();
+		Face* p_face1 = new  Face();
 		decl.AddFace(p_face1);
 		p_face1->incident_edge = p_edge1;
 		p_edge1->incident_face = p_face1;
@@ -167,7 +264,7 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 		}
 
 		//form face 2
-		DECL_Delaunay::Face* p_face2 = new DECL_Delaunay::Face();
+		Face* p_face2 = new  Face();
 		decl.AddFace(p_face2);
 		p_face2->incident_edge = p_edge2;
 		p_edge2->incident_face = p_face2;
@@ -190,7 +287,7 @@ void Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
 
 		//Step 2: process possible_bad_edge_list
 		while (possible_bad_edge_list.size()) {
-			DECL_Delaunay::HalfEdge* possible_bad_edge = possible_bad_edge_list[possible_bad_edge_list.size() - 1];
+			HalfEdge* possible_bad_edge = possible_bad_edge_list[possible_bad_edge_list.size() - 1];
 			possible_bad_edge_list.pop_back();
 			if (possible_bad_edge->twin->incident_face != nullptr) {
 				auto test_vertex = possible_bad_edge->twin->succ->end;

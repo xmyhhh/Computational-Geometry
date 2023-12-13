@@ -4,18 +4,21 @@
 #include "common/helper.h"
 
 
+#include "delaunay_01.h"
+using namespace delaunay_01_datastruct;
 
 
-void Non_Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& decl) {
+
+void Non_Delaunay_01(std::vector<cv::Point>& all_point, DECL& decl) {
 	//Dlaunay Triangulation
 	//Bowyer-Watson Algorithm
 
-	auto create_pari_edge = [](DECL_Delaunay::Vertex* f, DECL_Delaunay::Vertex* t) {
-		DECL_Delaunay::HalfEdge* edge;
-		DECL_Delaunay::HalfEdge* edge_twin;
+	auto create_pari_edge = [](Vertex* f, Vertex* t) {
+		HalfEdge* edge;
+		HalfEdge* edge_twin;
 
-		edge = new DECL_Delaunay::HalfEdge(f, t);
-		edge_twin = new DECL_Delaunay::HalfEdge(t, f);
+		edge = new  HalfEdge(f, t);
+		edge_twin = new  HalfEdge(t, f);
 
 		edge->twin = edge_twin;
 		edge_twin->twin = edge;
@@ -23,8 +26,8 @@ void Non_Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& dec
 		return edge;
 		};
 
-	auto Incremental_construction = [&](const cv::Point2d vertex_position, DECL_Delaunay::DECL& decl) {
-		DECL_Delaunay::Vertex* vertex_to_add = new DECL_Delaunay::Vertex(vertex_position);
+	auto Incremental_construction = [&](const cv::Point2d vertex_position, DECL& decl) {
+		Vertex* vertex_to_add = new  Vertex(vertex_position);
 		decl.AddVertex(vertex_to_add);
 
 		if (decl.vertex_list.size() < 3) {
@@ -32,11 +35,11 @@ void Non_Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& dec
 		}
 
 		if (decl.vertex_list.size() == 3) {
-			DECL_Delaunay::Face* face = new DECL_Delaunay::Face();
+			Face* face = new  Face();
 			decl.AddFace(face);
-			DECL_Delaunay::HalfEdge* e01;
-			DECL_Delaunay::HalfEdge* e12;
-			DECL_Delaunay::HalfEdge* e20;
+			HalfEdge* e01;
+			HalfEdge* e12;
+			HalfEdge* e20;
 			bool ccw = ToLeft(decl.vertex_list[0]->position, decl.vertex_list[1]->position, decl.vertex_list[2]->position);
 
 			if (ccw) {
@@ -101,7 +104,7 @@ void Non_Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& dec
 		}
 
 		//find out which face the new vtx in
-		DECL_Delaunay::Face* inside_face = nullptr;
+		Face* inside_face = nullptr;
 		{
 			for (auto face : decl.face_list) {
 				auto& p1 = face->incident_edge->origin;
@@ -126,17 +129,17 @@ void Non_Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& dec
 			auto p_edge2 = inside_face->incident_edge->succ->succ;
 
 			//add edge 0
-			DECL_Delaunay::HalfEdge* new_edge0 = create_pari_edge(vertex_to_add, p_edge0->origin);
+			HalfEdge* new_edge0 = create_pari_edge(vertex_to_add, p_edge0->origin);
 			decl.AddEdge(new_edge0);
 			decl.AddEdge(new_edge0->twin);
 
 			//add edge 1
-			DECL_Delaunay::HalfEdge* new_edge1 = create_pari_edge(p_edge0->end, vertex_to_add);
+			HalfEdge* new_edge1 = create_pari_edge(p_edge0->end, vertex_to_add);
 			decl.AddEdge(new_edge1);
 			decl.AddEdge(new_edge1->twin);
 
 			//form face 0
-			DECL_Delaunay::Face* p_face0 = new DECL_Delaunay::Face();
+			Face* p_face0 = new  Face();
 			decl.AddFace(p_face0);
 			p_face0->incident_edge = p_edge0;
 
@@ -177,12 +180,12 @@ void Non_Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& dec
 			}
 
 			//add edge 2
-			DECL_Delaunay::HalfEdge* new_edge2 = create_pari_edge(diffrent_v, vertex_to_add);
+			HalfEdge* new_edge2 = create_pari_edge(diffrent_v, vertex_to_add);
 			decl.AddEdge(new_edge2);
 			decl.AddEdge(new_edge2->twin);
 
 			//form face 1
-			DECL_Delaunay::Face* p_face1 = new DECL_Delaunay::Face();
+			Face* p_face1 = new  Face();
 			decl.AddFace(p_face1);
 			p_face1->incident_edge = p_edge1;
 
@@ -214,7 +217,7 @@ void Non_Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& dec
 
 
 			//form face 2
-			DECL_Delaunay::Face* p_face2 = new DECL_Delaunay::Face();
+			Face* p_face2 = new  Face();
 			decl.AddFace(p_face2);
 			p_face2->incident_edge = p_edge2;
 
@@ -248,7 +251,7 @@ void Non_Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& dec
 		}
 		else {
 			//find the closet edge
-			DECL_Delaunay::HalfEdge* minEdge;
+			HalfEdge* minEdge;
 			{
 				double distance = _Infinity;
 				for (auto& edge : decl.edge_list) {
@@ -261,17 +264,17 @@ void Non_Delaunay_01(std::vector<cv::Point>& all_point, DECL_Delaunay::DECL& dec
 			}
 
 			//add edge 0
-			DECL_Delaunay::HalfEdge* new_edge0 = create_pari_edge(vertex_to_add, minEdge->origin);
+			HalfEdge* new_edge0 = create_pari_edge(vertex_to_add, minEdge->origin);
 			decl.AddEdge(new_edge0);
 			decl.AddEdge(new_edge0->twin);
 
 			//add edge 1
-			DECL_Delaunay::HalfEdge* new_edge1 = create_pari_edge(minEdge->end, vertex_to_add);
+			HalfEdge* new_edge1 = create_pari_edge(minEdge->end, vertex_to_add);
 			decl.AddEdge(new_edge1);
 			decl.AddEdge(new_edge1->twin);
 
 			//form face 0
-			DECL_Delaunay::Face* p_face = new DECL_Delaunay::Face();
+			Face* p_face = new  Face();
 			decl.AddFace(p_face);
 			p_face->incident_edge = minEdge;
 			{

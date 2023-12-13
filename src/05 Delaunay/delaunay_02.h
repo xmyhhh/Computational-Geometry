@@ -3,36 +3,38 @@
 #include "common/typedef.h"
 #include "common/helper.h"
 
+namespace delaunay_02_datastruct {
+	//generalization face, in 2-d it is a segment
+	struct n_simplices_face {
+		int index_p1;
+		int index_p2;
+	};
 
-//generalization face, in 2-d it is a segment
-struct n_simplices_face {
-	int index_p1;
-	int index_p2;
-};
+	struct n_simplices {
+		int index_p1;
+		int index_p2;
+		int index_p3;
+		//Each (n + 1)-tuple of indices is associated with coordinates/radius of circumsphere
+		cv::Point2d coordinates;
+		double radius;
 
-struct n_simplices {
-	int index_p1;
-	int index_p2;
-	int index_p3;
-	//Each (n + 1)-tuple of indices is associated with coordinates/radius of circumsphere
-	cv::Point2d coordinates;
-	double radius;
+		bool mark_delation = false;
+	};
 
-	bool mark_delation = false;
-};
+	struct BW_DT_struct
+	{
+		//* A list of(n + 1)-tuples of indices to the nuclei or datapoints
+		std::vector<n_simplices> n_simplices_list;
 
-struct BW_DT_struct
-{
-	//* A list of(n + 1)-tuples of indices to the nuclei or datapoints
-	std::vector<n_simplices> n_simplices_list;
+		std::vector<cv::Point2d> all_point;
+	};
+}
 
-	std::vector<cv::Point2d> all_point;
-};
 
-void Delaunay_02(std::vector<cv::Point>& all_point, BW_DT_struct& bw_dt_struct) {
+void Delaunay_02(std::vector<cv::Point>& all_point, delaunay_02_datastruct::BW_DT_struct& bw_dt_struct) {
 	//Delaunay Triangulation
 	//Bowyer-Watson Algorithm
-
+	using namespace delaunay_02_datastruct;
 	auto Incremental_construction = [&](const cv::Point2d insert_vertex_position, BW_DT_struct& bw_dt_struct) {
 
 		auto n_simplices_bounding_circle_cal = [&bw_dt_struct](n_simplices& _n_simplices) {
@@ -45,7 +47,7 @@ void Delaunay_02(std::vector<cv::Point>& all_point, BW_DT_struct& bw_dt_struct) 
 			);
 			};
 
-		auto inside_simplices = [](const cv::Point2d vertex_position, n_simplices _n_simplices) {
+		auto inside_simplices_circle = [](const cv::Point2d vertex_position, n_simplices _n_simplices) {
 			return VectorLengthSqr(vertex_position, _n_simplices.coordinates) < _n_simplices.radius * _n_simplices.radius;
 			};
 
@@ -100,7 +102,7 @@ void Delaunay_02(std::vector<cv::Point>& all_point, BW_DT_struct& bw_dt_struct) 
 		std::vector<n_simplices> bad_n_simplices_list;
 
 		for (auto& simplices : bw_dt_struct.n_simplices_list) {
-			if (inside_simplices(insert_vertex_position, simplices)) {
+			if (inside_simplices_circle(insert_vertex_position, simplices)) {
 				simplices.mark_delation = true;
 				bad_n_simplices_list.push_back(simplices);
 			}
@@ -142,10 +144,6 @@ void Delaunay_02(std::vector<cv::Point>& all_point, BW_DT_struct& bw_dt_struct) 
 			n_simplices_bounding_circle_cal(*(bw_dt_struct.n_simplices_list.end() - 1));
 		}
 
-
-		/*	for (std::vector<n_simplices>::reverse_iterator i = bw_dt_struct.n_simplices_list.rbegin();i != my_vector.rend(); ++i) {
-			}*/
-
 		auto it = bw_dt_struct.n_simplices_list.begin();
 		while (it != bw_dt_struct.n_simplices_list.end()) {
 
@@ -158,10 +156,6 @@ void Delaunay_02(std::vector<cv::Point>& all_point, BW_DT_struct& bw_dt_struct) 
 		}
 
 
-
-
-
-		int a = 1;
 		};
 
 	for (const auto& point : all_point) {

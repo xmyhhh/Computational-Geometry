@@ -15,10 +15,10 @@ layout (location = 0) out vec4 outFragColor;
 void main() 
 {	
 	if(inColor.x>1){
-		outFragColor = vec4(inColor.x/255., inColor.y/255., inColor.z/255.,  0.9);
+		outFragColor = vec4(inColor.x/255., inColor.y/255., inColor.z/255.,  1.);
 	}
 	else{
-		outFragColor =  vec4(inColor.x., inColor.y., inColor.z., 0.9);;
+		outFragColor =  vec4(inColor.x., inColor.y., inColor.z., 1.);
 	}
 	
 }

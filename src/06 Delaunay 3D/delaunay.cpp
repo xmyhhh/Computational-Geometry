@@ -181,11 +181,23 @@ public:
 			vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
 
 			for (int j = 0; j < data.numberOfPoint; j++) {
-				sphere.pos = glm::vec3(data.points[j * 3], data.points[j * 3 + 1], data.points[j * 3 + 2]);
-				sphere.size = glm::vec3(1, 1, 1);
-				glm::mat4 model = glm::translate(glm::mat4(1.0f), sphere.pos);
-				model = glm::scale(model, sphere.size);
-				vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushBlock_Point), &model);
+				auto pos = glm::vec3(data.points[j * (3)], data.points[j * (3) + 1], data.points[j * (3) + 2]);
+				auto size = glm::vec3(1, 1, 1);
+				PushBlock_Point pushblock;
+				pushblock.mvp = glm::translate(glm::mat4(1.0f), pos);
+				pushblock.mvp = glm::scale(pushblock.mvp, size);
+				if (data.numberOfPointAttr == 4) {
+					pushblock.color = glm::vec4(
+						data.attr[j * (data.numberOfPointAttr)],
+						data.attr[j * (data.numberOfPointAttr) + 1],
+						data.attr[j * (data.numberOfPointAttr) + 2],
+						data.attr[j * (data.numberOfPointAttr) + 3]
+					);
+				}
+				else {
+					pushblock.color = glm::vec4(1);
+				}
+				vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushBlock_Point), (void*)&pushblock);
 				sphere.model.draw(drawCmdBuffers[i]);
 			}
 
@@ -198,6 +210,7 @@ public:
 			vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);
 
 			vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout_triangle, 0, 1, &descriptorSet, 0, NULL);
+
 			for (int j = 0; j < data.numberOfTriangle; j++) {
 				auto tr = &data.triangles[j * 3];
 
@@ -324,13 +337,13 @@ void Delaunay3D(HINSTANCE hInstance) {
 
 	std::vector<cv::Point3d> all_dots;
 
-	int size = 5;
+	int size = 1;
 	for (int i = 0; i < size; i++)
 	{
 		all_dots.push_back(cv::Point3d(rand() % width, rand() % height, rand() % deepth));
 
 	}
-	DelaunayTrianlgeResult res;
+	Delaunay3D_01_datastruct::BW_DT_struct res;
 
 	Delaunay_3D_01(all_dots, res);
 

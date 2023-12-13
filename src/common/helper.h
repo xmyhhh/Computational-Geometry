@@ -1,5 +1,10 @@
 #pragma once
 #include "typedef.h"
+//liner linear algebra
+//PLU 分解;
+bool lu_decmp(double lu[4][4], int n, int* ps, double* d, int N);
+
+void lu_solve(double lu[4][4], int n, int* ps, double* b, int N);
 
 //geo tesl
 bool ToLeft(const cv::Point& p1, const cv::Point& p2, const cv::Point& p3);
@@ -29,38 +34,82 @@ IntersectionResult LineIntersectionCalulate(Line l1, Line l2);
 //geo cul
 Polygon PolygonRandomGen(int width, int height, int size = 3, float miniAngle = 30);
 
-template<typename PointT >
-void CalculateBoundingSphere(const PointT& p1, const PointT& p2, const PointT& p3, const PointT& p4, PointT& center, double& radius)
+
+inline double dot(cv::Point3d& p1, cv::Point3d& p2)
 {
-	double a = p1.x - p2.x, b = p1.y - p2.y, c = p1.z - p2.z;
-	double a1 = p3.x - p4.x, b1 = p3.y - p4.y, c1 = p3.z - p3.z;
-	double a2 = p2.x - p3.x, b2 = p2.y - p3.y, c2 = p2.z - p3.z;
-	double A = p1.x * p1.x - p2.x * p2.x;
-	double B = p1.y * p1.y - p2.y * p2.y;
-	double C = p1.z * p1.z - p2.z * p2.z;
-	double A1 = p3.x * p3.x - p4.x * p4.x;
-	double B1 = p3.y * p3.y - p4.y * p4.y;
-	double C1 = p3.z * p3.z - p4.z * p4.z;
-	double A2 = p2.x * p2.x - p3.x * p3.x;
-	double B2 = p2.y * p2.y - p3.y * p3.y;
-	double C2 = p2.z * p2.z - p3.z * p3.z;
-	double P = (A + B + C) / 2;
-	double Q = (A1 + B1 + C1) / 2;
-	double R = (A2 + B2 + C2) / 2;
+	return p1.x * p2.x + p1.y * p2.y + p1.z * p2.z;
+}
+
+inline double dot(double* p1, double* p2)
+{
+	return p1[0] * p2[0] + p1[1] * p2[1] + p1[2] * p2[2];
+}
+
+template<typename PointT >
+bool CalculateBoundingSphere(const PointT& pa, const PointT& pb, const PointT& pc, const PointT& pd, PointT& center, double& radius)
+{
+
+	auto lu_solve = [](double lu[4][4], int n, int* ps, double* b, int N)
+		{
+			int i, j;
+			double X[4], dot;
+
+			for (i = N; i < n + N; i++) X[i] = 0.0;
+
+			// Vector reduction using U triangular matrix.
+			for (i = N; i < n + N; i++)
+			{
+				dot = 0.0;
+				for (j = N; j < i + N; j++)
+					dot += lu[ps[i]][j] * X[j];
+				X[i] = b[ps[i]] - dot;
+			}
+
+			// Back substitution, in L triangular matrix.
+			for (i = n + N - 1; i >= N; i--)
+			{
+				dot = 0.0;
+				for (j = i + 1; j < n + N; j++)
+					dot += lu[ps[i]][j] * X[j];
+				X[i] = (X[i] - dot) / lu[ps[i]][i];
+			}
+
+			for (i = N; i < n + N; i++) b[i] = X[i];
+		};
+
+	double A[4][4], b[4], D;
+	int indx[4];
+
+	// Compute the coefficient matrix A (3x3).
+	A[0][0] = pb.x - pa.x;
+	A[0][1] = pb.y - pa.y;
+	A[0][2] = pb.z - pa.z;
+	A[1][0] = pc.x - pa.x;
+	A[1][1] = pc.y - pa.y;
+	A[1][2] = pc.z - pa.z;
+	A[2][0] = pd.x - pa.x;
+	A[2][1] = pd.y - pa.y;
+	A[2][2] = pd.z - pa.z;
+
+	// Compute the matrix b (3).
+	b[0] = 0.5 * dot(A[0], A[0]);
+	b[1] = 0.5 * dot(A[1], A[1]);
+	b[2] = 0.5 * dot(A[1], A[1]);
+
+	if (!lu_decmp(A, 3, indx, &D, 0))
+	{
+		radius = 0.0;
+		return false;
+	}
+	lu_solve(A, 3, indx, b, 0);
 
 
-	double D = a * b1 * c2 + a2 * b * c1 + c * a1 * b2 - (a2 * b1 * c + a1 * b * c2 + a * b2 * c1);
-	double Dx = P * b1 * c2 + b * c1 * R + c * Q * b2 - (c * b1 * R + P * c1 * b2 + Q * b * c2);
-	double Dy = a * Q * c2 + P * c1 * a2 + c * a1 * R - (c * Q * a2 + a * c1 * R + c2 * P * a1);
-	double Dz = a * b1 * R + b * Q * a2 + P * a1 * b2 - (a2 * b1 * P + a * Q * b2 + R * b * a1);
+	center.x = pa.x + b[0];
+	center.y = pa.y + b[1];
+	center.z = pa.z + b[2];
 
-
-	center.x = (Dx / D);
-	center.y = (Dy / D);
-	center.z = (Dz / D);
-	radius = std::sqrt((p1.x - center.x) * (p1.x - center.x) +
-		(p1.y - center.y) * (p1.y - center.y) +
-		(p1.z - center.z) * (p1.z - center.z));
+	radius = std::sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2]);
+	return true;
 }
 
 template<typename PointT >
@@ -84,6 +133,7 @@ void CalculateBoundingCircle(const PointT& p1, const PointT& p2, const PointT& p
 
 
 double VectorLengthSqr(cv::Point2d a, cv::Point2d b);
+double VectorLengthSqr(cv::Point3d a, cv::Point3d b);
 bool VectorSlop(cv::Point2d a, cv::Point2d b, double& slop);
 double DistanceToPoint(Line line, cv::Point2d point);
 double Abs(double in);

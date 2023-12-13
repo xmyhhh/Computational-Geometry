@@ -3,7 +3,103 @@
 extern void Intersection_01(std::vector<Line>& all_lines, std::vector <IntersectionResult>& intersectionResults);
 
 
+bool lu_decmp(double lu[4][4], int n, int* ps, double* d, int N)
+{
+	double scales[4];
+	double pivot, biggest, mult, tempf;
+	int pivotindex = 0;
+	int i, j, k;
 
+	*d = 1.0; // No row interchanges yet.
+
+	for (i = N; i < n + N; i++)
+	{
+		// For each row.
+		// Find the largest element in each row for row equilibration
+		biggest = 0.0;
+		for (j = N; j < n + N; j++)
+			if (biggest < (tempf = fabs(lu[i][j])))
+				biggest = tempf;
+		if (biggest != 0.0)
+			scales[i] = 1.0 / biggest;
+		else
+		{
+			scales[i] = 0.0;
+			return false; // Zero row: singular matrix.
+		}
+		ps[i] = i; // Initialize pivot sequence.
+	}
+
+	for (k = N; k < n + N - 1; k++)
+	{
+		// For each column.
+		// Find the largest element in each column to pivot around.
+		biggest = 0.0;
+		for (i = k; i < n + N; i++)
+		{
+			if (biggest < (tempf = fabs(lu[ps[i]][k]) * scales[ps[i]]))
+			{
+				biggest = tempf;
+				pivotindex = i;
+			}
+		}
+		if (biggest == 0.0)
+		{
+			return false; // Zero column: singular matrix.
+		}
+		if (pivotindex != k)
+		{
+			// Update pivot sequence.
+			j = ps[k];
+			ps[k] = ps[pivotindex];
+			ps[pivotindex] = j;
+			*d = -(*d); // ...and change the parity of d.
+		}
+
+		// Pivot, eliminating an extra variable  each time
+		pivot = lu[ps[k]][k];
+		for (i = k + 1; i < n + N; i++)
+		{
+			lu[ps[i]][k] = mult = lu[ps[i]][k] / pivot;
+			if (mult != 0.0)
+			{
+				for (j = k + 1; j < n + N; j++)
+					lu[ps[i]][j] -= mult * lu[ps[k]][j];
+			}
+		}
+	}
+
+	// (lu[ps[n + N - 1]][n + N - 1] == 0.0) ==> A is singular.
+	return lu[ps[n + N - 1]][n + N - 1] != 0.0;
+}
+
+void lu_solve(double lu[4][4], int n, int* ps, double* b, int N)
+{
+	int i, j;
+	double X[4], dot;
+
+	for (i = N; i < n + N; i++) X[i] = 0.0;
+
+	// Vector reduction using U triangular matrix.
+	for (i = N; i < n + N; i++)
+	{
+		dot = 0.0;
+		for (j = N; j < i + N; j++)
+			dot += lu[ps[i]][j] * X[j];
+		X[i] = b[ps[i]] - dot;
+	}
+
+	// Back substitution, in L triangular matrix.
+	for (i = n + N - 1; i >= N; i--)
+	{
+		dot = 0.0;
+		for (j = i + 1; j < n + N; j++)
+			dot += lu[ps[i]][j] * X[j];
+		X[i] = (X[i] - dot) / lu[ps[i]][i];
+	}
+
+	for (i = N; i < n + N; i++) b[i] = X[i];
+}
 
 
 bool ToLeft(const cv::Point& p1, const cv::Point& p2, const cv::Point& s)
@@ -165,7 +261,11 @@ double VectorLengthSqr(cv::Point2d a, cv::Point2d b)
 	return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
 
 }
+double VectorLengthSqr(cv::Point3d a, cv::Point3d b)
+{
+	return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)+ (a.z - b.z) * (a.z - b.z);
 
+}
 
 bool VectorSlop(cv::Point2d a, cv::Point2d b, double& slop) {
 	if (a == b)
