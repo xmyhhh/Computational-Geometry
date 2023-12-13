@@ -84,9 +84,11 @@ bool CalculateBoundingSphere(const PointT& pa, const PointT& pb, const PointT& p
 	A[0][0] = pb.x - pa.x;
 	A[0][1] = pb.y - pa.y;
 	A[0][2] = pb.z - pa.z;
+
 	A[1][0] = pc.x - pa.x;
 	A[1][1] = pc.y - pa.y;
 	A[1][2] = pc.z - pa.z;
+
 	A[2][0] = pd.x - pa.x;
 	A[2][1] = pd.y - pa.y;
 	A[2][2] = pd.z - pa.z;
@@ -94,7 +96,7 @@ bool CalculateBoundingSphere(const PointT& pa, const PointT& pb, const PointT& p
 	// Compute the matrix b (3).
 	b[0] = 0.5 * dot(A[0], A[0]);
 	b[1] = 0.5 * dot(A[1], A[1]);
-	b[2] = 0.5 * dot(A[1], A[1]);
+	b[2] = 0.5 * dot(A[2], A[2]);
 
 	if (!lu_decmp(A, 3, indx, &D, 0))
 	{

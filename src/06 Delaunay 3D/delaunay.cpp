@@ -331,16 +331,16 @@ LRESULT CALLBACK Delaunay3D_WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 }
 
 void Delaunay3D(HINSTANCE hInstance) {
-	int width = 100;
-	int height = 100;
-	int deepth = 100;
+	int width = 50;
+	int height = 50;
+	int deepth = 50;
 
 	std::vector<cv::Point3d> all_dots;
 
-	int size = 1;
+	int size = 5;
 	for (int i = 0; i < size; i++)
 	{
-		all_dots.push_back(cv::Point3d(rand() % width, rand() % height, rand() % deepth));
+		all_dots.push_back(cv::Point3d(rand() % width + 1, rand() % height + 1, rand() % deepth + 1));
 
 	}
 	Delaunay3D_01_datastruct::BW_DT_struct res;

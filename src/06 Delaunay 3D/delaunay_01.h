@@ -41,29 +41,56 @@ namespace Delaunay3D_01_datastruct {
 				data.points[i * 3 + 1] = all_point[i].y;
 				data.points[i * 3 + 2] = all_point[i].z;
 			}
-			
+			data.numberOfPointAttr = 4;
+			data.attr = (double*)malloc(sizeof(double) * data.numberOfPointAttr * data.numberOfPoint);
+			for (int i = 0; i < data.numberOfPoint; i++) {
+				if (i < 2) {
+					data.attr[i * 4 + 0] = 254;
+					data.attr[i * 4 + 1] = 0;
+					data.attr[i * 4 + 2] = 0;
+					data.attr[i * 4 + 3] = 1;
+				}
+				else if (i == 2) {
+					data.attr[i * 4 + 0] = 0;
+					data.attr[i * 4 + 1] = 0;
+					data.attr[i * 4 + 2] = 254;
+					data.attr[i * 4 + 3] = 1;
+				}
+				else if (i==3) {
+					data.attr[i * 4 + 0] = 0;
+					data.attr[i * 4 + 1] = 254;
+					data.attr[i * 4 + 2] = 0;
+					data.attr[i * 4 + 3] = 1;
+				}
+				else {
+					data.attr[i * 4 + 0] = 255;
+					data.attr[i * 4 + 1] = 255;
+					data.attr[i * 4 + 2] = 255;
+					data.attr[i * 4 + 3] = 0;
+				}
+			}
+			data.numberOfTriangle = n_simplices_list.size() * 4;
+			data.triangles = (int*)malloc(data.numberOfTriangle * 4 * 3 * sizeof(int));
+			for (int i = 0; i < n_simplices_list.size(); i++) {
+				auto& tetrahedrons = n_simplices_list[i];
+				data.triangles[i * 4 * 3 + 0 * 3] = tetrahedrons.index_p1;
+				data.triangles[i * 4 * 3 + 0 * 3 + 1] = tetrahedrons.index_p2;
+				data.triangles[i * 4 * 3 + 0 * 3 + 2] = tetrahedrons.index_p3;
 
-			//data.numberOfTriangle = n_simplices_list.size() * 4 * 0;
-			//data.triangles = (int*)malloc(data.numberOfTriangle * 4 * 3 * sizeof(int));
-			//for (int i = 0; i < n_simplices_list.size(); i++) {
-			//	auto& tetrahedrons = n_simplices_list[i];
-			//	data.triangles[i * 4 * 3 + 0 * 3] = tetrahedrons.index_p1;
-			//	data.triangles[i * 4 * 3 + 0 * 3 + 1] = tetrahedrons.index_p2;
-			//	data.triangles[i * 4 * 3 + 0 * 3 + 2] = tetrahedrons.index_p3;
+				data.triangles[i * 4 * 3 + 1 * 3] = tetrahedrons.index_p1;
+				data.triangles[i * 4 * 3 + 1 * 3 + 1] = tetrahedrons.index_p2;
+				data.triangles[i * 4 * 3 + 1 * 3 + 2] = tetrahedrons.index_p4;
 
-			//	data.triangles[i * 4 * 3 + 1 * 3] = tetrahedrons.index_p1;
-			//	data.triangles[i * 4 * 3 + 1 * 3 + 1] = tetrahedrons.index_p2;
-			//	data.triangles[i * 4 * 3 + 1 * 3 + 2] = tetrahedrons.index_p4;
+				data.triangles[i * 4 * 3 + 2 * 3] = tetrahedrons.index_p1;
+				data.triangles[i * 4 * 3 + 2 * 3 + 1] = tetrahedrons.index_p3;
+				data.triangles[i * 4 * 3 + 2 * 3 + 2] = tetrahedrons.index_p4;
 
-			//	data.triangles[i * 4 * 3 + 2 * 3] = tetrahedrons.index_p1;
-			//	data.triangles[i * 4 * 3 + 2 * 3 + 1] = tetrahedrons.index_p3;
-			//	data.triangles[i * 4 * 3 + 2 * 3 + 2] = tetrahedrons.index_p4;
+				data.triangles[i * 4 * 3 + 3 * 3] = tetrahedrons.index_p2;
+				data.triangles[i * 4 * 3 + 3 * 3 + 1] = tetrahedrons.index_p3;
+				data.triangles[i * 4 * 3 + 3 * 3 + 2] = tetrahedrons.index_p3;
+			}
 
-			//	data.triangles[i * 4 * 3 + 3 * 3] = tetrahedrons.index_p2;
-			//	data.triangles[i * 4 * 3 + 3 * 3 + 1] = tetrahedrons.index_p3;
-			//	data.triangles[i * 4 * 3 + 3 * 3 + 2] = tetrahedrons.index_p3;
 
-			//}
 
 			return data;
 		}
@@ -90,7 +117,8 @@ void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 		};
 
 	auto inside_simplices_sphere = [](const cv::Point3d vertex_position, n_simplices _n_simplices) {
-		return VectorLengthSqr(vertex_position, _n_simplices.coordinates) < _n_simplices.radius * _n_simplices.radius;
+		double distance = VectorLengthSqr(vertex_position, _n_simplices.coordinates);
+		return  distance < _n_simplices.radius * _n_simplices.radius;
 		};
 
 	auto is_face_inside_facelist = [](n_simplices_face& face, std::vector<n_simplices_face>& n_simplices_face_to_reserve_list) {
@@ -121,18 +149,7 @@ void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 		};
 
 	auto Incremental_construction = [&](const cv::Point3d insert_vertex_position, BW_DT_struct& bw_dt_struct) {
-		//init BW_DT_struct
-		if (bw_dt_struct.all_point.size() < 4) {
-			//uses a boundary tetrahedron to enclose the whole set of points
-			//here we assume all point  in  p1(0,0) p1(2000,0) p1(0,2000) the range is min(0,0) max(1000,1000)
-			bw_dt_struct.all_point.push_back({ 0,0,0 });
-			bw_dt_struct.all_point.push_back({ 0,2000,0 });
-			bw_dt_struct.all_point.push_back({ 2000,0,0 });
-			bw_dt_struct.all_point.push_back({ 0,0,2000 });
 
-			bw_dt_struct.n_simplices_list.push_back({ 0,1,2,3 });
-			n_simplices_bounding_sphere_cal(bw_dt_struct.n_simplices_list[0]);
-		}
 
 		bw_dt_struct.all_point.push_back(insert_vertex_position);
 		int insert_vertex_index = bw_dt_struct.all_point.size() - 1;
@@ -146,6 +163,8 @@ void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 				bad_n_simplices_list.push_back(simplices);
 			}
 		}
+
+		ASSERT(bad_n_simplices_list.size() > 0);
 
 		//Stage 2:
 		std::vector<n_simplices_face> n_simplices_face_to_reserve_list;
@@ -188,7 +207,7 @@ void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 		//new n-simplices are then formed with each of these singly occurring (n - 1)-faces and their circumcentres are calculated
 
 		for (auto& face : n_simplices_face_to_reserve_list) {
-			bw_dt_struct.n_simplices_list.push_back({ face.index_p1, face.index_p2,insert_vertex_index });
+			bw_dt_struct.n_simplices_list.push_back({ face.index_p1, face.index_p2,face.index_p3,insert_vertex_index });
 			n_simplices_bounding_sphere_cal(*(bw_dt_struct.n_simplices_list.end() - 1));
 		}
 
@@ -203,6 +222,21 @@ void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 			}
 		}
 		};
+
+
+
+	//init BW_DT_struct
+	if (bw_dt_struct.all_point.size() < 4) {
+		//uses a boundary tetrahedron to enclose the whole set of points
+
+		bw_dt_struct.all_point.push_back({ 0,0,0 });
+		bw_dt_struct.all_point.push_back({ 150,0,0 });
+		bw_dt_struct.all_point.push_back({ 0,150,0 });
+		bw_dt_struct.all_point.push_back({ 0,0,150 });
+
+		bw_dt_struct.n_simplices_list.push_back({ 0,1,2,3 });
+		n_simplices_bounding_sphere_cal(bw_dt_struct.n_simplices_list[0]);
+	}
 
 	for (const auto& point : all_dots) {
 		Incremental_construction(point, bw_dt_struct);
