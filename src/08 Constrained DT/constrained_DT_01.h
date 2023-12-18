@@ -84,7 +84,7 @@ namespace CDT_01_datastruct {
 		cv::Point2d get_position(int b_id, int v_id) {
 			assert(b_id < boundary_array.size());
 			assert(v_id < boundary_array[b_id].point_array.size());
-			return vertex_array[boundary_array[b_id].point_array[v_id]] * factor + offset;
+			return vertex_array[boundary_array[b_id].point_array[v_id] - 1] * factor + offset;
 		}
 
 		cv::Point2d get_position(int v_id) {
@@ -92,7 +92,6 @@ namespace CDT_01_datastruct {
 			return vertex_array[v_id] * factor + offset;
 		}
 	};
-
 
 	//run time
 
@@ -128,13 +127,26 @@ namespace CDT_01_datastruct {
 		std::vector<Strip> strip_array;
 	};
 
+
+	bool cmp(cv::Point2d x, cv::Point2d y) {
+		return x.x > y.x;
+	}
 }
 
 
-void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& ctd) {
+void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 	//CDT from Chew's alg
+	using namespace CDT_01_datastruct;
+	//Step 1: sort vertex
+	cdt.vertex_pool.initializePool(sizeof(Vertex), 100, 8, 32);
+	std::vector<cv::Point2d> tmp_vtx_array;
+	for (int i = 0; i < plsg.boundary_array.size(); i++) {
+		for (int j = 0; j < plsg.boundary_array[i].point_array.size(); j++) {
+			tmp_vtx_array.push_back(plsg.get_position(i, j));
+		}
+	}
+	std::sort(tmp_vtx_array.begin(), tmp_vtx_array.end(), cmp);
 
-
-
+	int a = 0;
 
 }

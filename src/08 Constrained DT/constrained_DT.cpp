@@ -5,8 +5,8 @@
 
 void constrained_DT() {
 
-	int width = 2000;
-	int height = 700;
+	int width = 1500;
+	int height = 500;
 	cv::Mat img = cv::Mat::zeros(cv::Size(width, height), CV_8UC3);
 
 	std::vector<cv::Point> all_point;
