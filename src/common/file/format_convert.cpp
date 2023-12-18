@@ -1,8 +1,4 @@
 #include "format_convert.h"
-#include <cstdio>
-#include <stdlib.h>
-#include <cassert>
-
 
 struct Polygon
 {

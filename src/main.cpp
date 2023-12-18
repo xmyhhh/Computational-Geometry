@@ -23,6 +23,8 @@ extern void Delaunay();
 extern void Delaunay3D(HINSTANCE hInstance);
 extern void Interpolation4D(HINSTANCE hInstance);
 
+extern void constrained_DT();
+
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 //int main() {
 	//opencv test
@@ -41,9 +43,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	//Delaunay();
 
 	// 3D
-	Delaunay3D(hInstance);
+	//Delaunay3D(hInstance);
 
 	//Interpolation4D(hInstance);
+	
+	constrained_DT();
 
 	return 0;
 }
