@@ -1,6 +1,6 @@
 #include "common/typedef.h"
 #include "common/helper.h"
-
+using namespace base_type;
 void ShowTriangle() {
 
 	int width = 1920 / 2;

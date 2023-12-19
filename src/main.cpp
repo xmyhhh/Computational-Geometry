@@ -16,7 +16,7 @@ extern void FileConvert();
 
 extern void ConvexHull();
 extern void Intersection();
-extern void Polygon();
+extern void PolygonRandom();
 extern void Monotonicity();
 extern void Voronoi();
 extern void Delaunay();

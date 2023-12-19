@@ -2,7 +2,7 @@
 #include "common/typedef.h"
 #include "common/helper.h"
 
-void Intersection_01(std::vector<Line>& all_lines, std::vector <IntersectionResult>& intersectionResults) {
+void Intersection_01(std::vector<base_type::Line>& all_lines, std::vector <base_type::IntersectionResult>& intersectionResults) {
 	//方法一：两两4次toleft测试
 
 	for (int i = 0; i < all_lines.size(); i++) {

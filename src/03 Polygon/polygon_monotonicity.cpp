@@ -3,8 +3,8 @@
 #include "common/typedef.h"
 #include "common/helper.h"
 #include <queue>
-
-void MakeMonotonicity(Polygon polygon) {
+using namespace base_type;
+void MakeMonotonicity(PolygonRandom polygon) {
 
 	class BinarySearchTree {
 

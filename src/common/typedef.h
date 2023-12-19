@@ -18,46 +18,45 @@
 
 #define  _Infinity  std::numeric_limits<double>::infinity() 
 
-struct Triangle {
-	cv::Point p1;
-	cv::Point p2;
-	cv::Point p3;
-};
+namespace base_type {
+	struct Triangle {
+		cv::Point p1;
+		cv::Point p2;
+		cv::Point p3;
+	};
 
-struct Edge {
-	cv::Point p1;
-	cv::Point p2;
-};
+	struct Edge {
+		cv::Point p1;
+		cv::Point p2;
+	};
 
-struct Line {
-	cv::Point2d p1;
-	cv::Point2d p2;
-};
+	struct Line {
+		cv::Point2d p1;
+		cv::Point2d p2;
+	};
 
-struct IntersectionResult {
-	Line l1;
-	Line l2;
-	cv::Point2d intersectionPoint;
-};
+	struct IntersectionResult {
+		Line l1;
+		Line l2;
+		cv::Point2d intersectionPoint;
+	};
 
+	struct Triangle_Index {
+		uint p1;
+		uint p2;
+		uint p3;
+	};
 
-struct Triangle_Index {
-	uint p1;
-	uint p2;
-	uint p3;
-};
+	struct Edge_Index {
+		uint p1;
+		uint p2;
+	};
 
-struct Edge_Index {
-	uint p1;
-	uint p2;
-};
-
-struct Polygon {
-	std::vector<cv::Point2d> Point;
-	std::vector<Edge_Index> Segment;
-};
-
-
+	struct PolygonRandom {
+		std::vector<cv::Point2d> Point;
+		std::vector<Edge_Index> Segment;
+	};
+}
 struct VulkanDrawData {
 	int numberOfPoint = 0;
 	double* points; //location xyz(3 double) * numberOfPoint
@@ -67,10 +66,6 @@ struct VulkanDrawData {
 	double* attr; //each point to size of((numberOfPointAttr double) * numberOfPoint)
 
 };
-
-
-
-
 
 
 

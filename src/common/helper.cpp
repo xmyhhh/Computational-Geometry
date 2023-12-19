@@ -1,5 +1,7 @@
 #include "helper.h"
 
+using namespace base_type;
+
 extern void Intersection_01(std::vector<Line>& all_lines, std::vector <IntersectionResult>& intersectionResults);
 
 
@@ -170,9 +172,9 @@ IntersectionResult LineIntersectionCalulate(Line l1, Line l2) {
 	return  { l1 ,l2 ,{inter_x, inter_y} };
 }
 
-Polygon PolygonRandomGen(int width, int height, int size, float miniAngle)
+PolygonRandom PolygonRandomGen(int width, int height, int size, float miniAngle)
 {
-	Polygon val;
+	PolygonRandom val;
 
 	cv::Point2d next;
 	cv::Point2d last;
@@ -256,6 +258,11 @@ Polygon PolygonRandomGen(int width, int height, int size, float miniAngle)
 	return val;
 }
 
+
+
+
+
+
 double VectorLengthSqr(cv::Point2d a, cv::Point2d b)
 {
 	return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
@@ -263,7 +270,7 @@ double VectorLengthSqr(cv::Point2d a, cv::Point2d b)
 }
 double VectorLengthSqr(cv::Point3d a, cv::Point3d b)
 {
-	return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)+ (a.z - b.z) * (a.z - b.z);
+	return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + (a.z - b.z) * (a.z - b.z);
 
 }
 

@@ -1,6 +1,6 @@
 #include "voronoi_01.h"
 
-
+using namespace base_type;
 void Voronoi() {
 
 	int width = 1920 / 2;

@@ -1,7 +1,7 @@
 
 #include "common/typedef.h"
 #include "intersection_01.h"
-
+using namespace base_type;
 void Intersection() {
 
 	int width = 1920 / 2;

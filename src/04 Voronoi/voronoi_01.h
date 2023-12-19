@@ -3,7 +3,7 @@
 #include "common/typedef.h"
 #include "common/helper.h"
 
-extern void Intersection_01(std::vector<Line>& all_lines, std::vector <IntersectionResult>& intersectionResults);
+extern void Intersection_01(std::vector<base_type::Line>& all_lines, std::vector <base_type::IntersectionResult>& intersectionResults);
 
 namespace DECL_Voronoi {
 	//doubly connected edge list (DCEL), https://github.com/AnkurRyder/DCEL
@@ -97,7 +97,7 @@ namespace DECL_Voronoi {
 
 void Voronoi_01(std::vector<cv::Point>& all_point, DECL_Voronoi::DECL& decl) {
 	//Incremental Construction
-
+	using namespace base_type;
 	struct newRecord {
 		cv::Point2d position;
 		DECL_Voronoi::HalfEdge* half_edge;

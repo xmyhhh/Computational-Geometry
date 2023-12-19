@@ -28,12 +28,19 @@ double Area2(PointT& p1, PointT& p2, PointT& s) {
 	return value;
 }
 
-IntersectionResult LineIntersectionCalulate(Line l1, Line l2);
+base_type::IntersectionResult LineIntersectionCalulate(base_type::Line l1, base_type::Line l2);
 
 
 //geo cul
-Polygon PolygonRandomGen(int width, int height, int size = 3, float miniAngle = 30);
+base_type::PolygonRandom PolygonRandomGen(int width, int height, int size = 3, float miniAngle = 30);
 
+inline cv::Point2d Rotate(cv::Point2d point, double angle) {
+	if (angle == 0) {
+		return point;
+	}
+	double angle_deg = angle / 180;
+	return cv::Point2d((point.x * std::cos(angle_deg) - std::sin(angle_deg) * point.y), (point.x * std::sin(angle_deg) - std::cos(angle_deg) * point.y));
+}
 
 inline double dot(cv::Point3d& p1, cv::Point3d& p2)
 {
@@ -137,7 +144,7 @@ void CalculateBoundingCircle(const PointT& p1, const PointT& p2, const PointT& p
 double VectorLengthSqr(cv::Point2d a, cv::Point2d b);
 double VectorLengthSqr(cv::Point3d a, cv::Point3d b);
 bool VectorSlop(cv::Point2d a, cv::Point2d b, double& slop);
-double DistanceToPoint(Line line, cv::Point2d point);
+double DistanceToPoint(base_type::Line line, cv::Point2d point);
 double Abs(double in);
 
 //draw
