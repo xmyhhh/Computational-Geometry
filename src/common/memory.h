@@ -105,7 +105,7 @@ public:
 		//   - The primary word type, to avoid unaligned accesses.
 		//   - sizeof(void *), so the stack of dead items can be maintained
 		//       without unaligned accesses.
-
+		dirty = true;
 		void* newItem;
 		void* newBlock;
 		uintptr_t alignPtr;
@@ -139,6 +139,7 @@ public:
 	}
 
 	void deallocate(void* dyingItem) {
+		dirty = true;
 		*((void**)dyingItem) = deadItemStack;
 		deadItemStack = dyingItem;
 		items--;
@@ -190,4 +191,42 @@ public:
 		pathItemsLeft--;
 		return newItem;
 	}
+
+	void* operator[](const int index)
+	{
+
+		void** index_array = nullptr;
+		if (index_array == nullptr) {
+			index_array = (void**)malloc(items * sizeof(void*));
+			traversalInit();
+			auto loop = traverse();
+			int idx = 0;
+			while (loop != (void*)NULL)
+			{
+				index_array[idx++] = loop;
+				loop = traverse();
+			}
+		}
+		else if (dirty) {
+			free(index_array);
+
+			index_array = (void**)malloc(items * sizeof(void*));
+			traversalInit();
+			auto loop = traverse();
+			int idx = 0;
+			while (loop != (void*)NULL)
+			{
+				index_array[idx++] = loop;
+				loop = traverse();
+			}
+			dirty = false;
+		}
+		return index_array[index];
+
+	}
+	size_t size() {
+		return items;
+	}
+private:
+	bool dirty = false;
 };

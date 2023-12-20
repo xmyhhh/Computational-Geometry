@@ -171,6 +171,13 @@ namespace CDT_01_datastruct {
 		bool empty = true;
 		std::vector<Vertex*> vertex_array;
 		std::vector<PreDefineEdge> edge_array;
+
+		struct {
+			Vertex top_left;
+			Vertex top_right;
+			Vertex buttom_left;
+			Vertex buttom_right;
+		}infinity_vtx;
 	};
 
 	struct Strip {
@@ -223,7 +230,7 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 				end = plsg.get_position(i, j);
 			}
 			if (start.x > end.x) {
-				std::swap(start,end);
+				std::swap(start, end);
 			}
 
 			edge_array.push_back({});
@@ -264,7 +271,6 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 	double line_x_current = 0;
 	std::vector<CDT_01_datastruct::PreDefineEdge*> event_queue;
 	cdt.vertex_pool.traversalInit();
-
 	while (true) {
 		auto next = (Vertex*)cdt.vertex_pool.traverse();
 		if (next == (Vertex*)NULL) {
@@ -331,30 +337,47 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 		return pt;
 		};
 
-	auto divide_and_conquer = [&](auto&& divide_and_conquer, std::vector<cv::Point2d> vtx_array)->Strip* {
+	auto divide_and_conquer = [&](auto&& divide_and_conquer, int index_begin, int index_end)->Strip* {
+		int size = index_end - index_begin;
 
-		if (vtx_array.size() > 1) {
+		if (size > 1) {
 			//split
-			int center = vtx_array.size() / 2;
-			std::vector<cv::Point2d> vtx_array_left = { vtx_array.begin(), vtx_array.begin() + center };
-			std::vector<cv::Point2d> vtx_array_right = { vtx_array.begin() + center, vtx_array.end() };
-			Strip* t1 = divide_and_conquer(divide_and_conquer, vtx_array_left);
-			Strip* t2 = divide_and_conquer(divide_and_conquer, vtx_array_left);
-			delete(t1);
-			delete(t2);
+			int center = size / 2;
+
+			Strip* t1 = divide_and_conquer(divide_and_conquer, index_begin, center);
+			Strip* t2 = divide_and_conquer(divide_and_conquer, center, index_end);
+
 			return strip_merge(t1, t2);
 		}
-		//else if (vtx_array.size() = 1) {
+		else if (size == 1) {
+			auto vtx = (Vertex*)cdt.vertex_pool[index_begin];
+			Strip* pt = new Strip();
+			pt->region.push_back({});
+			pt->region[0].empty = false;
+			pt->region[0].vertex_array.push_back(vtx);
 
-		//	p->is_infinity = false;
-		//	p->position = vtx_array[0];
+			double region_width = 0.0;
 
-		//	Strip* pt = new Strip();
-		//	pt->region.push_back({});
-		//	pt->region[0].empty = false;
-		//	pt->region[0].vertex_array.push_back(p);
-		//	return pt;
-		//}
+
+
+
+		/*	ASSERT(index_begin != 0);
+			ASSERT(index_begin != cdt.vertex_pool.items - 1;);
+			auto vtx_left = (Vertex*)cdt.vertex_pool[index_begin - 1];
+			auto vtx_right = (Vertex*)cdt.vertex_pool[index_begin + 1];
+			region_width += (vtx->position.x - vtx_left->position.x) / 2;*/
+
+
+
+			if (vtx->edge_above != nullptr) {
+
+			}
+			if (vtx->edge_below != nullptr) {
+
+			}
+
+			return pt;
+		}
 		else {
 			ASSERT(false);
 		}
