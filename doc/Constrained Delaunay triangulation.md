@@ -32,10 +32,14 @@ We distinguish 2 types of edges that appear in a CDT:
         * Each vertex-containing region has a set of 4 of these infinite vertices.
         * It is convenient to picture the infinite vertices for a region as if they are located at the 4 corners of the region;
 
-    * Lemma 1. If we eliminate the infinite vertices of a region by removing the infinite vertices and their edges then the remaining vertices and edges form a CDT for the region.
-    * Lemma 2. Let S1, and S2 be adjacent strips that are combined to make strip S and let T be a CDT that is in S. (S1 and S2 contain CDTs that may be altered in the process of making S.) If e is a Delaunay edge of T and both endpoints of e are in S1 then e is a Delaunay edge of a CDT in S1
+### Stitching CDTs together
+    * Lemma 1. If we eliminate the infinite vertices of a region by removing the infinite vertices and their edges then the remaining vertices and edges form a CDT for the region. （如果我们通过删除一个区域的无限顶点及其边来消除该区域的无限顶点，那么剩余的顶点和边就构成了该区域的 CDT）
+
+    * Lemma 2. Let S1, and S2 be adjacent strips that are combined to make strip S and let T be a CDT that is in S. (S1 and S2 contain CDTs that may be altered in the process of making S.) If e is a Delaunay edge of T and both endpoints of e are in S1 then e is a Delaunay edge of a CDT in S1 （假设 S1 和 S2 是相邻的条带，它们被组合成条带S，假设 T 是 S 中的 CDT（S1 和 S2 包含 CDT，它们可能在生成 S 的过程中被改变）。如果 e 是 T 的一条 Delaunay 边，并且 e 的两个端点都在 S1 中，那么 e 就是 S1 中 CDT 的一条 Delaunay 边。）
+
+
     * <b>CDTs are combined by executing the following steps:</b>
-        1) <b>eliminate infinite vertices along the boundary between the two strips.(消除boundary上的无限点)</b>, leaving a partial CDT in each half; Lemma 2 implies that the only new edges that need to be added to complete the CDT for ,the combined strip are edges that cross the boundary between the two strips.???
+        1) <b>eliminate infinite vertices along the boundary between the two strips.(消除boundary上的无限点)</b>, leaving a partial CDT in each half; Lemma 2 implies that the only new edges that need to be added to complete the CDT for ,the combined strip are edges that cross the boundary between the two strips.???（定理 2 意味着，要完成合并条带的 CDT，唯一需要添加的新边是跨越两个条带边界的边）
 
         2) <b>stitch the partial CDTs together</b>（拼接）; Consider a circle with points A and B on its boundary and with center well below AB. Change the circle by moving the center upward toward AB always keeping A and B on the boundary. Continue moving the center upward until the circle intersects the first point above AB that can be seen from both A and B. Call this point X. By definition, the edges AX and BX are Delaunay edges of the CDT.
             * how to Find the best candidate. 

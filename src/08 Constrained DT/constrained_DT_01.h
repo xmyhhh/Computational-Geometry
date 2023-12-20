@@ -137,57 +137,55 @@ namespace CDT_01_datastruct {
 
 
 		}
-		void add_rect_boundary() {
-			vertex_array.push_back({ 10, 10 });
-			vertex_array.push_back({ 10, -10 });
-			vertex_array.push_back({ -10, 10 });
-			vertex_array.push_back({ -10, -10 });
-			boundary_array.push_back({});
-			boundary_array[boundary_array.size() - 1].point_array.push_back(vertex_array.size() - 1);
-			boundary_array[boundary_array.size() - 1].point_array.push_back(vertex_array.size() - 2);
-			boundary_array[boundary_array.size() - 1].point_array.push_back(vertex_array.size() - 3);
-			boundary_array[boundary_array.size() - 1].point_array.push_back(vertex_array.size() - 4);
-		}
+
 	};
 
 	//run time
-	struct Vertex;
 
-	struct PreDefineEdge {
-		Vertex* orig;
-		Vertex* end;
+	struct Edge {
+		struct Vertex* orig;
+		struct Vertex* end;
 	};
 
 	struct Vertex
 	{
 		cv::Point2d position;
 		bool is_infinity = false;
-		PreDefineEdge* edge_below = nullptr;
-		PreDefineEdge* edge_above = nullptr;
-		std::vector<PreDefineEdge*>* p_connect_edge_array;
+		Edge* edge_below = nullptr;
+		Edge* edge_above = nullptr;
+		std::vector<Edge*>* p_connect_edge_array;
+
+		struct Strip_Region* region;//the region belong to
 	};
 
 	struct Strip_Region {
 		bool empty = true;
+
+		double region_left_x;
+		double region_right_x;
+
+		Edge* edge_below = nullptr;
+		Edge* edge_above = nullptr;
 		std::vector<Vertex*> vertex_array;
-		std::vector<PreDefineEdge> edge_array;
+		std::vector<Edge> edge_array;
+		struct Strip* strip;
 
 		struct {
-			Vertex top_left;
-			Vertex top_right;
-			Vertex buttom_left;
-			Vertex buttom_right;
+			Vertex* top_left;
+			Vertex* top_right;
+			Vertex* buttom_left;
+			Vertex* buttom_right;
 		}infinity_vtx;
 	};
 
 	struct Strip {
-		std::vector<Strip_Region> region;
+		std::vector<Strip_Region*> region;
 	};
 
 	struct CDT
 	{
 		MemoryPool vertex_pool;
-		std::vector<Strip> strip_array;
+		std::vector<Strip*> strip_array;//for draw 
 	};
 
 
@@ -212,11 +210,12 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 		auto p = (Vertex*)cdt.vertex_pool.allocate();
 		p->position = vtx;
 		p->is_infinity = false;
-		p->p_connect_edge_array = new std::vector<PreDefineEdge*>();
+		p->p_connect_edge_array = new std::vector<Edge*>();
+		p->region = nullptr;
 	}
 
 	//Step 3: add predefine edge
-	std::vector<CDT_01_datastruct::PreDefineEdge> edge_array;
+	std::vector<CDT_01_datastruct::Edge> edge_array;
 	for (int i = 0; i < plsg.boundary_array.size(); i++) {
 		for (int j = 0; j < plsg.boundary_array[i].point_array.size(); j++) {
 			cv::Point2d start;
@@ -234,7 +233,7 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 			}
 
 			edge_array.push_back({});
-			CDT_01_datastruct::PreDefineEdge& edge = edge_array[edge_array.size() - 1];
+			CDT_01_datastruct::Edge& edge = edge_array[edge_array.size() - 1];
 
 			//find index in pool
 			cdt.vertex_pool.traversalInit();
@@ -269,7 +268,7 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 	//Step 4: update each vertex edge_below and edge_above using line-Sweep alg
 	double line_x_last = 0;
 	double line_x_current = 0;
-	std::vector<CDT_01_datastruct::PreDefineEdge*> event_queue;
+	std::vector<CDT_01_datastruct::Edge*> event_queue;
 	cdt.vertex_pool.traversalInit();
 	while (true) {
 		auto next = (Vertex*)cdt.vertex_pool.traverse();
@@ -297,7 +296,7 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 		}
 
 		//find edge_below and edge_above
-		priority_queue<CDT_01_datastruct::PreDefineEdge*> edge_intersection_queue;
+		priority_queue<CDT_01_datastruct::Edge*> edge_intersection_queue;
 		for (auto queue_item : event_queue) {
 			if (queue_item->end == next || queue_item->orig == next) {
 				//if this edge is self's edge, we ignore here
@@ -311,6 +310,8 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 			edge_intersection_queue.push_back(queue_item, res.intersectionPoint.y);
 		}
 
+		next->edge_above = nullptr;
+		next->edge_below = nullptr;
 		if (edge_intersection_queue.size() >= 1) {
 			if (edge_intersection_queue.max_priority() > next->position.y) {
 				//has above
@@ -333,17 +334,259 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 		if (next == (Vertex*)NULL) {
 			break;
 		}
-		
+
 	}
 
 	int a = 0;
 
+	auto strip_region_group_merge = [&](std::vector<Strip_Region*> left_merge_region_group, std::vector<Strip_Region*>right_merge_region_group, bool is_begin_left, bool is_end_left)->Strip_Region* {
+
+		Strip_Region* new_region = new Strip_Region();
+		bool left_group_empty = left_merge_region_group.size() == 0;
+		bool right_group_empty = right_merge_region_group.size() == 0;
+		//combine vtx
+		{
+			for (auto& r : left_merge_region_group) {
+				for (auto& vtx : r->vertex_array) {
+					new_region->vertex_array.push_back(vtx);
+				}
+			}
+
+			for (auto& r : right_merge_region_group) {
+				for (auto& vtx : r->vertex_array) {
+					new_region->vertex_array.push_back(vtx);
+				}
+			}
+		}
+
+		{
+			//cal infinity vtx
+			//top
+			{
+				if (is_begin_left) {
+					new_region->infinity_vtx.top_left = left_merge_region_group[0]->infinity_vtx.top_left;
+					if (!right_group_empty && left_merge_region_group[0]->edge_above == right_merge_region_group[0]->edge_above) {
+						//may share same edge
+						new_region->infinity_vtx.top_right = right_merge_region_group[0]->infinity_vtx.top_right;
+					}
+					else if (left_merge_region_group[0]->edge_above != nullptr) {
+						//TODO make new inf
+						//auto res = LineIntersectionCalulate();
+					}
+				}
+				else {
+					new_region->infinity_vtx.top_right = right_merge_region_group[0]->infinity_vtx.top_right;
+
+				}
+
+			}
+
+		}
 
 
-	auto strip_merge = [](Strip* t1, Strip* t2)->Strip* {
+		return new_region;
+		};
 
-		Strip* pt = new Strip();
-		return pt;
+	auto strip_merge = [&](Strip* t1, Strip* t2)->Strip* {
+
+		Strip* new_strip = new Strip();
+
+		//TODO:is region order top-to-down
+
+		int region_size_t1 = t1->region.size();
+		int region_size_t2 = t2->region.size();
+		int region_index_t1 = 0;
+		int region_index_t2 = 0;
+
+		//find a start
+		auto cmp_start = [&](int index_l, int index_r, bool& is_left)->Strip_Region* {
+			Strip_Region* region;
+
+			if (index_l >= region_size_t1) {
+				region = t2->region[index_r];
+				is_left = false;
+			}
+			else if (index_r >= region_size_t2) {
+				region = t1->region[index_l];
+				is_left = true;
+			}
+			else {
+				auto inf_t1_tl = t1->region[index_l]->infinity_vtx.top_left;
+				auto inf_t2_tr = t2->region[index_r]->infinity_vtx.top_right;
+
+				if (inf_t1_tl == nullptr) {
+					region = t1->region[index_l];
+					is_left = true;
+				}
+				else if (inf_t2_tr == nullptr) {
+					region = t2->region[index_r];
+					is_left = false;
+				}
+				else {
+					region = inf_t1_tl->position.y > inf_t2_tr->position.y ? t1->region[index_l] : t2->region[index_r];
+					is_left = inf_t1_tl->position.y > inf_t2_tr->position.y ? true : false;
+				}
+			}
+
+			return region;
+			};
+		auto is_region_connect = [&](Strip_Region* region_left, Strip_Region* region_right)->bool {
+			bool res = false;
+			if (region_left->infinity_vtx.top_right == nullptr && region_left->infinity_vtx.buttom_right == nullptr) {
+				res = true;
+			}
+			else if (region_right->infinity_vtx.top_left == nullptr && region_right->infinity_vtx.buttom_left == nullptr) {
+				res = true;
+			}
+			else if (region_left->infinity_vtx.top_right == nullptr && region_right->infinity_vtx.top_left == nullptr) {
+				res = true;
+			}
+			else if (region_left->infinity_vtx.buttom_right == nullptr && region_right->infinity_vtx.buttom_left == nullptr) {
+				res = true;
+			}
+
+			else if (region_left->infinity_vtx.top_right == nullptr && region_right->infinity_vtx.top_left->position.y >= region_left->infinity_vtx.buttom_right->position.y) {
+				res = true;
+			}
+			else if (region_right->infinity_vtx.top_left == nullptr && region_left->infinity_vtx.top_right->position.y >= region_right->infinity_vtx.buttom_left->position.y) {
+				res = true;
+			}
+			else if (region_left->infinity_vtx.buttom_right == nullptr && region_right->infinity_vtx.buttom_left->position.y <= region_left->infinity_vtx.top_right->position.y) {
+				res = true;
+			}
+			else if (region_right->infinity_vtx.buttom_left == nullptr && region_left->infinity_vtx.buttom_right->position.y <= region_right->infinity_vtx.top_left->position.y) {
+				res = true;
+			}
+
+
+			return res;
+
+			};
+		auto get_connect_region = [&](Strip_Region* region, Strip* strip, bool is_left)->std::vector<Strip_Region*> {
+			std::vector<Strip_Region*> res;
+			for (auto& region_item : strip->region) {
+				if (is_left && is_region_connect(region, region_item)) {
+					res.push_back(region_item);
+				}
+				else if (!is_left && is_region_connect(region_item, region)) {
+					res.push_back(region_item);
+				}
+			}
+			return res;
+			};
+		auto left_buttom_lower = [](Strip_Region* region_left, Strip_Region* region_right)->bool {
+			if (region_left->infinity_vtx.buttom_right == nullptr) {
+				return true;
+			}
+			if (region_right->infinity_vtx.buttom_left == nullptr) {
+				return false;
+			}
+			return region_left->infinity_vtx.buttom_right->position.y < region_right->infinity_vtx.buttom_left->position.y;
+
+			};
+
+		while (region_index_t1 < region_size_t1 || region_index_t2 < region_size_t2) {
+			//begin merge all sub region
+
+			//find sub region merge group
+			{
+				bool is_begin_left, is_end_left = true;
+				Strip_Region* merge_sub_region_begin;
+
+				merge_sub_region_begin = cmp_start(region_index_t1, region_index_t2, is_begin_left);
+
+				std::vector<Strip_Region*> merge_region_group_left;
+				std::vector<Strip_Region*> merge_region_group_right;
+				//prepare  merge_sub_region_left and merge_sub_region_right
+				{
+					if (is_begin_left) {
+						merge_region_group_left.push_back(merge_sub_region_begin);
+					}
+					else {
+						merge_region_group_right.push_back(merge_sub_region_begin);
+					}
+
+					//s1: inf bottom is nullptr
+					if (merge_sub_region_begin->infinity_vtx.buttom_right == nullptr && is_begin_left) {
+						//put a sub region in right of range(merge_sub_region_begin..top_left.y,nullptr)
+						for (; region_index_t2 < region_size_t2; region_index_t2++) {
+							merge_region_group_right.push_back(t2->region[region_index_t2]);
+						}
+
+					}
+					else if (merge_sub_region_begin->infinity_vtx.buttom_left == nullptr && !is_begin_left)
+					{
+						for (; region_index_t1 < region_size_t1; region_index_t1++) {
+							merge_region_group_left.push_back(t1->region[region_index_t1]);
+						}
+
+					}
+					else {
+						//get here means merge_sub_region_begin->infinity_vtx.buttom is nuo nullptr
+						Strip* search_strip = is_begin_left ? t2 : t1;
+						bool serach_from = is_begin_left;
+						Strip_Region* search_region = merge_sub_region_begin;
+						std::vector<Strip_Region*>* res_to_put_vector;
+						{
+							if (serach_from) {
+								res_to_put_vector = &merge_region_group_right;
+							}
+							else {
+								res_to_put_vector = &merge_region_group_left;
+							}
+						}
+
+						while (true) {
+							auto res = get_connect_region(search_region, search_strip, serach_from);
+							if (res.size() > 0) {
+								bool has_find_new_region = false;
+								for (auto& res_item : res) {
+									if (std::find((*res_to_put_vector).begin(), (*res_to_put_vector).end(), res_item) != (*res_to_put_vector).end()) {
+										(*res_to_put_vector).push_back(res_item);
+										has_find_new_region = true;
+									}
+								}
+
+								if (has_find_new_region) {
+									search_strip = search_strip == t2 ? t1 : t2;
+									serach_from = !serach_from;
+									search_region = res[res.size() - 1];
+									res_to_put_vector = serach_from ? &merge_region_group_right : &merge_region_group_left;
+								}
+								else {
+									break;
+								}
+
+							}
+							else {
+								break;
+							}
+						}
+
+					}
+				}
+				//calculate is_end_left
+				if (merge_region_group_left.size() == 0)
+					is_end_left = false;
+				else if (merge_region_group_right.size() == 0) {
+					is_end_left = true;
+				}
+				else {
+					is_end_left = left_buttom_lower(merge_region_group_left[merge_region_group_left.size() - 1], merge_region_group_right[merge_region_group_right.size() - 1]);
+				}
+
+				auto new_region = strip_region_group_merge(merge_region_group_left, merge_region_group_right, is_begin_left, is_end_left);
+				new_strip->region.push_back(new_region);
+			}
+
+
+
+
+		}
+
+		//delete(t1);
+		//delete(t2);
+		return new_strip;
 		};
 
 	auto divide_and_conquer = [&](auto&& divide_and_conquer, int index_begin, int index_end)->Strip* {
@@ -351,7 +594,7 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 
 		if (size > 1) {
 			//split
-			int center = size / 2;
+			int center = size / 2 + index_begin;
 
 			Strip* t1 = divide_and_conquer(divide_and_conquer, index_begin, center);
 			Strip* t2 = divide_and_conquer(divide_and_conquer, center, index_end);
@@ -360,32 +603,112 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 		}
 		else if (size == 1) {
 			auto vtx = (Vertex*)cdt.vertex_pool[index_begin];
-			Strip* pt = new Strip();
-			pt->region.push_back({});
-			pt->region[0].empty = false;
-			pt->region[0].vertex_array.push_back(vtx);
+			Strip* strip = new Strip();
+			cdt.strip_array.push_back(strip);
+			strip->region.push_back(new Strip_Region());
+			Strip_Region* region = (strip->region[0]);
+			region->infinity_vtx.buttom_left = nullptr;
+			region->infinity_vtx.buttom_right = nullptr;
+			region->infinity_vtx.top_left = nullptr;
+			region->infinity_vtx.top_right = nullptr;
 
-			double region_width = 0.0;
+			region->empty = false;
+			region->vertex_array.push_back(vtx);
+			region->strip = strip;
+			vtx->region = region;
 
+			//calculate region infinity point
+			if (index_begin != 0 && index_begin != cdt.vertex_pool.items - 1) {
 
+				auto vtx_left = (Vertex*)cdt.vertex_pool[index_begin - 1];
+				auto vtx_right = (Vertex*)cdt.vertex_pool[index_begin + 1];
 
+				double region_x_left = vtx_left->position.x + (vtx->position.x - vtx_left->position.x) / 2;
+				double region_x_right = vtx->position.x + (vtx_right->position.x - vtx->position.x) / 2;
+				
+				region->region_left_x = region_x_left;
+				region->region_right_x = region_x_right;
 
-		/*	ASSERT(index_begin != 0);
-			ASSERT(index_begin != cdt.vertex_pool.items - 1;);
-			auto vtx_left = (Vertex*)cdt.vertex_pool[index_begin - 1];
-			auto vtx_right = (Vertex*)cdt.vertex_pool[index_begin + 1];
-			region_width += (vtx->position.x - vtx_left->position.x) / 2;*/
+				if (vtx->edge_above != nullptr) {
+					//top-left
+					{
+						if (vtx_left->edge_above == vtx->edge_above && vtx_left->region != nullptr && vtx_left->region->infinity_vtx.top_right != nullptr) {
+							//if they share the same above edge, then vtx_left's top-right infinity is vtx's top-left infinity
+							region->infinity_vtx.top_left = vtx_left->region->infinity_vtx.top_right;
+						}
+						else {
+							//intersection test and make infinity
+							base_type::IntersectionResult res = LineIntersectionCalulate(
+								{ {region_x_left,-1000} ,{region_x_left,1000} }
+								,
+								{ {vtx->edge_above->orig->position} ,{vtx->edge_above->end->position} }
+							);
+							region->infinity_vtx.top_left = new Vertex();
+							region->infinity_vtx.top_left->is_infinity = true;
+							region->infinity_vtx.top_left->position = res.intersectionPoint;
+						}
+					}
 
+					//top-right
+					{
+						if (vtx_right->edge_above == vtx->edge_above && vtx_right->region != nullptr && vtx_right->region->infinity_vtx.top_left != nullptr) {
+							region->infinity_vtx.top_right = vtx_right->region->infinity_vtx.top_left;
+						}
+						else {
+							//intersection test and make infinity
+							base_type::IntersectionResult res = LineIntersectionCalulate(
+								{ {region_x_right,-1000} ,{region_x_right,1000} }
+								,
+								{ {vtx->edge_above->orig->position} ,{vtx->edge_above->end->position} }
+							);
+							region->infinity_vtx.top_right = new Vertex();
+							region->infinity_vtx.top_right->is_infinity = true;
+							region->infinity_vtx.top_right->position = res.intersectionPoint;
+						}
+					}
 
+				}
+				if (vtx->edge_below != nullptr) {
+					//buttom-left
+					{
+						if (vtx_left->edge_below == vtx->edge_below && vtx_left->region != nullptr && vtx_left->region->infinity_vtx.buttom_right != nullptr) {
+							region->infinity_vtx.buttom_left = vtx_left->region->infinity_vtx.buttom_right;
+						}
+						else {
+							//intersection test and make infinity
+							base_type::IntersectionResult res = LineIntersectionCalulate(
+								{ {region_x_left,-1000} ,{region_x_left,1000} }
+								,
+								{ {vtx->edge_below->orig->position} ,{vtx->edge_below->end->position} }
+							);
+							region->infinity_vtx.buttom_left = new Vertex();
+							region->infinity_vtx.buttom_left->is_infinity = true;
+							region->infinity_vtx.buttom_left->position = res.intersectionPoint;
+						}
+					}
 
-			if (vtx->edge_above != nullptr) {
-
+					//buttom-right
+					{
+						if (vtx_right->edge_below == vtx->edge_below && vtx_right->region != nullptr && vtx_right->region->infinity_vtx.buttom_left != nullptr) {
+							region->infinity_vtx.buttom_right = vtx_right->region->infinity_vtx.buttom_left;
+						}
+						else {
+							//intersection test and make infinity
+							base_type::IntersectionResult res = LineIntersectionCalulate(
+								{ {region_x_right,-1000} ,{region_x_right,1000} }
+								,
+								{ {vtx->edge_below->orig->position} ,{vtx->edge_below->end->position} }
+							);
+							region->infinity_vtx.buttom_right = new Vertex();
+							region->infinity_vtx.buttom_right->is_infinity = true;
+							region->infinity_vtx.buttom_right->position = res.intersectionPoint;
+						}
+					}
+				}
+				int aaa = 0;
 			}
-			if (vtx->edge_below != nullptr) {
 
-			}
-
-			return pt;
+			return strip;
 		}
 		else {
 			ASSERT(false);
@@ -393,5 +716,5 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 		};
 
 
-
+	divide_and_conquer(divide_and_conquer, 0, cdt.vertex_pool.items);
 }

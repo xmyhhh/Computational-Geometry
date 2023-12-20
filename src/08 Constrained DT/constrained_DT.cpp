@@ -5,8 +5,8 @@
 
 void constrained_DT() {
 
-	int width = 1200;
-	int height = 700;
+	int width = 2000;
+	int height = 800;
 	cv::Mat img = cv::Mat::zeros(cv::Size(width, height), CV_8UC3);
 
 	std::vector<cv::Point> all_point;
@@ -17,8 +17,8 @@ void constrained_DT() {
 	using namespace CDT_01_datastruct;
 	//load plsg 
 	PSLG plsg;
-	plsg.factor = 20;
-	plsg.offset = cv::Point2d(width / 5, height / 5);
+	plsg.factor = 45;
+	plsg.offset = cv::Point2d(width / 8, height / 8);
 	auto plsg_path = getAssetPath() + "guita.plsg";
 	plsg.init_from_file(plsg_path);
 
@@ -29,9 +29,7 @@ void constrained_DT() {
 	//draw code begin
 	debug_cout("\n*********start draw*********");
 
-	for (size_t i = 0; i < plsg.vertex_array.size(); i++) {
-		draw_circle_origin_buttom_left(width, height, img, plsg.get_position(i), 2, RED, 2);
-	}
+
 	for (size_t i = 0; i < plsg.boundary_array.size(); i++)
 	{
 		for (size_t j = 0; j < plsg.boundary_array[i].point_array.size(); j++) {
@@ -48,6 +46,23 @@ void constrained_DT() {
 	for (size_t i = 0; i < plsg.vertex_array.size(); i++) {
 		draw_circle_origin_buttom_left(width, height, img, plsg.get_position(i), 2, RED, 2);
 	}
+#define draw_strip 1
+	if (draw_strip) {
+		for (auto &strip : cdt.strip_array) {
+			for (auto &region : strip->region) {
+				if(region->infinity_vtx.buttom_left)
+					draw_circle_origin_buttom_left(width, height, img, region->infinity_vtx.buttom_left->position, 1, WHITE, 2);
+				if (region->infinity_vtx.buttom_right)
+					draw_circle_origin_buttom_left(width, height, img, region->infinity_vtx.buttom_right->position, 1, WHITE, 2);
+				if (region->infinity_vtx.top_left)
+					draw_circle_origin_buttom_left(width, height, img, region->infinity_vtx.top_left->position, 1, WHITE, 2);
+				if (region->infinity_vtx.top_right)
+					draw_circle_origin_buttom_left(width, height, img, region->infinity_vtx.top_right->position, 1, WHITE, 2);
+			}
+			
+		}
+	}
+
 
 #define Grid_Size_w 12
 #define Grid_Size_h 7
