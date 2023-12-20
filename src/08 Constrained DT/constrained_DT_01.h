@@ -161,8 +161,8 @@ namespace CDT_01_datastruct {
 	struct Strip_Region {
 		bool empty = true;
 
-		double region_left_x;
-		double region_right_x;
+		double region_left_x = -1;
+		double region_right_x = -1;
 
 		Edge* edge_below = nullptr;
 		Edge* edge_above = nullptr;
@@ -323,7 +323,6 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 			}
 		}
 
-
 		line_x_last = line_x_current;
 	}
 
@@ -371,6 +370,7 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 					}
 					else if (left_merge_region_group[0]->edge_above != nullptr) {
 						//TODO make new inf
+						int aaaa = 0;
 						//auto res = LineIntersectionCalulate();
 					}
 				}
@@ -501,9 +501,11 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 				{
 					if (is_begin_left) {
 						merge_region_group_left.push_back(merge_sub_region_begin);
+						region_index_t1++;
 					}
 					else {
 						merge_region_group_right.push_back(merge_sub_region_begin);
+						region_index_t2++;
 					}
 
 					//s1: inf bottom is nullptr
@@ -543,6 +545,7 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 								for (auto& res_item : res) {
 									if (std::find((*res_to_put_vector).begin(), (*res_to_put_vector).end(), res_item) != (*res_to_put_vector).end()) {
 										(*res_to_put_vector).push_back(res_item);
+										serach_from ? region_index_t2++ : region_index_t1++;
 										has_find_new_region = true;
 									}
 								}
@@ -625,7 +628,7 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 
 				double region_x_left = vtx_left->position.x + (vtx->position.x - vtx_left->position.x) / 2;
 				double region_x_right = vtx->position.x + (vtx_right->position.x - vtx->position.x) / 2;
-				
+
 				region->region_left_x = region_x_left;
 				region->region_right_x = region_x_right;
 
