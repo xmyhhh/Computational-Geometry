@@ -50,24 +50,29 @@ public:
 
 	priority_pair<T> get_upper(double priority) {
 		ASSERT(max_priority() > priority);
-		if (queue.size() == 1)
-			return queue[0];
 
 		for (int i = queue.size() - 1; i >= 0; i--) {
 			if (queue[i].priority < priority)
-				return queue[i + 1];
+
+				if (i == (queue.size() - 1))
+					return queue[i];
+				else
+					return queue[i + 1];
 		}
+		return  queue[queue.size() - 1];
 	}
 
 	priority_pair<T> get_lower(double priority) {
 		ASSERT(min_priority() < priority);
-		if (queue.size() == 1)
-			return queue[0];
 
 		for (int i = 0; i < queue.size(); i++) {
 			if (queue[i].priority > priority)
-				return queue[i - 1];
+				if (i == 0)
+					return queue[i];
+				else
+					return queue[i - 1];
 		}
+		return  queue[0];
 
 	}
 };

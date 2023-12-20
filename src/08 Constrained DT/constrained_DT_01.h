@@ -326,6 +326,15 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 		line_x_last = line_x_current;
 	}
 
+	cdt.vertex_pool.traversalInit();
+
+	while (true) {
+		auto next = (Vertex*)cdt.vertex_pool.traverse();
+		if (next == (Vertex*)NULL) {
+			break;
+		}
+		
+	}
 
 	int a = 0;
 
