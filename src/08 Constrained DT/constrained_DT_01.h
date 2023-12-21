@@ -517,16 +517,17 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 
 			else if ((is_vtx_in_vtx_array(e.end, new_region->vertex_array) || is_vtx_in_vtx_array(e.orig, new_region->vertex_array)) && is_edge_cross(strip_left->region_right_x, &e)) {
 				//find new edge start
-				Vertex* new_edge_start;
+				Vertex* new_cross_edge_start;
+				Vertex* new_cross_edge_end;
 				{
 					if (is_vtx_in_vtx_array(e.end, new_region->vertex_array))
 					{
-						new_edge_start = e.end;
+						new_cross_edge_start = e.end;
 
 					}
 					else
 					{
-						new_edge_start = e.orig;
+						new_cross_edge_start = e.orig;
 					}
 				}
 
@@ -534,7 +535,7 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 				new_region->edge_array.push_back({});
 				auto new_cross_edge = new_region->edge_array[new_region->edge_array.size() - 1];
 
-				if (new_edge_start->position.x < strip_left->region_right_x) {
+				if (new_cross_edge_start->position.x < strip_left->region_right_x) {
 					//there is already one vtx can be use, must be one of inf vtx 
 					ASSERT(strip_right->region_right_x != -1 && (e.orig->position.x > strip_right->region_right_x || e.end->position.x > strip_right->region_right_x));
 					Strip_Region* target_region = nullptr;
@@ -545,12 +546,14 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 						}
 					}
 					ASSERT(target_region != nullptr);
-					auto& v = target_region->edge_below == &e ? target_region->infinity_vtx.buttom_right : target_region->infinity_vtx.top_right;
-					ASSERT(v->is_infinity == true);
+					new_cross_edge_end = target_region->edge_below == &e ? target_region->infinity_vtx.buttom_right : target_region->infinity_vtx.top_right;
+					ASSERT(new_cross_edge_end->is_infinity == true);
 
-					v->p_connect_edge_array->push_back(&new_cross_edge);//TODO:how to delete othre unsed edge
-					new_cross_edge.orig = new_edge_start;
-					new_cross_edge.end = v;
+					new_cross_edge_end->p_connect_edge_array->push_back(&new_cross_edge);//TODO:how to delete othre unsed edge
+					new_cross_edge_start->p_connect_edge_array->push_back(&new_cross_edge);
+
+					new_cross_edge.orig = new_cross_edge_start;
+					new_cross_edge.end = new_cross_edge_end;
 					cross_edge_array.push_back(&new_cross_edge);
 				}
 				else {
@@ -564,12 +567,14 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 						}
 					}
 					ASSERT(target_region != nullptr);
-					auto& v = target_region->edge_below == &e ? target_region->infinity_vtx.buttom_left : target_region->infinity_vtx.top_left;
-					ASSERT(v->is_infinity == true);
+					new_cross_edge_end = target_region->edge_below == &e ? target_region->infinity_vtx.buttom_left : target_region->infinity_vtx.top_left;
+					ASSERT(new_cross_edge_end->is_infinity == true);
 
-					v->p_connect_edge_array->push_back(&new_cross_edge);//TODO:how to delete othre unsed edge
-					new_cross_edge.orig = new_edge_start;
-					new_cross_edge.end = v;
+					new_cross_edge_end->p_connect_edge_array->push_back(&new_cross_edge);//TODO:how to delete othre unsed edge
+					new_cross_edge_start->p_connect_edge_array->push_back(&new_cross_edge);
+
+					new_cross_edge.orig = new_cross_edge_start;
+					new_cross_edge.end = new_cross_edge_end;
 					cross_edge_array.push_back(&new_cross_edge);
 
 				}
@@ -874,19 +879,27 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 			};
 		auto is_region_connect = [&](Strip_Region* region_left, Strip_Region* region_right)->bool {
 			bool res = false;
-			if (region_left->infinity_vtx.top_right == nullptr && region_left->infinity_vtx.buttom_right == nullptr) {
-				res = true;
-			}
-			else if (region_right->infinity_vtx.top_left == nullptr && region_right->infinity_vtx.buttom_left == nullptr) {
-				res = true;
-			}
-			else if (region_left->infinity_vtx.top_right == nullptr && region_right->infinity_vtx.top_left == nullptr) {
-				res = true;
-			}
-			else if (region_left->infinity_vtx.buttom_right == nullptr && region_right->infinity_vtx.buttom_left == nullptr) {
+			if (
+				(region_left->infinity_vtx.top_right == nullptr && region_left->infinity_vtx.buttom_right == nullptr)
+				||
+				(region_right->infinity_vtx.top_left == nullptr && region_right->infinity_vtx.buttom_left == nullptr)
+				)
+			{
+				//one of region‘s both top and bottom are inf
 				res = true;
 			}
 
+			else if (
+				(region_left->infinity_vtx.top_right == nullptr && region_right->infinity_vtx.top_left == nullptr)
+				||
+				(region_left->infinity_vtx.buttom_right == nullptr && region_right->infinity_vtx.buttom_left == nullptr)
+				)
+			{
+				//both of region 's top or bottom are inf
+				res = true;
+			}
+
+			//other inf affairs
 			else if (region_left->infinity_vtx.top_right == nullptr && region_right->infinity_vtx.top_left->position.y >= region_left->infinity_vtx.buttom_right->position.y) {
 				res = true;
 			}
@@ -900,7 +913,13 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 				res = true;
 			}
 
-
+			//no inf affairs
+			else if (region_left->infinity_vtx.buttom_right->position.y <= region_right->infinity_vtx.top_left->position.y && region_left->infinity_vtx.top_right->position.y >= region_right->infinity_vtx.buttom_left->position.y) {
+				res = true;
+			}
+			else if (region_left->infinity_vtx.top_right->position.y >= region_right->infinity_vtx.buttom_left->position.y && region_left->infinity_vtx.buttom_right->position.y <= region_right->infinity_vtx.top_left->position.y) {
+				res = true;
+			}
 			return res;
 
 			};
@@ -951,14 +970,14 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 					}
 
 					//s1: inf bottom is nullptr
-					if (merge_sub_region_begin->infinity_vtx.buttom_right == nullptr && is_begin_left) {
+					if (is_begin_left && merge_sub_region_begin->infinity_vtx.buttom_right == nullptr) {
 						//put a sub region in right of range(merge_sub_region_begin..top_left.y,nullptr)
 						for (; region_index_t2 < region_size_t2; region_index_t2++) {
 							merge_region_group_right.push_back(t2->region[region_index_t2]);
 						}
 
 					}
-					else if (merge_sub_region_begin->infinity_vtx.buttom_left == nullptr && !is_begin_left)
+					else if (!is_begin_left && merge_sub_region_begin->infinity_vtx.buttom_left == nullptr)
 					{
 						for (; region_index_t1 < region_size_t1; region_index_t1++) {
 							merge_region_group_left.push_back(t1->region[region_index_t1]);
@@ -984,8 +1003,8 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 							auto res = get_connect_region(search_region, search_strip, serach_from);
 							if (res.size() > 0) {
 								bool has_find_new_region = false;
-								for (auto& res_item : res) {
-									if (std::find((*res_to_put_vector).begin(), (*res_to_put_vector).end(), res_item) != (*res_to_put_vector).end()) {
+								for (Strip_Region*& res_item : res) {
+									if (std::find((*res_to_put_vector).begin(), (*res_to_put_vector).end(), res_item) == (*res_to_put_vector).end()) {
 										(*res_to_put_vector).push_back(res_item);
 										serach_from ? region_index_t2++ : region_index_t1++;
 										has_find_new_region = true;
@@ -1029,8 +1048,8 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 
 		}
 
-		//delete(t1);
-		//delete(t2);
+		delete(t1);
+		delete(t2);
 		return new_strip;
 		};
 
