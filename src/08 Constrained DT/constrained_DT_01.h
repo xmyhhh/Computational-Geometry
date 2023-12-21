@@ -154,19 +154,24 @@ namespace CDT_01_datastruct {
 		Edge* edge_below = nullptr;
 		Edge* edge_above = nullptr;
 		std::vector<Edge*>* p_connect_edge_array;
+		//struct Strip_Region* p_connect_region_array[2];//if the vtx is a infinity-vtx, then it may has one or two connect region
+		struct Strip_Region* inside_region;//the region belong to
 
-		struct Strip_Region* region;//the region belong to
+		Vertex() {
+			p_connect_edge_array = new std::vector<Edge*>();
+		}
+		~Vertex() {
+			delete(p_connect_edge_array);
+		}
 	};
 
 	struct Strip_Region {
 		bool empty = true;
 
-		double region_left_x = -1;
-		double region_right_x = -1;
-
 		Edge* edge_below = nullptr;
 		Edge* edge_above = nullptr;
 		std::vector<Vertex*> vertex_array;
+		std::vector<Vertex*> temp_vertex_array;
 		std::vector<Edge> edge_array;
 		struct Strip* strip;
 
@@ -180,6 +185,9 @@ namespace CDT_01_datastruct {
 
 	struct Strip {
 		std::vector<Strip_Region*> region;
+
+		double region_left_x = -1;
+		double region_right_x = -1;
 	};
 
 	struct CDT
@@ -192,7 +200,10 @@ namespace CDT_01_datastruct {
 }
 
 void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
-	//CDT from Chew's alg
+	//CDT from L.P. Chew's alg
+	//Chew's alg require at least one Constrained edge
+	ASSERT(plsg.boundary_array.size() != 0);
+
 	using namespace CDT_01_datastruct;
 
 	//Step 1: sort vertex
@@ -211,11 +222,11 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 		p->position = vtx;
 		p->is_infinity = false;
 		p->p_connect_edge_array = new std::vector<Edge*>();
-		p->region = nullptr;
+		p->inside_region = nullptr;
 	}
 
 	//Step 3: add predefine edge
-	std::vector<CDT_01_datastruct::Edge> edge_array;
+	std::vector<CDT_01_datastruct::Edge> constrained_edge_array;
 	for (int i = 0; i < plsg.boundary_array.size(); i++) {
 		for (int j = 0; j < plsg.boundary_array[i].point_array.size(); j++) {
 			cv::Point2d start;
@@ -232,8 +243,8 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 				std::swap(start, end);
 			}
 
-			edge_array.push_back({});
-			CDT_01_datastruct::Edge& edge = edge_array[edge_array.size() - 1];
+			constrained_edge_array.push_back({});
+			CDT_01_datastruct::Edge& edge = constrained_edge_array[constrained_edge_array.size() - 1];
 
 			//find index in pool
 			cdt.vertex_pool.traversalInit();
@@ -278,7 +289,7 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 		line_x_current = next->position.x;
 
 		//update event
-		for (auto& e : edge_array) {
+		for (auto& e : constrained_edge_array) {
 			if (e.orig->position.x > line_x_last && e.orig->position.x <= line_x_current) {
 				event_queue.push_back(&e);
 			}
@@ -338,11 +349,13 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 
 	int a = 0;
 
-	auto strip_region_group_merge = [&](std::vector<Strip_Region*> left_merge_region_group, std::vector<Strip_Region*>right_merge_region_group, bool is_begin_left, bool is_end_left)->Strip_Region* {
-
+	auto strip_region_group_merge = [&](std::vector<Strip_Region*> left_merge_region_group, Strip* strip_left, std::vector<Strip_Region*>right_merge_region_group, Strip* strip_right, bool is_begin_left, bool is_end_left)->Strip_Region* {
+		ASSERT(strip_left->region_right_x == strip_right->region_left_x);
+		ASSERT(strip_left->region_right_x != -1);
 		Strip_Region* new_region = new Strip_Region();
 		bool left_group_empty = left_merge_region_group.size() == 0;
 		bool right_group_empty = right_merge_region_group.size() == 0;
+		//Step 1
 		//combine vtx
 		{
 			for (auto& r : left_merge_region_group) {
@@ -358,27 +371,456 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 			}
 		}
 
+		//cal infinity vtx
 		{
-			//cal infinity vtx
 			//top
 			{
 				if (is_begin_left) {
+					//top-left
 					new_region->infinity_vtx.top_left = left_merge_region_group[0]->infinity_vtx.top_left;
-					if (!right_group_empty && left_merge_region_group[0]->edge_above == right_merge_region_group[0]->edge_above) {
+
+					//top-right
+					if (strip_right->region_right_x == -1) {
+						new_region->infinity_vtx.top_right = nullptr;
+					}
+					else if (!right_group_empty && left_merge_region_group[0]->edge_above == right_merge_region_group[0]->edge_above) {
 						//may share same edge
 						new_region->infinity_vtx.top_right = right_merge_region_group[0]->infinity_vtx.top_right;
 					}
 					else if (left_merge_region_group[0]->edge_above != nullptr) {
-						//TODO make new inf
-						int aaaa = 0;
-						//auto res = LineIntersectionCalulate();
+						//do intersection
+						base_type::IntersectionResult res = LineIntersectionCalulate(
+							{ {strip_right->region_right_x,-1000} ,{strip_right->region_right_x,1000} }
+							,
+							{ {left_merge_region_group[0]->edge_above->orig->position} ,{left_merge_region_group[0]->edge_above->end->position} }
+						);
+						new_region->infinity_vtx.top_right = new Vertex();
+						new_region->infinity_vtx.top_right->position = res.intersectionPoint;
+						new_region->infinity_vtx.top_right->is_infinity = true;
 					}
 				}
 				else {
+					//top-right
 					new_region->infinity_vtx.top_right = right_merge_region_group[0]->infinity_vtx.top_right;
 
+					//top-left
+					if (strip_right->region_left_x == -1) {
+						new_region->infinity_vtx.top_left = nullptr;
+					}
+					else if (!left_group_empty && right_merge_region_group[0]->edge_above == left_merge_region_group[0]->edge_above) {
+						//may share same edge
+						new_region->infinity_vtx.top_left = left_merge_region_group[0]->infinity_vtx.top_left;
+					}
+					else if (right_merge_region_group[0]->edge_above != nullptr) {
+						//do intersection
+						base_type::IntersectionResult res = LineIntersectionCalulate(
+							{ {strip_left->region_left_x,-1000} ,{strip_right->region_left_x,1000} }
+							,
+							{ {right_merge_region_group[0]->edge_above->orig->position} ,{right_merge_region_group[0]->edge_above->end->position} }
+						);
+						new_region->infinity_vtx.top_left = new Vertex();
+						new_region->infinity_vtx.top_left->position = res.intersectionPoint;
+						new_region->infinity_vtx.top_left->is_infinity = true;
+					}
 				}
 
+			}
+
+			//down
+			{
+				if (is_end_left) {
+					//buttom-left
+					new_region->infinity_vtx.buttom_left = left_merge_region_group[0]->infinity_vtx.buttom_left;
+
+					//buttom-right
+					if (strip_right->region_right_x == -1) {
+						new_region->infinity_vtx.buttom_right = nullptr;
+					}
+					else if (!right_group_empty && left_merge_region_group[0]->edge_below == right_merge_region_group[0]->edge_below) {
+						//may share same edge
+						new_region->infinity_vtx.buttom_right = right_merge_region_group[0]->infinity_vtx.buttom_right;
+					}
+					else if (left_merge_region_group[0]->edge_below != nullptr) {
+						//do intersection
+						base_type::IntersectionResult res = LineIntersectionCalulate(
+							{ {strip_right->region_right_x,-1000} ,{strip_right->region_right_x,1000} }
+							,
+							{ {left_merge_region_group[0]->edge_below->orig->position} ,{left_merge_region_group[0]->edge_below->end->position} }
+						);
+						new_region->infinity_vtx.buttom_right = new Vertex();
+						new_region->infinity_vtx.buttom_right->position = res.intersectionPoint;
+						new_region->infinity_vtx.buttom_right->is_infinity = true;
+					}
+				}
+				else {
+					//buttom-right
+					new_region->infinity_vtx.buttom_right = right_merge_region_group[0]->infinity_vtx.buttom_right;
+
+					//buttom-left
+					if (strip_right->region_left_x == -1) {
+						new_region->infinity_vtx.buttom_left = nullptr;
+					}
+					else if (!left_group_empty && right_merge_region_group[0]->edge_below == left_merge_region_group[0]->edge_below) {
+						//may share same edge
+						new_region->infinity_vtx.buttom_left = left_merge_region_group[0]->infinity_vtx.buttom_left;
+					}
+					else if (right_merge_region_group[0]->edge_below != nullptr) {
+						//do intersection
+						base_type::IntersectionResult res = LineIntersectionCalulate(
+							{ {strip_left->region_left_x,-1000} ,{strip_right->region_left_x,1000} }
+							,
+							{ {right_merge_region_group[0]->edge_below->orig->position} ,{right_merge_region_group[0]->edge_below->end->position} }
+						);
+						new_region->infinity_vtx.buttom_left = new Vertex();
+						new_region->infinity_vtx.buttom_left->position = res.intersectionPoint;
+						new_region->infinity_vtx.buttom_left->is_infinity = true;
+					}
+				}
+
+			}
+		}
+
+		//copy edge
+		{
+			auto is_infinity_edge = [](Edge* e) ->bool {return e->end->is_infinity || e->orig->is_infinity; };
+
+			for (auto& r : left_merge_region_group) {
+				for (auto& e : r->edge_array) {
+					if (!is_infinity_edge(&e))
+						new_region->edge_array.push_back(e);
+				}
+			}
+
+			for (auto& r : right_merge_region_group) {
+				for (auto& e : r->edge_array) {
+					if (!is_infinity_edge(&e))
+						new_region->edge_array.push_back(e);
+				}
+			}
+		}
+
+		auto is_vtx_in_vtx_array = [](Vertex* vtx, std::vector<Vertex*> vtx_array) {
+			return std::find(vtx_array.begin(), vtx_array.end(), vtx) != vtx_array.end();
+			};
+		auto is_edge_cross = [](double x, Edge* e)->bool {return (e->end->position.x<x && e->orig->position.x>x) || (e->end->position.x > x && e->orig->position.x < x); };
+
+		//add edges that cross the boundary between the two strips
+		std::vector<Edge*> cross_edge_array;
+		for (Edge& e : constrained_edge_array) {
+
+			if (is_vtx_in_vtx_array(e.end, new_region->vertex_array) && is_vtx_in_vtx_array(e.orig, new_region->vertex_array)) {
+				new_region->temp_vertex_array.push_back({});
+				auto new_cross_edge = new_region->edge_array[new_region->edge_array.size() - 1];
+				new_cross_edge.orig = e.orig;
+				new_cross_edge.end = e.end;
+			}
+
+			else if ((is_vtx_in_vtx_array(e.end, new_region->vertex_array) || is_vtx_in_vtx_array(e.orig, new_region->vertex_array)) && is_edge_cross(strip_left->region_right_x, &e)) {
+				//find new edge start
+				Vertex* new_edge_start;
+				{
+					if (is_vtx_in_vtx_array(e.end, new_region->vertex_array))
+					{
+						new_edge_start = e.end;
+
+					}
+					else
+					{
+						new_edge_start = e.orig;
+					}
+				}
+
+				//find new_edge end
+				new_region->edge_array.push_back({});
+				auto new_cross_edge = new_region->edge_array[new_region->edge_array.size() - 1];
+
+				if (new_edge_start->position.x < strip_left->region_right_x) {
+					//there is already one vtx can be use, must be one of inf vtx 
+					ASSERT(strip_right->region_right_x != -1 && (e.orig->position.x > strip_right->region_right_x || e.end->position.x > strip_right->region_right_x));
+					Strip_Region* target_region = nullptr;
+					for (auto& r : right_merge_region_group) {
+						if (r->edge_above == &e || r->edge_below == &e) {
+							target_region = r;
+							break;
+						}
+					}
+					ASSERT(target_region != nullptr);
+					auto& v = target_region->edge_below == &e ? target_region->infinity_vtx.buttom_right : target_region->infinity_vtx.top_right;
+					ASSERT(v->is_infinity == true);
+
+					v->p_connect_edge_array->push_back(&new_cross_edge);//TODO:how to delete othre unsed edge
+					new_cross_edge.orig = new_edge_start;
+					new_cross_edge.end = v;
+					cross_edge_array.push_back(&new_cross_edge);
+				}
+				else {
+					//there is already one vtx can be use, must be one of inf vtx 
+					ASSERT(strip_left->region_left_x != -1 && (e.orig->position.x > strip_left->region_left_x || e.end->position.x > strip_left->region_left_x));
+					Strip_Region* target_region = nullptr;
+					for (auto& r : right_merge_region_group) {
+						if (r->edge_above == &e || r->edge_below == &e) {
+							target_region = r;
+							break;
+						}
+					}
+					ASSERT(target_region != nullptr);
+					auto& v = target_region->edge_below == &e ? target_region->infinity_vtx.buttom_left : target_region->infinity_vtx.top_left;
+					ASSERT(v->is_infinity == true);
+
+					v->p_connect_edge_array->push_back(&new_cross_edge);//TODO:how to delete othre unsed edge
+					new_cross_edge.orig = new_edge_start;
+					new_cross_edge.end = v;
+					cross_edge_array.push_back(&new_cross_edge);
+
+				}
+			}
+		}
+
+		//Step 2
+		for (auto& cross_edge : cross_edge_array) {
+			Vertex* A = cross_edge->orig;
+			Vertex* B = cross_edge->end;
+			while (true) {
+				//1) Eliminate A - edges that can be shown to be illegal because of their interaction with B;
+				auto eliminate_illegal_egde = [](std::vector<Edge*>& edge_array, std::vector<Vertex*> check_vtx, Vertex* interaction_vtx) {
+					auto it = edge_array.begin();
+					while (it != edge_array.end()) {
+						bool is_illegal = false;
+						auto edge = *it;
+						cv::Point2d center;
+						double radius;
+
+						CalculateBoundingCircle<cv::Point2d>(edge->orig->position, edge->end->position, interaction_vtx->position, center, radius);
+						double radius2 = radius * radius;
+						for (auto vtx : check_vtx) {
+							if (vtx == edge->orig || vtx == edge->end || interaction_vtx)
+								continue;
+
+							if (VectorLengthSqr(vtx->position, center) < radius2) {
+								is_illegal = true;
+								break;
+							}
+						}
+						if (is_illegal) {
+							it = edge_array.erase(it);
+						}
+						else {
+							it++;
+						}
+					}
+
+					};
+
+				eliminate_illegal_egde(*(A->p_connect_edge_array), new_region->vertex_array, B);
+
+				//2) Eliminate B - edges that can be shown to be illegal because of their interaction with A;
+				eliminate_illegal_egde(*(B->p_connect_edge_array), new_region->vertex_array, A);
+
+				//3) Let C be a candidate where AC is the next edge counterclockwise around A from AB(if such an edge exists);
+				auto find_next_edge_ccw = [](Edge* edge, std::vector<Edge*> edge_array)->Edge* {
+					ASSERT(edge_array.size() != 0);
+
+					//get rid of self
+					std::vector<Edge*> edge_array_copy(edge_array.begin(), edge_array.end());
+					{
+						auto t = std::find(edge_array_copy.begin(), edge_array_copy.end(), edge);
+						if (t != edge_array_copy.end()) {
+							edge_array_copy.erase(t);
+						}
+					}
+
+					if (edge_array_copy.size() == 0)
+						return nullptr;
+
+					if (edge_array_copy.size() == 1)
+						return edge_array_copy[0];
+
+					Vertex* common_vtx;
+					Vertex* non_common_vtx;
+					if (edge->end == edge_array_copy[0]->orig || edge->end == edge_array_copy[0]->end)
+					{
+						common_vtx = edge->end;
+						non_common_vtx = edge->orig;
+					}
+					else
+					{
+						non_common_vtx = edge->orig;
+						common_vtx = edge->end;
+					}
+
+					Edge* return_val = nullptr;
+
+					bool is_next_edge_at_left = false;
+					for (int i = 0; i < edge_array_copy.size(); i++) {
+						auto& ei = edge_array_copy[i];
+						ASSERT(ei->orig == common_vtx || ei->end == common_vtx);
+						auto ei_non_common_vtx = ei->orig != common_vtx ? ei->orig : ei->end;
+						if (ToLeft(common_vtx->position, non_common_vtx->position,/*<*/ ei_non_common_vtx->position)) {
+							is_next_edge_at_left = true;
+							return_val = ei;
+							break;
+						}
+
+					}
+
+					if (is_next_edge_at_left) {
+						for (int i = 0; i < edge_array_copy.size(); i++) {
+							auto& ei = edge_array_copy[i];
+							ASSERT(ei->orig == common_vtx || ei->end == common_vtx);
+							auto ei_non_common_vtx = ei->orig != common_vtx ? ei->orig : ei->end;
+							if (ToLeft(common_vtx->position, non_common_vtx->position, ei_non_common_vtx->position)) {
+								if (ToLeft(common_vtx->position, ei_non_common_vtx->position, return_val->orig != common_vtx ? return_val->orig->position : return_val->end->position)) {
+									return_val = ei;
+								}
+							}
+
+						}
+					}
+					else {
+						for (int i = 0; i < edge_array_copy.size(); i++) {
+							auto& ei = edge_array_copy[i];
+							ASSERT(ei->orig == common_vtx || ei->end == common_vtx);
+							auto ei_non_common_vtx = ei->orig != common_vtx ? ei->orig : ei->end;
+							if (!ToLeft(common_vtx->position, non_common_vtx->position, ei_non_common_vtx->position)) {
+								if (!ToLeft(common_vtx->position, ei_non_common_vtx->position, return_val->orig != common_vtx ? return_val->orig->position : return_val->end->position)) {
+									return_val = ei;
+								}
+							}
+
+						}
+					}
+					return return_val;
+					};
+				auto find_next_edge_cw = [](Edge* edge, std::vector<Edge*> edge_array)->Edge* {
+					ASSERT(edge_array.size() != 0);
+
+					//get rid of self
+					std::vector<Edge*> edge_array_copy(edge_array.begin(), edge_array.end());
+					{
+						auto t = std::find(edge_array_copy.begin(), edge_array_copy.end(), edge);
+						if (t != edge_array_copy.end()) {
+							edge_array_copy.erase(t);
+						}
+					}
+
+					if (edge_array_copy.size() == 0)
+						return nullptr;
+
+					if (edge_array_copy.size() == 1)
+						return edge_array_copy[0];
+
+					Vertex* common_vtx;
+					Vertex* non_common_vtx;
+					if (edge->end == edge_array_copy[0]->orig || edge->end == edge_array_copy[0]->end)
+					{
+						common_vtx = edge->end;
+						non_common_vtx = edge->orig;
+					}
+					else
+					{
+						non_common_vtx = edge->orig;
+						common_vtx = edge->end;
+					}
+
+					Edge* return_val = nullptr;
+
+					bool is_next_edge_at_right = false;
+					for (int i = 0; i < edge_array_copy.size(); i++) {
+						auto& ei = edge_array_copy[i];
+						ASSERT(ei->orig == common_vtx || ei->end == common_vtx);
+						auto ei_non_common_vtx = ei->orig != common_vtx ? ei->orig : ei->end;
+						if (!ToLeft(common_vtx->position, non_common_vtx->position,/*<*/ ei_non_common_vtx->position)) {
+							is_next_edge_at_right = true;
+							return_val = ei;
+							break;
+						}
+
+					}
+
+					if (is_next_edge_at_right) {
+						for (int i = 0; i < edge_array_copy.size(); i++) {
+							auto& ei = edge_array_copy[i];
+							ASSERT(ei->orig == common_vtx || ei->end == common_vtx);
+							auto ei_non_common_vtx = ei->orig != common_vtx ? ei->orig : ei->end;
+							if (!ToLeft(common_vtx->position, non_common_vtx->position, ei_non_common_vtx->position)) {
+								if (ToLeft(common_vtx->position, ei_non_common_vtx->position, return_val->orig != common_vtx ? return_val->orig->position : return_val->end->position)) {
+									return_val = ei;
+								}
+							}
+
+						}
+					}
+					else {
+						for (int i = 0; i < edge_array_copy.size(); i++) {
+							auto& ei = edge_array_copy[i];
+							ASSERT(ei->orig == common_vtx || ei->end == common_vtx);
+							auto ei_non_common_vtx = ei->orig != common_vtx ? ei->orig : ei->end;
+							if (ToLeft(common_vtx->position, non_common_vtx->position, ei_non_common_vtx->position)) {
+								if (!ToLeft(common_vtx->position, ei_non_common_vtx->position, return_val->orig != common_vtx ? return_val->orig->position : return_val->end->position)) {
+									return_val = ei;
+								}
+							}
+
+						}
+					}
+					return return_val;
+					};
+				Vertex* C = nullptr;
+				Edge* AC = find_next_edge_ccw(cross_edge, *(A->p_connect_edge_array));
+				if (AC != nullptr) {
+					C = AC->end != A ? AC->end : AC->orig;
+				}
+				//4) Let D be a candidate where BD is the next edge  clockwise around B from BA(if such an edge exists) :
+				Vertex* D = nullptr;
+				Edge* BD = find_next_edge_ccw(cross_edge, *(B->p_connect_edge_array));
+				if (BD != nullptr) {
+					D = BD->end != B ? BD->end : BD->orig;
+				}
+
+				//break if no candidates exist;
+				if (C == nullptr && D == nullptr) {
+					break;
+				}
+				//5) Let X be the candidate that correspcnds to the lower of circles ABC and ABD;
+				Vertex* X = nullptr;
+				if (C == nullptr) {
+					X = D;
+				}
+				else if (D == nullptr)
+				{
+					X = C;
+				}
+				else
+				{
+					cv::Point2d ABC_center;
+					double ABC_radius;
+					CalculateBoundingCircle<cv::Point2d>(A->position, B->position, C->position, ABC_center, ABC_radius);
+
+					cv::Point2d ABD_center;
+					double ABD_radius;
+					CalculateBoundingCircle<cv::Point2d>(A->position, B->position, D->position, ABD_center, ABD_radius);
+
+					if (ABC_center.y < ABD_center.y) {
+						X = C;
+					}
+					else
+					{
+						X = D;
+					}
+				}
+				//6)Add edge AX or BX as appropriate and call this new edge AB;
+				new_region->edge_array.push_back({});
+				Edge* new_edge = &new_region->edge_array[new_region->edge_array.size() - 1];
+				if (X = C) {
+					new_edge->orig = B;
+					new_edge->end = X;
+				}
+				else {
+					new_edge->orig = A;
+					new_edge->end = X;
+				}
+				A = new_edge->orig;
+				B = new_edge->end;
 			}
 
 		}
@@ -578,7 +1020,7 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 					is_end_left = left_buttom_lower(merge_region_group_left[merge_region_group_left.size() - 1], merge_region_group_right[merge_region_group_right.size() - 1]);
 				}
 
-				auto new_region = strip_region_group_merge(merge_region_group_left, merge_region_group_right, is_begin_left, is_end_left);
+				auto new_region = strip_region_group_merge(merge_region_group_left, t1, merge_region_group_right, t2, is_begin_left, is_end_left);
 				new_strip->region.push_back(new_region);
 			}
 
@@ -618,8 +1060,8 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 			region->empty = false;
 			region->vertex_array.push_back(vtx);
 			region->strip = strip;
-			vtx->region = region;
-
+			vtx->inside_region = region;
+			vtx->p_connect_edge_array = new std::vector<Edge*>();
 			//calculate region infinity point
 			if (index_begin != 0 && index_begin != cdt.vertex_pool.items - 1) {
 
@@ -629,15 +1071,16 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 				double region_x_left = vtx_left->position.x + (vtx->position.x - vtx_left->position.x) / 2;
 				double region_x_right = vtx->position.x + (vtx_right->position.x - vtx->position.x) / 2;
 
-				region->region_left_x = region_x_left;
-				region->region_right_x = region_x_right;
+				strip->region_left_x = region_x_left;
+				strip->region_right_x = region_x_right;
 
 				if (vtx->edge_above != nullptr) {
+					region->edge_above = vtx->edge_above;
 					//top-left
 					{
-						if (vtx_left->edge_above == vtx->edge_above && vtx_left->region != nullptr && vtx_left->region->infinity_vtx.top_right != nullptr) {
+						if (vtx_left->edge_above == vtx->edge_above && vtx_left->inside_region != nullptr && vtx_left->inside_region->infinity_vtx.top_right != nullptr) {
 							//if they share the same above edge, then vtx_left's top-right infinity is vtx's top-left infinity
-							region->infinity_vtx.top_left = vtx_left->region->infinity_vtx.top_right;
+							region->infinity_vtx.top_left = vtx_left->inside_region->infinity_vtx.top_right;
 						}
 						else {
 							//intersection test and make infinity
@@ -648,14 +1091,85 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 							);
 							region->infinity_vtx.top_left = new Vertex();
 							region->infinity_vtx.top_left->is_infinity = true;
+
 							region->infinity_vtx.top_left->position = res.intersectionPoint;
 						}
 					}
 
 					//top-right
 					{
-						if (vtx_right->edge_above == vtx->edge_above && vtx_right->region != nullptr && vtx_right->region->infinity_vtx.top_left != nullptr) {
-							region->infinity_vtx.top_right = vtx_right->region->infinity_vtx.top_left;
+						if (vtx_right->edge_above == vtx->edge_above && vtx_right->inside_region != nullptr && vtx_right->inside_region->infinity_vtx.top_left != nullptr) {
+							region->infinity_vtx.top_right = vtx_right->inside_region->infinity_vtx.top_left;
+						}
+						else {
+							//intersection test and make infinity
+							base_type::IntersectionResult res = LineIntersectionCalulate(
+								{ {region_x_right,-1000} ,{region_x_right,1000} }
+								,
+								{ {vtx->edge_above->orig->position} ,{vtx->edge_above->end->position} }
+							);
+							region->infinity_vtx.top_right = new Vertex();
+							region->infinity_vtx.top_right->is_infinity = true;
+
+							region->infinity_vtx.top_right->position = res.intersectionPoint;
+						}
+					}
+
+				}
+				if (vtx->edge_below != nullptr) {
+					region->edge_below = vtx->edge_below;
+					//buttom-left
+					{
+						if (vtx_left->edge_below == vtx->edge_below && vtx_left->inside_region != nullptr && vtx_left->inside_region->infinity_vtx.buttom_right != nullptr) {
+							region->infinity_vtx.buttom_left = vtx_left->inside_region->infinity_vtx.buttom_right;
+						}
+						else {
+							//intersection test and make infinity
+							base_type::IntersectionResult res = LineIntersectionCalulate(
+								{ {region_x_left,-1000} ,{region_x_left,1000} }
+								,
+								{ {vtx->edge_below->orig->position} ,{vtx->edge_below->end->position} }
+							);
+							region->infinity_vtx.buttom_left = new Vertex();
+							region->infinity_vtx.buttom_left->is_infinity = true;
+
+							region->infinity_vtx.buttom_left->position = res.intersectionPoint;
+						}
+					}
+
+					//buttom-right
+					{
+						if (vtx_right->edge_below == vtx->edge_below && vtx_right->inside_region != nullptr && vtx_right->inside_region->infinity_vtx.buttom_left != nullptr) {
+							region->infinity_vtx.buttom_right = vtx_right->inside_region->infinity_vtx.buttom_left;
+						}
+						else {
+							//intersection test and make infinity
+							base_type::IntersectionResult res = LineIntersectionCalulate(
+								{ {region_x_right,-1000} ,{region_x_right,1000} }
+								,
+								{ {vtx->edge_below->orig->position} ,{vtx->edge_below->end->position} }
+							);
+							region->infinity_vtx.buttom_right = new Vertex();
+							region->infinity_vtx.buttom_right->is_infinity = true;
+							region->infinity_vtx.buttom_right->position = res.intersectionPoint;
+						}
+					}
+				}
+
+			}
+
+			else if (index_begin == 0) {
+				auto vtx_right = (Vertex*)cdt.vertex_pool[index_begin + 1];
+				double region_x_right = vtx->position.x + (vtx_right->position.x - vtx->position.x) / 2;
+				strip->region_right_x = region_x_right;
+
+				if (vtx->edge_above != nullptr) {
+
+
+					//top-right
+					{
+						if (vtx_right->edge_above == vtx->edge_above && vtx_right->inside_region != nullptr && vtx_right->inside_region->infinity_vtx.top_left != nullptr) {
+							region->infinity_vtx.top_right = vtx_right->inside_region->infinity_vtx.top_left;
 						}
 						else {
 							//intersection test and make infinity
@@ -672,28 +1186,11 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 
 				}
 				if (vtx->edge_below != nullptr) {
-					//buttom-left
-					{
-						if (vtx_left->edge_below == vtx->edge_below && vtx_left->region != nullptr && vtx_left->region->infinity_vtx.buttom_right != nullptr) {
-							region->infinity_vtx.buttom_left = vtx_left->region->infinity_vtx.buttom_right;
-						}
-						else {
-							//intersection test and make infinity
-							base_type::IntersectionResult res = LineIntersectionCalulate(
-								{ {region_x_left,-1000} ,{region_x_left,1000} }
-								,
-								{ {vtx->edge_below->orig->position} ,{vtx->edge_below->end->position} }
-							);
-							region->infinity_vtx.buttom_left = new Vertex();
-							region->infinity_vtx.buttom_left->is_infinity = true;
-							region->infinity_vtx.buttom_left->position = res.intersectionPoint;
-						}
-					}
 
 					//buttom-right
 					{
-						if (vtx_right->edge_below == vtx->edge_below && vtx_right->region != nullptr && vtx_right->region->infinity_vtx.buttom_left != nullptr) {
-							region->infinity_vtx.buttom_right = vtx_right->region->infinity_vtx.buttom_left;
+						if (vtx_right->edge_below == vtx->edge_below && vtx_right->inside_region != nullptr && vtx_right->inside_region->infinity_vtx.buttom_left != nullptr) {
+							region->infinity_vtx.buttom_right = vtx_right->inside_region->infinity_vtx.buttom_left;
 						}
 						else {
 							//intersection test and make infinity
@@ -708,7 +1205,53 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 						}
 					}
 				}
-				int aaa = 0;
+
+			}
+			else {
+				ASSERT(index_begin == cdt.vertex_pool.items - 1);
+				auto vtx_left = (Vertex*)cdt.vertex_pool[index_begin - 1];
+				double region_x_left = vtx_left->position.x + (vtx->position.x - vtx_left->position.x) / 2;
+				strip->region_left_x = region_x_left;
+
+				if (vtx->edge_above != nullptr) {
+					//top-left
+					{
+						if (vtx_left->edge_above == vtx->edge_above && vtx_left->inside_region != nullptr && vtx_left->inside_region->infinity_vtx.top_right != nullptr) {
+							//if they share the same above edge, then vtx_left's top-right infinity is vtx's top-left infinity
+							region->infinity_vtx.top_left = vtx_left->inside_region->infinity_vtx.top_right;
+						}
+						else {
+							//intersection test and make infinity
+							base_type::IntersectionResult res = LineIntersectionCalulate(
+								{ {region_x_left,-1000} ,{region_x_left,1000} }
+								,
+								{ {vtx->edge_above->orig->position} ,{vtx->edge_above->end->position} }
+							);
+							region->infinity_vtx.top_left = new Vertex();
+							region->infinity_vtx.top_left->is_infinity = true;
+							region->infinity_vtx.top_left->position = res.intersectionPoint;
+						}
+					}
+				}
+				if (vtx->edge_below != nullptr) {
+					//buttom-left
+					{
+						if (vtx_left->edge_below == vtx->edge_below && vtx_left->inside_region != nullptr && vtx_left->inside_region->infinity_vtx.buttom_right != nullptr) {
+							region->infinity_vtx.buttom_left = vtx_left->inside_region->infinity_vtx.buttom_right;
+						}
+						else {
+							//intersection test and make infinity
+							base_type::IntersectionResult res = LineIntersectionCalulate(
+								{ {region_x_left,-1000} ,{region_x_left,1000} }
+								,
+								{ {vtx->edge_below->orig->position} ,{vtx->edge_below->end->position} }
+							);
+							region->infinity_vtx.buttom_left = new Vertex();
+							region->infinity_vtx.buttom_left->is_infinity = true;
+							region->infinity_vtx.buttom_left->position = res.intersectionPoint;
+						}
+					}
+				}
 			}
 
 			return strip;

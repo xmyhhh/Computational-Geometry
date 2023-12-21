@@ -87,7 +87,6 @@ void ConvexHull_04(std::vector<cv::Point>& all_dots, std::vector<int>& extreme_d
 				all_dots[j] = p;
 			}
 		}
-
 	}
 	for (int i = all_dots.size() - 1; i >= 2; i--) {
 		T.Push(i);

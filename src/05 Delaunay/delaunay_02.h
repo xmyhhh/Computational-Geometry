@@ -94,7 +94,7 @@ void Delaunay_02(std::vector<cv::Point>& all_point, delaunay_02_datastruct::BW_D
 			n_simplices_bounding_circle_cal(bw_dt_struct.n_simplices_list[0]);
 		}
 
-
+		
 		bw_dt_struct.all_point.push_back(insert_vertex_position);
 		int insert_vertex_index = bw_dt_struct.all_point.size() - 1;
 

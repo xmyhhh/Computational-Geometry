@@ -36,7 +36,7 @@ file(GLOB_RECURSE  SOURCE_FILES
 )
 
 file(GLOB_RECURSE  IMGUI_SOURCE_FILES 
-	${PROJECT_SOURCE_DIR}/third/imgui/*.cpp
+	${PROJECT_SOURCE_DIR}/third/imgui/*.cpp 
 )
 
 add_executable(MAIN ${SOURCE_FILES} ${IMGUI_SOURCE_FILES})
