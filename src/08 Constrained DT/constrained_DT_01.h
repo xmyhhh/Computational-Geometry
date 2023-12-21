@@ -154,7 +154,7 @@ namespace CDT_01_datastruct {
 		Edge* edge_below = nullptr;
 		Edge* edge_above = nullptr;
 		std::vector<Edge*>* p_connect_edge_array;
-		//struct Strip_Region* p_connect_region_array[2];//if the vtx is a infinity-vtx, then it may has one or two connect region
+
 		struct Strip_Region* inside_region;//the region belong to
 
 		Vertex() {
@@ -171,8 +171,7 @@ namespace CDT_01_datastruct {
 		Edge* edge_below = nullptr;
 		Edge* edge_above = nullptr;
 		std::vector<Vertex*> vertex_array;
-		std::vector<Vertex*> temp_vertex_array;
-		std::vector<Edge> edge_array;
+		std::vector<Edge*> edge_array;
 		struct Strip* strip;
 
 		struct {
@@ -267,7 +266,7 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 					cea->push_back(&edge);
 					find_start = true;
 				}
-				if (((Vertex*)next)->position == end) {
+				else if (((Vertex*)next)->position == end) {
 					edge.end = (Vertex*)next;
 					cea->push_back(&edge);
 					find_end = true;
@@ -356,7 +355,7 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 		bool left_group_empty = left_merge_region_group.size() == 0;
 		bool right_group_empty = right_merge_region_group.size() == 0;
 		//Step 1
-		//combine vtx
+		//combine vtxnew_region
 		{
 			for (auto& r : left_merge_region_group) {
 				for (auto& vtx : r->vertex_array) {
@@ -486,14 +485,14 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 
 			for (auto& r : left_merge_region_group) {
 				for (auto& e : r->edge_array) {
-					if (!is_infinity_edge(&e))
+					if (!is_infinity_edge(e))
 						new_region->edge_array.push_back(e);
 				}
 			}
 
 			for (auto& r : right_merge_region_group) {
 				for (auto& e : r->edge_array) {
-					if (!is_infinity_edge(&e))
+					if (!is_infinity_edge(e))
 						new_region->edge_array.push_back(e);
 				}
 			}
@@ -507,12 +506,12 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 		//add edges that cross the boundary between the two strips
 		std::vector<Edge*> cross_edge_array;
 		for (Edge& e : constrained_edge_array) {
-
+			//TODO:delete edge unsed(may have)
 			if (is_vtx_in_vtx_array(e.end, new_region->vertex_array) && is_vtx_in_vtx_array(e.orig, new_region->vertex_array)) {
-				new_region->temp_vertex_array.push_back({});
-				auto new_cross_edge = new_region->edge_array[new_region->edge_array.size() - 1];
-				new_cross_edge.orig = e.orig;
-				new_cross_edge.end = e.end;
+				new_region->edge_array.push_back(&e);
+				cross_edge_array.push_back(&e);
+				ASSERT(e.orig->p_connect_edge_array->size() != 0);
+				ASSERT(e.end->p_connect_edge_array->size() != 0);
 			}
 
 			else if ((is_vtx_in_vtx_array(e.end, new_region->vertex_array) || is_vtx_in_vtx_array(e.orig, new_region->vertex_array)) && is_edge_cross(strip_left->region_right_x, &e)) {
@@ -532,8 +531,8 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 				}
 
 				//find new_edge end
-				new_region->edge_array.push_back({});
-				auto new_cross_edge = new_region->edge_array[new_region->edge_array.size() - 1];
+				new_region->edge_array.push_back(new Edge());
+				auto& new_cross_edge = new_region->edge_array[new_region->edge_array.size() - 1];
 
 				if (new_cross_edge_start->position.x < strip_left->region_right_x) {
 					//there is already one vtx can be use, must be one of inf vtx 
@@ -549,18 +548,17 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 					new_cross_edge_end = target_region->edge_below == &e ? target_region->infinity_vtx.buttom_right : target_region->infinity_vtx.top_right;
 					ASSERT(new_cross_edge_end->is_infinity == true);
 
-					new_cross_edge_end->p_connect_edge_array->push_back(&new_cross_edge);//TODO:how to delete othre unsed edge
-					new_cross_edge_start->p_connect_edge_array->push_back(&new_cross_edge);
+					new_cross_edge_end->p_connect_edge_array->push_back(new_cross_edge);//TODO:how to delete othre unsed edge
+					new_cross_edge_start->p_connect_edge_array->push_back(new_cross_edge);
 
-					new_cross_edge.orig = new_cross_edge_start;
-					new_cross_edge.end = new_cross_edge_end;
-					cross_edge_array.push_back(&new_cross_edge);
+					new_cross_edge->orig = new_cross_edge_start;
+					new_cross_edge->end = new_cross_edge_end;
 				}
 				else {
 					//there is already one vtx can be use, must be one of inf vtx 
 					ASSERT(strip_left->region_left_x != -1 && (e.orig->position.x > strip_left->region_left_x || e.end->position.x > strip_left->region_left_x));
 					Strip_Region* target_region = nullptr;
-					for (auto& r : right_merge_region_group) {
+					for (auto& r : left_merge_region_group) {
 						if (r->edge_above == &e || r->edge_below == &e) {
 							target_region = r;
 							break;
@@ -570,14 +568,13 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 					new_cross_edge_end = target_region->edge_below == &e ? target_region->infinity_vtx.buttom_left : target_region->infinity_vtx.top_left;
 					ASSERT(new_cross_edge_end->is_infinity == true);
 
-					new_cross_edge_end->p_connect_edge_array->push_back(&new_cross_edge);//TODO:how to delete othre unsed edge
-					new_cross_edge_start->p_connect_edge_array->push_back(&new_cross_edge);
+					new_cross_edge_end->p_connect_edge_array->push_back(new_cross_edge);//TODO:how to delete othre unsed edge
+					new_cross_edge_start->p_connect_edge_array->push_back(new_cross_edge);
 
-					new_cross_edge.orig = new_cross_edge_start;
-					new_cross_edge.end = new_cross_edge_end;
-					cross_edge_array.push_back(&new_cross_edge);
-
+					new_cross_edge->orig = new_cross_edge_start;
+					new_cross_edge->end = new_cross_edge_end;
 				}
+				cross_edge_array.push_back(new_cross_edge);
 			}
 		}
 
@@ -814,8 +811,8 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 					}
 				}
 				//6)Add edge AX or BX as appropriate and call this new edge AB;
-				new_region->edge_array.push_back({});
-				Edge* new_edge = &new_region->edge_array[new_region->edge_array.size() - 1];
+				new_region->edge_array.push_back(new Edge());
+				Edge*& new_edge = new_region->edge_array[new_region->edge_array.size() - 1];
 				if (X = C) {
 					new_edge->orig = B;
 					new_edge->end = X;
@@ -1040,13 +1037,13 @@ void CDT_01(CDT_01_datastruct::PSLG& plsg, CDT_01_datastruct::CDT& cdt) {
 				}
 
 				auto new_region = strip_region_group_merge(merge_region_group_left, t1, merge_region_group_right, t2, is_begin_left, is_end_left);
+				new_region->strip = new_strip;
 				new_strip->region.push_back(new_region);
 			}
-
-
-
-
 		}
+
+		new_strip->region_left_x = t1->region_left_x;
+		new_strip->region_right_x = t2->region_right_x;
 
 		delete(t1);
 		delete(t2);
