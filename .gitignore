@@ -11,3 +11,8 @@ out
 *.ppm
 
 !third/**
+
+.idea
+
+cmake-build-debug
+cmake-build-debug-visual-studio
