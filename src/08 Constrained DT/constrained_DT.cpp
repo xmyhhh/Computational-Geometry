@@ -18,10 +18,15 @@ void constrained_DT() {
     PSLG plsg;
 
     plsg.offset = cv::Point2d(width / 8, height / 8);
-    //plsg.factor = 45;
-    //auto plsg_path = getAssetPath() + "guita.plsg";
-    plsg.factor = 10;
-    auto plsg_path = getAssetPath() + "simple.plsg";
+    std::string plsg_path;
+#define load_guita 1
+    if (load_guita) {
+        plsg.factor = 45;
+        plsg_path = getAssetPath() + "guita.plsg";
+    } else {
+        plsg.factor = 10;
+        plsg_path = getAssetPath() + "simple.plsg";
+    }
     plsg.init_from_file(plsg_path);
 
     CDT cdt;
@@ -32,6 +37,7 @@ void constrained_DT() {
 
 #define draw_plsg 1
 //draw plsg
+    draw_circle_origin_buttom_left(width, height, img, {100,100}, 2, BLUE, 2);
     if (draw_plsg) {
         for (size_t i = 0; i < plsg.boundary_array.size(); i++) {
             for (size_t j = 0; j < plsg.boundary_array[i].point_array.size(); j++) {
@@ -107,8 +113,8 @@ void constrained_DT() {
     }
 
 
-#define Grid_Size_w 12
-#define Grid_Size_h 7
+#define Grid_Size_w 20
+#define Grid_Size_h 8
 #define Show_Grid 1
     {
         if (Show_Grid) {

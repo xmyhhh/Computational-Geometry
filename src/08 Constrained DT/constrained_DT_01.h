@@ -1351,7 +1351,8 @@ void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::CDT &cdt) {
         if (size > 1) {
             //split
             int center = size / 2 + index_begin;
-
+            auto vv = (Vertex *) cdt.vertex_pool[index_begin];
+            auto vv2 = (Vertex *) cdt.vertex_pool[center];
             Strip *t1 = divide_and_conquer(divide_and_conquer, index_begin, center);
             Strip *t2 = divide_and_conquer(divide_and_conquer, center, index_end);
 
@@ -1361,8 +1362,6 @@ void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::CDT &cdt) {
             cdt.strip_array.push_back(s);
             return s;
         } else if (size == 1) {
-
-
             auto vtx = (Vertex *) cdt.vertex_pool[index_begin];
             Strip *strip = new Strip();
             cdt.strip_array.push_back(strip);
