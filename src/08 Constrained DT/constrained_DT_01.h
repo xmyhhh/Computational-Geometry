@@ -7,7 +7,6 @@
 #include "common/priority_queue.h"
 
 namespace CDT_01_datastruct {
-
     bool cmp(cv::Point2d x, cv::Point2d y) {
 
         return x.x < y.x;
@@ -201,8 +200,6 @@ namespace CDT_01_datastruct {
 
         std::vector<Strip *> strip_array;//for draw
     };
-
-
 }
 
 void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::CDT &cdt) {
@@ -215,10 +212,13 @@ void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::CDT &cdt) {
     {
         //Step 1: sort vertex
         std::vector<cv::Point2d> tmp_vtx_array;
-        for (int i = 0; i < plsg.boundary_array.size(); i++) {
-            for (int j = 0; j < plsg.boundary_array[i].point_array.size(); j++) {
-                tmp_vtx_array.push_back(plsg.get_position(i, j));
-            }
+//        for (int i = 0; i < plsg.boundary_array.size(); i++) {
+//            for (int j = 0; j < plsg.boundary_array[i].point_array.size(); j++) {
+//                tmp_vtx_array.push_back(plsg.get_position(i, j));
+//            }
+//        }
+        for (int i = 0; i < plsg.vertex_array.size(); i++) {
+            tmp_vtx_array.push_back(plsg.get_position(i));
         }
         std::sort(tmp_vtx_array.begin(), tmp_vtx_array.end(), cmp);
 
@@ -282,10 +282,6 @@ void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::CDT &cdt) {
             }
         }
 
-
-
-
-
         //Step 4: update each vertex edge_below and edge_above using line-Sweep alg
         double line_x_last = 0;
         double line_x_current = 0;
@@ -297,15 +293,19 @@ void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::CDT &cdt) {
                 break;
             }
             line_x_current = next->position.x;
-
+            if ((int) next->position.x == 386) {
+                int aaaaa = 0;
+            }
             //update event
             for (int i = 0; i < cdt.number_of_constrained_edge; i++) {
                 Edge &e = cdt.constrained_edge_array[i];
+                Vertex *edge_left_vtx = e.orig->position.x < e.end->position.x ? e.orig : e.end;
+                Vertex *edge_right_vtx = e.orig->position.x < e.end->position.x ? e.end : e.orig;
 
-                if (e.orig->position.x > line_x_last && e.orig->position.x <= line_x_current) {
+                if (edge_left_vtx->position.x > line_x_last && edge_left_vtx->position.x <= line_x_current) {
                     event_queue.push_back(&e);
                 }
-                if (e.end->position.x >= line_x_last && e.end->position.x < line_x_current) {
+                if (edge_right_vtx->position.x >= line_x_last && edge_right_vtx->position.x < line_x_current) {
 
                     //find which index to remove
                     int index = 0;
@@ -354,7 +354,8 @@ void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::CDT &cdt) {
     int a = 0;
 
 
-    auto strip_region_group_merge = [&](std::vector<Strip_Region *> left_merge_region_group, Strip *strip_left, std::vector<Strip_Region *> right_merge_region_group, Strip *strip_right,
+    auto strip_region_group_merge = [&](std::vector<Strip_Region *> left_merge_region_group, Strip *strip_left,
+                                        std::vector<Strip_Region *> right_merge_region_group, Strip *strip_right,
                                         bool is_begin_left, bool is_end_left) -> Strip_Region * {
         ASSERT(strip_left->region_right_x == strip_right->region_left_x);
         ASSERT(strip_left->region_right_x != -1);
@@ -508,14 +509,15 @@ void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::CDT &cdt) {
             auto is_infinity_edge_and_need_keep = [](Edge *e, Strip *strip_left) {
 
                 if (e->end->is_infinity || e->orig->is_infinity) {
-                    if (strip_left->region_right_x != e->end->position.x && strip_left->region_right_x != e->orig->position.x) {
+                    if (strip_left->region_right_x != e->end->position.x &&
+                        strip_left->region_right_x != e->orig->position.x) {
                         return true;
                     }
                 }
                 return false;
 
             };
-
+            //TODO: also put inf edge's vtx into new region array
             for (auto &r: left_merge_region_group) {
                 for (auto &e: r->edge_array) {
                     if (is_infinity_edge_and_need_keep(e, strip_left))
@@ -579,7 +581,7 @@ void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::CDT &cdt) {
                 auto &new_cross_edge = new_region->edge_array[new_region->edge_array.size() - 1];
 
                 if (new_cross_edge_start->position.x < strip_left->region_right_x) {
-                    //there is already one vtx can be use, must be one of inf vtx
+                    //there may be already one vtx can be use, must be one of inf vtx
                     ASSERT(strip_right->region_right_x != -1 && (e.orig->position.x > strip_right->region_right_x ||
                                                                  e.end->position.x > strip_right->region_right_x));
                     Strip_Region *target_region = nullptr;
@@ -589,10 +591,26 @@ void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::CDT &cdt) {
                             break;
                         }
                     }
-                    ASSERT(target_region != nullptr);
-                    new_cross_edge_end = target_region->edge_below == &e ? target_region->infinity_vtx.buttom_right
-                                                                         : target_region->infinity_vtx.top_right;
-                    ASSERT(new_cross_edge_end->is_infinity == true);
+
+                    if (target_region != nullptr) {
+                        new_cross_edge_end = target_region->edge_below == &e ? target_region->infinity_vtx.buttom_right
+                                                                             : target_region->infinity_vtx.top_right;
+                        ASSERT(new_cross_edge_end->is_infinity == true);
+                    } else {
+                        //there is no vtx can be use, create one
+                        base_type::IntersectionResult res = LineIntersectionCalulate(
+                                {{strip_right->region_right_x, -1000},
+                                 {strip_right->region_right_x, 1000}},
+                                {{e.orig->position},
+                                 {e.end->position}}
+                        );
+                        auto new_vtx = new Vertex();
+                        new_vtx->is_infinity = true;
+                        new_region->vertex_array.push_back(new_vtx);
+                        new_vtx->position = res.intersectionPoint;
+                        new_cross_edge_end = new_vtx;
+                    }
+
 
                     //TODO:how to delete othre unsed edge
                     new_cross_edge_end->p_connect_edge_array->push_back(new_cross_edge);
@@ -601,7 +619,7 @@ void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::CDT &cdt) {
                     new_cross_edge->orig = new_cross_edge_start;
                     new_cross_edge->end = new_cross_edge_end;
                 } else {
-                    //there is already one vtx can be use, must be one of inf vtx
+                    //there may be already one vtx can be use, must be one of inf vtx
                     ASSERT(strip_left->region_left_x != -1 && (e.orig->position.x > strip_left->region_left_x ||
                                                                e.end->position.x > strip_left->region_left_x));
                     Strip_Region *target_region = nullptr;
@@ -611,10 +629,24 @@ void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::CDT &cdt) {
                             break;
                         }
                     }
-                    ASSERT(target_region != nullptr);
-                    new_cross_edge_end = target_region->edge_below == &e ? target_region->infinity_vtx.buttom_left
-                                                                         : target_region->infinity_vtx.top_left;
-                    ASSERT(new_cross_edge_end->is_infinity == true);
+                    if (target_region != nullptr) {
+                        new_cross_edge_end = target_region->edge_below == &e ? target_region->infinity_vtx.buttom_left
+                                                                             : target_region->infinity_vtx.top_left;
+                        ASSERT(new_cross_edge_end->is_infinity == true);
+                    } else {
+                        //there is no vtx can be use, create one
+                        base_type::IntersectionResult res = LineIntersectionCalulate(
+                                {{strip_left->region_left_x, -1000},
+                                 {strip_left->region_left_x, 1000}},
+                                {{e.orig->position},
+                                 {e.end->position}}
+                        );
+                        auto new_vtx = new Vertex();
+                        new_vtx->is_infinity = true;
+                        new_region->vertex_array.push_back(new_vtx);
+                        new_vtx->position = res.intersectionPoint;
+                        new_cross_edge_end = new_vtx;
+                    }
 
                     new_cross_edge_end->p_connect_edge_array->push_back(
                             new_cross_edge);//TODO:how to delete othre unsed edge
@@ -669,10 +701,10 @@ void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::CDT &cdt) {
 
                 };
 
-                eliminate_illegal_egde(*(A->p_connect_edge_array), new_region->vertex_array, B);
+                //eliminate_illegal_egde(*(A->p_connect_edge_array), new_region->vertex_array, B);
 
                 //2) Eliminate B - edges that can be shown to be illegal because of their interaction with A;
-                eliminate_illegal_egde(*(B->p_connect_edge_array), new_region->vertex_array, A);
+                //eliminate_illegal_egde(*(B->p_connect_edge_array), new_region->vertex_array, A);
 
 
                 //3) Let C be a candidate where AC is the next edge counterclockwise around A from AB(if such an edge exists);
@@ -959,7 +991,9 @@ void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::CDT &cdt) {
                             ASSERT(ei->orig == common_vtx || ei->end == common_vtx);
                             auto ei_non_common_vtx = ei->orig != common_vtx ? ei->orig : ei->end;
                             if (!ToLeft(common_vtx->position, non_common_vtx->position, ei_non_common_vtx->position)) {
-                                if (ToLeft(common_vtx->position, ei_non_common_vtx->position, return_val->orig != common_vtx ? return_val->orig->position : return_val->end->position)) {
+                                if (ToLeft(common_vtx->position, ei_non_common_vtx->position,
+                                           return_val->orig != common_vtx ? return_val->orig->position
+                                                                          : return_val->end->position)) {
                                     return_val = ei;
                                 }
                             }
@@ -984,15 +1018,16 @@ void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::CDT &cdt) {
                     CalculateBoundingCircle<cv::Point2d>(A->position, B->position, C->position, ABC_center,
                                                          ABC_radius);
                     ABC_radius2 = ABC_radius * ABC_radius;
+                    if (!AC->is_GEdge) {
+                        if (strip_left->region_right_x < C->position.x ||
+                            (strip_left->region_left_x != 1 && C->position.x < strip_left->region_left_x)) {
+                            //check 1: if AC is at the same strip of A
+                            is_C_good_candidate = false;
+                        }
+                        if (is_C_good_candidate) {
+                            //check 2: if circle ABX will not contain a vertex that can be seen from A and X.
+                            //if AC is a G-edge then edge AC is automatically considered a good candidate.
 
-                    if (strip_left->region_right_x < C->position.x || (strip_left->region_left_x != 1 && C->position.x < strip_left->region_left_x)) {
-                        //check 1: if AC is at the same strip of A
-                        is_C_good_candidate = false;
-                    }
-                    if (is_C_good_candidate) {
-                        //check 2: if circle ABX will not contain a vertex that can be seen from A and X.
-                        //if AC is a G-edge then edge AC is automatically considered a good candidate.
-                        if (!AC->is_GEdge) {
                             cdt.vertex_pool.traversalInit();
                             while (true) {
                                 auto next = (Vertex *) cdt.vertex_pool.traverse();
@@ -1002,19 +1037,21 @@ void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::CDT &cdt) {
                                 if (next != A && next != B && next != C) {
                                     if (is_connect(next, A) && is_connect(next, C)) {
                                         bool in_circle = VectorLengthSqr(next->position, ABC_center) < ABC_radius2;
-                                        bool seen = ToLeft(A->position, C->position, next->position) == ToLeft(A->position, C->position, B->position);
+                                        bool seen = ToLeft(A->position, C->position, next->position) ==
+                                                    ToLeft(A->position, C->position, B->position);
                                         if (in_circle && seen) {
                                             is_C_good_candidate = false;
                                         }
                                     }
                                 }
                             }
-                        }
-                    }
 
-                    if (!is_C_good_candidate) {
-                        C = nullptr;
-                        AC = nullptr;
+                        }
+
+                        if (!is_C_good_candidate) {
+                            C = nullptr;
+                            AC = nullptr;
+                        }
                     }
                 }
                 //4) Let D be a candidate where BD is the next edge  clockwise around B from BA(if such an edge exists) :
@@ -1031,15 +1068,16 @@ void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::CDT &cdt) {
                     CalculateBoundingCircle<cv::Point2d>(A->position, B->position, D->position, ABD_center,
                                                          ABD_radius);
                     ABD_radius2 = ABD_radius * ABD_radius;
+                    if (!BD->is_GEdge) {
+                        if (strip_left->region_right_x > D->position.x ||
+                            (strip_right->region_right_x != 1 && D->position.x > strip_right->region_right_x)) {
+                            //check 1: if AC is at the same strip of A
+                            is_D_good_candidate = false;
+                        }
+                        if (is_D_good_candidate) {
+                            //check 2: if circle ABX will not contain a vertex that can be seen from A and X.
+                            //if AC is a G-edge then edge AC is automatically considered a good candidate.
 
-                    if (strip_left->region_right_x > D->position.x || (strip_right->region_right_x != 1 && D->position.x > strip_right->region_right_x)) {
-                        //check 1: if AC is at the same strip of A
-                        is_D_good_candidate = false;
-                    }
-                    if (is_D_good_candidate) {
-                        //check 2: if circle ABX will not contain a vertex that can be seen from A and X.
-                        //if AC is a G-edge then edge AC is automatically considered a good candidate.
-                        if (!BD->is_GEdge) {
                             cdt.vertex_pool.traversalInit();
                             while (true) {
                                 auto next = (Vertex *) cdt.vertex_pool.traverse();
@@ -1049,19 +1087,21 @@ void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::CDT &cdt) {
                                 if (next != A && next != B && next != D) {
                                     if (is_connect(next, B) && is_connect(next, D)) {
                                         bool in_circle = VectorLengthSqr(next->position, ABD_center) < ABD_radius2;
-                                        bool seen = ToLeft(B->position, D->position, next->position) == ToLeft(B->position, D->position, A->position);
+                                        bool seen = ToLeft(B->position, D->position, next->position) ==
+                                                    ToLeft(B->position, D->position, A->position);
                                         if (in_circle && seen) {
                                             is_D_good_candidate = false;
                                         }
                                     }
                                 }
                             }
-                        }
-                    }
 
-                    if (!is_D_good_candidate) {
-                        D = nullptr;
-                        BD = nullptr;
+                        }
+
+                        if (!is_D_good_candidate) {
+                            D = nullptr;
+                            BD = nullptr;
+                        }
                     }
                 }
                 //break if no candidates exist;
@@ -1363,6 +1403,8 @@ void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::CDT &cdt) {
             return s;
         } else if (size == 1) {
             auto vtx = (Vertex *) cdt.vertex_pool[index_begin];
+            if (index_begin == 10)
+                int bb = 0;
             Strip *strip = new Strip();
             cdt.strip_array.push_back(strip);
             strip->region.push_back(new Strip_Region());

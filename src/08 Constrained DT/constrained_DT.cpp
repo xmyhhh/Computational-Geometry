@@ -4,7 +4,8 @@
 
 
 void constrained_DT() {
-
+    //this alg in not working
+    ASSERT(false);
     int width = 2000;
     int height = 800;
     cv::Mat img = cv::Mat::zeros(cv::Size(width, height), CV_8UC3);
@@ -19,7 +20,7 @@ void constrained_DT() {
 
     plsg.offset = cv::Point2d(width / 8, height / 8);
     std::string plsg_path;
-#define load_guita 1
+#define load_guita 0
     if (load_guita) {
         plsg.factor = 45;
         plsg_path = getAssetPath() + "guita.plsg";
@@ -35,7 +36,7 @@ void constrained_DT() {
     //draw code begin
     debug_cout("\n*********start draw*********");
 
-#define draw_plsg 1
+#define draw_plsg 0
 //draw plsg
     draw_circle_origin_buttom_left(width, height, img, {100,100}, 2, BLUE, 2);
     if (draw_plsg) {
@@ -60,7 +61,7 @@ void constrained_DT() {
         }
     }
 
-#define draw_cdt 0
+#define draw_cdt 1
 //draw cdt
     if (draw_cdt) {
         for (size_t i = 0; i < cdt.number_of_constrained_edge; i++) {
@@ -85,7 +86,11 @@ void constrained_DT() {
                     auto vtx = r->vertex_array[k];
                     draw_circle_origin_buttom_left(width, height, img, vtx->position, 2, RED, 2);
                 }
-
+                for (size_t k = 0; k < r->edge_array.size(); k++) {
+                    auto e = r->edge_array[k];
+                    draw_line_origin_buttom_left(width, height, img,  e->orig->position,
+                                                 e->end->position, GREEN, 1);
+                }
             }
         }
     }
@@ -115,7 +120,7 @@ void constrained_DT() {
 
 #define Grid_Size_w 20
 #define Grid_Size_h 8
-#define Show_Grid 1
+#define Show_Grid 0
     {
         if (Show_Grid) {
             for (size_t i = 0; i < Grid_Size_w; i++) {

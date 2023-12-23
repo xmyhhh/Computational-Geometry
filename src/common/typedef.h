@@ -57,6 +57,7 @@ namespace base_type {
 		std::vector<Edge_Index> Segment;
 	};
 }
+
 struct VulkanDrawData {
 	int numberOfPoint = 0;
 	double* points; //location xyz(3 double) * numberOfPoint
@@ -64,12 +65,7 @@ struct VulkanDrawData {
 	int* triangles;//index of triangle (3 int) * numberOfTriangle
 	int numberOfPointAttr = 0;
 	double* attr; //each point to size of((numberOfPointAttr double) * numberOfPoint)
-
 };
-
-
-
-
 
 namespace Interpolation3D_datastruct {
 	struct Interpolation3DIO {

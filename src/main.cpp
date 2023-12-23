@@ -22,7 +22,7 @@ extern void Voronoi();
 extern void Delaunay();
 extern void Delaunay3D(HINSTANCE hInstance);
 extern void Interpolation4D(HINSTANCE hInstance);
-
+extern void ConstrainedDelaunay3D(HINSTANCE hInstance);
 extern void constrained_DT();
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
@@ -47,8 +47,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
 	//Interpolation4D(hInstance);
 	
-	constrained_DT();
+	//constrained_DT();
 
+    ConstrainedDelaunay3D(hInstance);
 	return 0;
 }
 

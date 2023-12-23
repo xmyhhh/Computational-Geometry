@@ -59,7 +59,7 @@ public:
 				else
 					return queue[i + 1];
 		}
-		return  queue[queue.size() - 1];
+		return  queue[0];
 	}
 
 	priority_pair<T> get_lower(double priority) {
@@ -72,7 +72,7 @@ public:
 				else
 					return queue[i - 1];
 		}
-		return  queue[0];
+		return  queue[queue.size() - 1];
 
 	}
 };
