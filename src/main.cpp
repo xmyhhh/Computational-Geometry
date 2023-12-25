@@ -31,7 +31,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	//ShowTriangle();
 	//ShowDot();
 	//ShowLine();
-	//FileConvert();
+	FileConvert();
 
 
 	// 2D
@@ -49,7 +49,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	
 	//constrained_DT();
 
-    ConstrainedDelaunay3D(hInstance);
+    //ConstrainedDelaunay3D(hInstance);
 	return 0;
 }
 

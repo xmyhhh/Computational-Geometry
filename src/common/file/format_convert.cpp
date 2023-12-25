@@ -1,9 +1,14 @@
 #include "format_convert.h"
+#include <string.h>
+#include <vector>
+#include <set>
 
-struct Polygon
+struct Cell
 {
 	int numberOfPoints = 3; //3表示三角形
 	int* pointList;
+	int numberOfAttr = 0;
+	int* attr;
 };
 
 struct FileData {
@@ -11,8 +16,8 @@ struct FileData {
 	int numberOfPoints = 0;
 	double* pointList;
 
-	int numberOfFace = 0;
-	Polygon* faceList;
+	int numberOfCell = 0;
+	Cell* cellList;
 
 };
 
@@ -53,7 +58,9 @@ bool load_vtk(const char* in_file_path, FileData& data) {
 
 
 	int nverts = 0, iverts = 0;
-	int ntetrahedras = 0, itetrahedras = 0;
+	int ntetrahedras = 0, itetrahedras = 0, itetrahedrasattr = 0;
+	bool readattr = false;
+
 	while ((bufferp = read_line(buffer, fp, &line_count)) != NULL)
 	{
 		if (nverts == 0)
@@ -78,14 +85,15 @@ bool load_vtk(const char* in_file_path, FileData& data) {
 			data.pointList[iverts * 3] = (double)strtod(bufferp, &bufferp);
 			data.pointList[iverts * 3 + 1] = (double)strtod(bufferp, &bufferp);
 			data.pointList[iverts * 3 + 2] = (double)strtod(bufferp, &bufferp);
+
 			iverts++;
 		}
 		else if (ntetrahedras == 0)
 		{
 			//CELLS 35186 175930
 			sscanf(bufferp, "%*s %d %*d", &ntetrahedras);
-			data.faceList = new Polygon[ntetrahedras * 4];
-			data.numberOfFace = ntetrahedras * 4;
+			data.cellList = new Cell[ntetrahedras];
+			data.numberOfCell = ntetrahedras;
 		}
 		else if (ntetrahedras > itetrahedras)
 		{
@@ -98,36 +106,34 @@ bool load_vtk(const char* in_file_path, FileData& data) {
 			);
 
 
-			data.faceList[itetrahedras * 4 + 0].pointList = new int[4];
-			data.faceList[itetrahedras * 4 + 1].pointList = new int[4];
-			data.faceList[itetrahedras * 4 + 2].pointList = new int[4];
-			data.faceList[itetrahedras * 4 + 3].pointList = new int[4];
+			data.cellList[itetrahedras].pointList = new int[4];
+			data.cellList[itetrahedras].numberOfPoints = 4;
 
-			auto polygon_point = &data.faceList[itetrahedras * 4 + 0].pointList[0];
-			polygon_point[0] = p0;
-			polygon_point[1] = p1;
-			polygon_point[2] = p2;
-
-			polygon_point = &data.faceList[itetrahedras * 4 + 1].pointList[0];
-			polygon_point[0] = p0;
-			polygon_point[1] = p1;
-			polygon_point[2] = p3;
-
-			polygon_point = &data.faceList[itetrahedras * 4 + 2].pointList[0];
-			polygon_point[0] = p0;
-			polygon_point[1] = p2;
-			polygon_point[2] = p3;
-
-			polygon_point = &data.faceList[itetrahedras * 4 + 3].pointList[0];
-			polygon_point[0] = p1;
-			polygon_point[1] = p2;
-			polygon_point[2] = p3;
+			auto Cell_point = &data.cellList[itetrahedras].pointList[0];
+			Cell_point[0] = p0;
+			Cell_point[1] = p1;
+			Cell_point[2] = p2;
+			Cell_point[3] = p3;
 
 			itetrahedras++;
 		}
-		else
+		else if (!readattr)
 		{
-			break;
+			char s[20];
+			sscanf(bufferp, "%s", &s);
+			if (strcmp(s, "CELL_DATA") == 0) {
+				readattr = true;
+				read_line(buffer, fp, &line_count); //SCALARS cell_scalars int 1
+				read_line(buffer, fp, &line_count); //LOOKUP_TABLE default
+			}
+		}
+		else {
+			int attr;
+			sscanf(bufferp, "%d", &attr);
+			data.cellList[itetrahedrasattr].attr = (int*)malloc(sizeof(int) * 1);
+			data.cellList[itetrahedrasattr].numberOfAttr = 1;
+			*data.cellList[itetrahedrasattr].attr = attr;
+			itetrahedrasattr++;
 		}
 	}
 	fclose(fp);
@@ -145,12 +151,12 @@ bool save_off(const char* out_file_path, const FileData& data) {
 		return false;
 	}
 	fprintf(fout, "OFF\n");
-	fprintf(fout, "%d  %d  %d\n", data.numberOfPoints, data.numberOfFace, 0);
+	fprintf(fout, "%d  %d  %d\n", data.numberOfPoints, data.numberOfCell, 0);
 	for (int i = 0; i < data.numberOfPoints; i++) {
 		fprintf(fout, "%.16g %.16g %.16g\n", data.pointList[i * 3], data.pointList[i * 3 + 1], data.pointList[i * 3 + 2]);
 	}
-	for (int i = 0; i < data.numberOfFace; i++) {
-		auto& face = data.faceList[i];
+	for (int i = 0; i < data.numberOfCell; i++) {
+		auto& face = data.cellList[i];
 		assert(face.numberOfPoints == 3);
 
 		fprintf(fout, "%d %d %d %d\n", 3, face.pointList[0], face.pointList[1], face.pointList[2]);
@@ -174,15 +180,64 @@ bool save_obj(const char* out_file_path, const FileData& data) {
 	for (int i = 0; i < data.numberOfPoints; i++) {
 		fprintf(fout, "%c %.16g %.16g %.16g\n", 'v', data.pointList[i * 3], data.pointList[i * 3 + 1], data.pointList[i * 3 + 2]);
 	}
-	for (int i = 0; i < data.numberOfFace; i++) {
-		auto& face = data.faceList[i];
+	for (int i = 0; i < data.numberOfCell; i++) {
+		auto& face = data.cellList[i];
 		assert(face.numberOfPoints == 3);
 
-		fprintf(fout, "%c %d %d %d\n", 'f', face.pointList[0]+1, face.pointList[1]+1, face.pointList[2]+1);
+		fprintf(fout, "%c %d %d %d\n", 'f', face.pointList[0] + 1, face.pointList[1] + 1, face.pointList[2] + 1);
 	}
 	fclose(fout);
 	return true;
 }
+
+
+bool save_f3grid(const char* out_file_path, const FileData& data) {
+
+	FILE* fout = fopen(out_file_path, "w");
+
+	if (fout == (FILE*)NULL)
+	{
+		//printf("File I/O Error:  Cannot create file %s.\n", vtk_file_path);
+
+		return false;
+	}
+
+	fprintf(fout, "* GRIDPOINTS\n");
+	for (int i = 0; i < data.numberOfPoints; i++) {
+		fprintf(fout, "%c %d %.16g %.16g %.16g\n", 'G', i + 1, data.pointList[i * 3], data.pointList[i * 3 + 1], data.pointList[i * 3 + 2]);
+	}
+	fprintf(fout, "* ZONES\n");
+	for (int i = 0; i < data.numberOfCell; i++) {
+		auto& cell = data.cellList[i];
+		assert(cell.numberOfPoints == 4);
+
+		fprintf(fout, "%c T4 %d %d %d %d %d\n", 'Z', i + 1, cell.pointList[0] + 1, cell.pointList[1] + 1, cell.pointList[2] + 1, cell.pointList[3] + 1);
+	}
+	fprintf(fout, "* ZONE GROUPS\n");
+	std::vector<std::vector<int>> all_zone_group(100);
+
+	for (int i = 0; i < data.numberOfCell; i++) {
+		auto& cell = data.cellList[i];
+		int g_id = cell.attr[0] - 1;
+		all_zone_group[g_id].push_back(i+1);
+	}
+
+	for (int i = 0; i < all_zone_group.size(); i++) {
+		auto g = all_zone_group[i];
+		if (g.size() != 0) {
+			fprintf(fout, "ZGROUP \"ZG_00%d\" SLOT 1 \n", i);
+
+			for (int j = 0; j < g.size(); j++) {
+				fprintf(fout, "%d ", g[j]);
+			}
+
+			fprintf(fout, "\n");
+		}
+	}
+	fclose(fout);
+	return true;
+}
+
 
 //public function
 bool vtk_to_off(const char* in_file_path, const char* out_file_path)
@@ -205,6 +260,19 @@ bool vtk_to_obj(const char* in_file_path, const char* out_file_path)
 	if (res)
 		//save
 		res = save_obj(out_file_path, data);
+
+	return res;
+}
+
+bool vtk_to_f3grid(const char* in_file_path, const char* out_file_path)
+{
+	FileData data;
+	//load
+	bool res = load_vtk(in_file_path, data);
+
+	//save
+	if (res)
+		res = save_f3grid(out_file_path, data);
 
 	return res;
 }
