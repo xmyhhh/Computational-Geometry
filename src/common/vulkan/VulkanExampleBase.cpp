@@ -703,8 +703,10 @@ void VulkanExampleBase::updateOverlay()
 	ImGui::PopStyleVar();
 	ImGui::Render();
 
-	if (UIOverlay.update() || UIOverlay.updated) {
-		buildCommandBuffers();
+	
+	if ((UIOverlay.update() || UIOverlay.updated) ) {
+		
+		//buildCommandBuffers();
 		UIOverlay.updated = false;
 	}
 

@@ -1,109 +1,11 @@
+#pragma once
 #include "common/typedef.h"
 #include "common/helper.h"
-
-
-
-namespace Delaunay3D_01_datastruct {
-
-	struct n_simplices_face {
-		int index_p1;
-		int index_p2;
-		int index_p3;
-	};
-
-	struct n_simplices {
-		int index_p1;
-		int index_p2;
-		int index_p3;
-		int index_p4;
-		//Each (n + 1)-tuple of indices is associated with coordinates/radius of circumsphere
-		cv::Point3d coordinates;
-		double radius;
-
-		bool mark_delation = false;
-	};
-
-	struct BW_DT_struct
-	{
-		//* A list of(n + 1)-tuples of indices to the nuclei or datapoints
-		std::vector<n_simplices> n_simplices_list;
-		std::vector<cv::Point3d> all_point;
-
-
-		VulkanDrawData toVulkanDrawData() {
-			VulkanDrawData data;
-
-			data.numberOfPoint = all_point.size();
-			data.points = (double*)malloc(data.numberOfPoint * 3 * sizeof(double));
-			//memcpy(data.points, all_point.data(), data.numberOfPoint * 3 * sizeof(double));
-			for (int i = 0; i < data.numberOfPoint; i++) {
-				data.points[i * 3 + 0] = all_point[i].x;
-				data.points[i * 3 + 1] = all_point[i].y;
-				data.points[i * 3 + 2] = all_point[i].z;
-			}
-			data.numberOfPointAttr = 4;
-			data.attr = (double*)malloc(sizeof(double) * data.numberOfPointAttr * data.numberOfPoint);
-			for (int i = 0; i < data.numberOfPoint; i++) {
-				if (i < 2) {
-					data.attr[i * 4 + 0] = 254;
-					data.attr[i * 4 + 1] = 0;
-					data.attr[i * 4 + 2] = 0;
-					data.attr[i * 4 + 3] = 1;
-				}
-				else if (i == 2) {
-					data.attr[i * 4 + 0] = 0;
-					data.attr[i * 4 + 1] = 0;
-					data.attr[i * 4 + 2] = 254;
-					data.attr[i * 4 + 3] = 1;
-				}
-				else if (i==3) {
-					data.attr[i * 4 + 0] = 0;
-					data.attr[i * 4 + 1] = 254;
-					data.attr[i * 4 + 2] = 0;
-					data.attr[i * 4 + 3] = 1;
-				}
-				else {
-					data.attr[i * 4 + 0] = 255;
-					data.attr[i * 4 + 1] = 255;
-					data.attr[i * 4 + 2] = 255;
-					data.attr[i * 4 + 3] = 0;
-				}
-			}
-			data.numberOfTriangle = n_simplices_list.size() * 4;
-			data.triangles = (int*)malloc(data.numberOfTriangle * 4 * 3 * sizeof(int));
-			for (int i = 0; i < n_simplices_list.size(); i++) {
-				auto& tetrahedrons = n_simplices_list[i];
-				data.triangles[i * 4 * 3 + 0 * 3] = tetrahedrons.index_p1;
-				data.triangles[i * 4 * 3 + 0 * 3 + 1] = tetrahedrons.index_p2;
-				data.triangles[i * 4 * 3 + 0 * 3 + 2] = tetrahedrons.index_p3;
-
-				data.triangles[i * 4 * 3 + 1 * 3] = tetrahedrons.index_p1;
-				data.triangles[i * 4 * 3 + 1 * 3 + 1] = tetrahedrons.index_p2;
-				data.triangles[i * 4 * 3 + 1 * 3 + 2] = tetrahedrons.index_p4;
-
-				data.triangles[i * 4 * 3 + 2 * 3] = tetrahedrons.index_p1;
-				data.triangles[i * 4 * 3 + 2 * 3 + 1] = tetrahedrons.index_p3;
-				data.triangles[i * 4 * 3 + 2 * 3 + 2] = tetrahedrons.index_p4;
-
-				data.triangles[i * 4 * 3 + 3 * 3] = tetrahedrons.index_p2;
-				data.triangles[i * 4 * 3 + 3 * 3 + 1] = tetrahedrons.index_p3;
-				data.triangles[i * 4 * 3 + 3 * 3 + 2] = tetrahedrons.index_p3;
-			}
-
-
-
-			return data;
-		}
-	};
-
-}
-
+#include "common/timer/timer.h"
 
 void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct::BW_DT_struct& bw_dt_struct) {
 	//Bowyer-Watson Algorithm 3d
 	using namespace Delaunay3D_01_datastruct;
-
-
 
 	auto n_simplices_bounding_sphere_cal = [&bw_dt_struct](n_simplices& _n_simplices) {
 		CalculateBoundingSphere(
@@ -121,17 +23,40 @@ void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 		return  distance < _n_simplices.radius * _n_simplices.radius;
 		};
 
-	auto is_face_inside_facelist = [](n_simplices_face& face, std::vector<n_simplices_face>& n_simplices_face_to_reserve_list) {
-
-
-		for (const auto& face_item : n_simplices_face_to_reserve_list) {
+	auto is_face_inside_facelist = [](n_simplices_face& face, std::vector<n_simplices_face>& n_simplices_face_to_reserve_list, bool find_and_remove) {
+		int index = 0;
+		for (auto it = n_simplices_face_to_reserve_list.begin(); it != n_simplices_face_to_reserve_list.end(); it++) {
+			auto face_item = *it;
 			bool b1 = face_item.index_p1 == face.index_p1 || face_item.index_p1 == face.index_p2 || face_item.index_p1 == face.index_p3;
 			bool b2 = face_item.index_p2 == face.index_p1 || face_item.index_p2 == face.index_p2 || face_item.index_p2 == face.index_p3;
 			bool b3 = face_item.index_p3 == face.index_p1 || face_item.index_p3 == face.index_p2 || face_item.index_p3 == face.index_p3;
-			if (b1 && b2 && b3)
+			if (b1 && b2 && b3) {
+				if (find_and_remove) {
+					n_simplices_face_to_reserve_list.erase(it);
+				}
 				return true;
+			}
+
 		}
+		index++;
 		return false;
+		};
+
+	auto is_face_inside_facemap = [](n_simplices_face& face, std::unordered_map<std::string, n_simplices_face>& n_simplices_face_to_reserve_map, bool find_and_remove) {
+
+		auto search_key = face.get_key();
+		auto it = n_simplices_face_to_reserve_map.find(search_key);
+		if (it == n_simplices_face_to_reserve_map.end()) {
+			return false;
+		}
+		else
+		{
+			if (find_and_remove) {
+				n_simplices_face_to_reserve_map.erase(it);
+			}
+			return true;
+		}
+
 		};
 
 	auto remove_face_from_vector = [](n_simplices_face& face, std::vector<n_simplices_face>& n_simplices_face_to_reserve_list) {
@@ -150,7 +75,6 @@ void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 
 	auto Incremental_construction = [&](const cv::Point3d insert_vertex_position, BW_DT_struct& bw_dt_struct) {
 
-
 		bw_dt_struct.all_point.push_back(insert_vertex_position);
 		int insert_vertex_index = bw_dt_struct.all_point.size() - 1;
 
@@ -167,43 +91,92 @@ void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 		ASSERT(bad_n_simplices_list.size() > 0);
 
 		//Stage 2:
+		bool use_map = true;
 		std::vector<n_simplices_face> n_simplices_face_to_reserve_list;
-		//make n_simplices_face_to_reserve_list
-		for (auto& simplices : bad_n_simplices_list) {
-			n_simplices_face face1 = n_simplices_face(simplices.index_p1, simplices.index_p2, simplices.index_p3);
-			n_simplices_face face2 = n_simplices_face(simplices.index_p1, simplices.index_p2, simplices.index_p4);
-			n_simplices_face face3 = n_simplices_face(simplices.index_p1, simplices.index_p3, simplices.index_p4);
-			n_simplices_face face4 = n_simplices_face(simplices.index_p2, simplices.index_p3, simplices.index_p4);
-			//If any (n - 1)-face is found to occur twice, both occurrences are dropped from the list since this face is shared by two adjacentn-simplices
-			if (is_face_inside_facelist(face1, n_simplices_face_to_reserve_list)) {
-				remove_face_from_vector(face1, n_simplices_face_to_reserve_list);
-			}
-			else {
-				n_simplices_face_to_reserve_list.push_back(face1);
+		if (use_map) {
+			std::unordered_map<std::string, n_simplices_face> n_simplices_face_to_reserve_map;
+
+			for (auto& simplices : bad_n_simplices_list) {
+				n_simplices_face face1 = n_simplices_face(simplices.index_p1, simplices.index_p2, simplices.index_p3);
+				n_simplices_face face2 = n_simplices_face(simplices.index_p1, simplices.index_p2, simplices.index_p4);
+				n_simplices_face face3 = n_simplices_face(simplices.index_p1, simplices.index_p3, simplices.index_p4);
+				n_simplices_face face4 = n_simplices_face(simplices.index_p2, simplices.index_p3, simplices.index_p4);
+				//If any (n - 1)-face is found to occur twice, both occurrences are dropped from the list since this face is shared by two adjacentn-simplices
+				if (is_face_inside_facemap(face1, n_simplices_face_to_reserve_map, true)) {
+
+				}
+				else {
+					n_simplices_face_to_reserve_map.insert(std::make_pair(face1.get_key(), face1));
+				}
+
+				if (is_face_inside_facemap(face2, n_simplices_face_to_reserve_map, true)) {
+
+				}
+				else {
+					n_simplices_face_to_reserve_map.insert(std::make_pair(face2.get_key(), face2));
+				}
+
+				if (is_face_inside_facemap(face3, n_simplices_face_to_reserve_map, true)) {
+
+				}
+				else {
+					n_simplices_face_to_reserve_map.insert(std::make_pair(face3.get_key(), face3));
+				}
+
+				if (is_face_inside_facemap(face4, n_simplices_face_to_reserve_map, true)) {
+
+				}
+				else {
+					n_simplices_face_to_reserve_map.insert(std::make_pair(face4.get_key(), face4));
+				}
+
 			}
 
-			if (is_face_inside_facelist(face2, n_simplices_face_to_reserve_list)) {
-				remove_face_from_vector(face2, n_simplices_face_to_reserve_list);
-			}
-			else {
-				n_simplices_face_to_reserve_list.push_back(face2);
-			}
 
-			if (is_face_inside_facelist(face3, n_simplices_face_to_reserve_list)) {
-				remove_face_from_vector(face3, n_simplices_face_to_reserve_list);
-			}
-			else {
-				n_simplices_face_to_reserve_list.push_back(face3);
-			}
+			for (auto& it : n_simplices_face_to_reserve_map) {
+				n_simplices_face_to_reserve_list.push_back(it.second);
 
-			if (is_face_inside_facelist(face4, n_simplices_face_to_reserve_list)) {
-				remove_face_from_vector(face4, n_simplices_face_to_reserve_list);
 			}
-			else {
-				n_simplices_face_to_reserve_list.push_back(face4);
-			}
-
 		}
+		else {
+			//make n_simplices_face_to_reserve_list
+			for (auto& simplices : bad_n_simplices_list) {
+				n_simplices_face face1 = n_simplices_face(simplices.index_p1, simplices.index_p2, simplices.index_p3);
+				n_simplices_face face2 = n_simplices_face(simplices.index_p1, simplices.index_p2, simplices.index_p4);
+				n_simplices_face face3 = n_simplices_face(simplices.index_p1, simplices.index_p3, simplices.index_p4);
+				n_simplices_face face4 = n_simplices_face(simplices.index_p2, simplices.index_p3, simplices.index_p4);
+				//If any (n - 1)-face is found to occur twice, both occurrences are dropped from the list since this face is shared by two adjacentn-simplices
+				if (is_face_inside_facelist(face1, n_simplices_face_to_reserve_list, true)) {
+					//remove_face_from_vector(face1, n_simplices_face_to_reserve_list);
+				}
+				else {
+					n_simplices_face_to_reserve_list.push_back(face1);
+				}
+
+				if (is_face_inside_facelist(face2, n_simplices_face_to_reserve_list, true)) {
+					//remove_face_from_vector(face2, n_simplices_face_to_reserve_list);
+				}
+				else {
+					n_simplices_face_to_reserve_list.push_back(face2);
+				}
+
+				if (is_face_inside_facelist(face3, n_simplices_face_to_reserve_list, true)) {
+					//remove_face_from_vector(face3, n_simplices_face_to_reserve_list);
+				}
+				else {
+					n_simplices_face_to_reserve_list.push_back(face3);
+				}
+
+				if (is_face_inside_facelist(face4, n_simplices_face_to_reserve_list, true)) {
+					//remove_face_from_vector(face4, n_simplices_face_to_reserve_list);
+				}
+				else {
+					n_simplices_face_to_reserve_list.push_back(face4);
+				}
+
+			}
+		}
+
 		//new n-simplices are then formed with each of these singly occurring (n - 1)-faces and their circumcentres are calculated
 
 		for (auto& face : n_simplices_face_to_reserve_list) {
@@ -237,11 +210,17 @@ void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 		bw_dt_struct.n_simplices_list.push_back({ 0,1,2,3 });
 		n_simplices_bounding_sphere_cal(bw_dt_struct.n_simplices_list[0]);
 	}
+	int i = 0;
+	MyTimer::ResetTime();
 
+	debug_cout("beging Incremental_construction pt");
 	for (const auto& point : all_dots) {
+		debug_cout("Incremental_construction pt " + std::to_string(i));
+		i++;
 		Incremental_construction(point, bw_dt_struct);
 	}
-
+	auto t = MyTimer::GetTime();
+	std::cout << "run time:" + std::to_string(t);
 
 
 

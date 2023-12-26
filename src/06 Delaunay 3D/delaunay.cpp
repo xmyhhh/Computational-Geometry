@@ -15,6 +15,7 @@ LRESULT CALLBACK Delaunay3D_WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 }
 
 void Delaunay3D(HINSTANCE hInstance) {
+	debug_cout("Delaunay3D begin");
 	int width = 50;
 	int height = 50;
 	int deepth = 50;
@@ -25,7 +26,7 @@ void Delaunay3D(HINSTANCE hInstance) {
 #define use_random_point 1
 
 	if (use_random_point) {
-		int size = 5;
+		int size = 500;
 		for (int i = 0; i < size; i++)
 		{
 			all_dots.push_back(cv::Point3d(rand() % width + 1, rand() % height + 1, rand() % deepth + 1));
