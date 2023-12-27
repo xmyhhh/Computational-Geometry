@@ -227,11 +227,8 @@ namespace CDT_3D_01_datastruct {
 
 
 void CDT_3D_01(CDT_3D_01_datastruct::PLC& plc, Delaunay3D_01_datastruct::BW_DT_struct& bw_dt_struct) {
-	//Bowyer-Watson Algorithm 3d
+	//Constrained Delaunay Tetrahedralizations and Provably Good Boundary Recovery （Shewchuk）
 	using namespace CDT_3D_01_datastruct;
-
-	
-
 
 	auto vertex_pool_allocate_default = [&plc](cv::Point3d position) {
 		auto new_v = (Vertex*)plc.vertex_pool.allocate();
@@ -266,7 +263,6 @@ void CDT_3D_01(CDT_3D_01_datastruct::PLC& plc, Delaunay3D_01_datastruct::BW_DT_s
 	auto unmark_edge = [](Edge* e) {
 		e->draw_red = false;
 		};
-
 
 	//Delaunay_3D_01(plc.vertex_array, bw_dt_struct);
 
