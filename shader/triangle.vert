@@ -11,8 +11,10 @@ layout(push_constant) uniform PushConsts {
 	vec4 p1;
     vec4 p2;
     vec4 p3;
+    vec4 color;
 }pushConsts;
 
+layout (location = 0) out vec4 outColor;
 
 void main() {
 
@@ -25,5 +27,5 @@ void main() {
     else{
         gl_Position = ubo.projection * ubo.view * pushConsts.p3;
     }
-
+    outColor = pushConsts.color;
 }

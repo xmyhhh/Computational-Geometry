@@ -42,7 +42,17 @@ inline cv::Point2d Rotate(cv::Point2d point, double angle) {
 	return cv::Point2d((point.x * std::cos(angle_deg) - std::sin(angle_deg) * point.y), (point.x * std::sin(angle_deg) - std::cos(angle_deg) * point.y));
 }
 
-inline double dot(cv::Point3d& p1, cv::Point3d& p2)
+
+inline cv::Point3d cross(const cv::Point3d& p1, const cv::Point3d& p2)
+{
+	double s1, s2, s3;
+	s1 = p1.y * p2.z - p1.z * p2.y;
+	s2 = p1.z * p2.x - p1.x * p2.z;
+	s3 = p1.x * p2.y - p1.y * p2.x;
+	return cv::Point3d(s1, s2, s3);
+}
+
+inline double dot(const cv::Point3d& p1, const cv::Point3d& p2)
 {
 	return p1.x * p2.x + p1.y * p2.y + p1.z * p2.z;
 }
@@ -140,12 +150,53 @@ void CalculateBoundingCircle(const PointT& p1, const PointT& p2, const PointT& p
 	center.y = ((x1 * x1 + y1 * y1) * (x3 - x2) + (x2 * x2 + y2 * y2) * (x1 - x3) + (x3 * x3 + y3 * y3) * (x2 - x1)) / d;
 }
 
+inline double VectorLengthSqr(cv::Point3d a) {
+	return (a.x) * (a.x) + (a.y) * (a.y) + (a.z) * (a.z);
+}
+inline double VectorAngle(cv::Point3d a, cv::Point3d b) {
+	auto d = dot(a, b);
+	auto cos = d / (std::sqrt(VectorLengthSqr(a)) * std::sqrt(VectorLengthSqr(b)));
+	return std::acos(cos);
+}
+inline double VectorLengthSqr(cv::Point2d a, cv::Point2d b) {
+	return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
+}
+inline double VectorLengthSqr(cv::Point3d a, cv::Point3d b) {
+	return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + (a.z - b.z) * (a.z - b.z);
+}
+inline cv::Point3d VectorNormal(cv::Point3d a) {
+	return a / std::sqrt(VectorLengthSqr(a));
+}
 
-double VectorLengthSqr(cv::Point2d a, cv::Point2d b);
-double VectorLengthSqr(cv::Point3d a, cv::Point3d b);
+inline double Abs(double in) {
+	if (in < 0) {
+		return -in;
+	}
+	return in;
+}
+
+
 bool VectorSlop(cv::Point2d a, cv::Point2d b, double& slop);
-double DistanceToPoint(base_type::Line line, cv::Point2d point);
-double Abs(double in);
+inline double DistanceToPoint(base_type::Line line, cv::Point2d point) {
+	if (line.p1.x == line.p2.x) {
+		//have no slop
+		return Abs(point.x - line.p2.x);
+	}
+	if (line.p1.y == line.p2.y) {
+		return Abs(point.y - line.p2.y);
+	}
+	double slop = (line.p1.y - line.p2.y) / (line.p1.x - line.p2.x);
+	double a = -slop;
+	double b = 1;
+	double c = slop * line.p1.x - line.p1.y;
+
+	return Abs(a * point.x + b * point.y + c) / std::sqrt(a * a + b * b);
+}
+
+inline double DistanceToPointSqr(base_type::Line3d line, cv::Point3d point) {
+	//https://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
+	return VectorLengthSqr(cross(line.p2 - line.p1, line.p1 - point)) / VectorLengthSqr(line.p2 - line.p1);
+}
 
 //draw
 void draw_line_origin_buttom_left(uint width, uint height, cv::InputOutputArray img, cv::Point pt1, cv::Point pt2, const cv::Scalar& color,

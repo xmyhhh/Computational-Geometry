@@ -3,7 +3,7 @@
 
 
 layout (location = 0) in vec3 inNormal;
-layout (location = 1) in vec4 inColor;
+layout (location = 1) in vec4 inColor; 
 
 
 
@@ -18,7 +18,7 @@ void main()
 		outFragColor = vec4(inColor.x/255., inColor.y/255., inColor.z/255.,  1.);
 	}
 	else{
-		outFragColor =  vec4(inColor.x., inColor.y., inColor.z., 1.);
+		outFragColor = vec4(inColor.x, inColor.y, inColor.z, 1.);
 	}
 	
 }

@@ -260,20 +260,6 @@ PolygonRandom PolygonRandomGen(int width, int height, int size, float miniAngle)
 
 
 
-
-
-
-double VectorLengthSqr(cv::Point2d a, cv::Point2d b)
-{
-	return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
-
-}
-double VectorLengthSqr(cv::Point3d a, cv::Point3d b)
-{
-	return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + (a.z - b.z) * (a.z - b.z);
-
-}
-
 bool VectorSlop(cv::Point2d a, cv::Point2d b, double& slop) {
 	if (a == b)
 		return false;
@@ -290,31 +276,6 @@ bool VectorSlop(cv::Point2d a, cv::Point2d b, double& slop) {
 	}
 }
 
-double DistanceToPoint(Line line, cv::Point2d point)
-{
-	if (line.p1.x == line.p2.x) {
-		//have no slop
-		return Abs(point.x - line.p2.x);
-	}
-	if (line.p1.y == line.p2.y) {
-		return Abs(point.y - line.p2.y);
-	}
-	double slop = (line.p1.y - line.p2.y) / (line.p1.x - line.p2.x);
-	double a = -slop;
-	double b = 1;
-	double c = slop * line.p1.x - line.p1.y;
-
-
-	return Abs(a * point.x + b * point.y + c) / std::sqrt(a * a + b * b);
-}
-
-double Abs(double in)
-{
-	if (in < 0) {
-		return -in;
-	}
-	return in;
-}
 
 
 void draw_line_origin_buttom_left(uint width, uint height, cv::InputOutputArray img, cv::Point pt1, cv::Point pt2, const cv::Scalar& color,

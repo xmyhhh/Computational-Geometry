@@ -35,6 +35,11 @@ namespace base_type {
 		cv::Point2d p2;
 	};
 
+	struct Line3d {
+		cv::Point3d p1;
+		cv::Point3d p2;
+	};
+
 	struct IntersectionResult {
 		Line l1;
 		Line l2;
@@ -65,6 +70,8 @@ struct VulkanDrawData {
 	int* triangles;//index of triangle (3 int) * numberOfTriangle
 	int numberOfPointAttr = 0;
 	double* attr; //each point to size of((numberOfPointAttr double) * numberOfPoint)
+	bool triangleColoring = false;
+	double* triangleColors; //each triangle has one color
 };
 
 namespace Interpolation3D_datastruct {

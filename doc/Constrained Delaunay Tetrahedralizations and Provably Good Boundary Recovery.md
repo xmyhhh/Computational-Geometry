@@ -52,6 +52,7 @@
 
 ### The local feature size
 * the local feature size lfs(p) of any point p in space is the radius of the smallest ball centered at p that intersects two segments or vertices in X that do not intersect each other.（空间中任意点 p 的局部特征尺寸 lfs(p) 是以 p 为中心，与 X 中两个互不相交的线段或顶点相交的最小球的半径。）(解释：)
+https://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
 ![Alt text](image/lfs.png)
 * Delaunay refinement algorithms typically bound the sizes of the elements they create in terms of this or a similar definition of lfs.
 * lfs is a continuous function that is positive everywhere and suggests a rough upper bound on how large high-quality elements can be. 
