@@ -480,8 +480,8 @@ void CDT_3D_01(CDT_3D_01_datastruct::PLC& plc, Delaunay3D_01_datastruct::BW_DT_s
 				mark_edge(new_edge);
 				};
 
-			//int iter_times = 0;
-			//debug_cout("begin edge protection algorithm step 2");
+			int iter_times = 0;
+			debug_cout("begin edge protection algorithm step 2");
 
 			while (true) {
 				debug_cout("split iter: " + std::to_string(iter_times));
