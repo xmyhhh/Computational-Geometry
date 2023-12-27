@@ -230,6 +230,9 @@ void CDT_3D_01(CDT_3D_01_datastruct::PLC& plc, Delaunay3D_01_datastruct::BW_DT_s
 	//Bowyer-Watson Algorithm 3d
 	using namespace CDT_3D_01_datastruct;
 
+	
+
+
 	auto vertex_pool_allocate_default = [&plc](cv::Point3d position) {
 		auto new_v = (Vertex*)plc.vertex_pool.allocate();
 		new_v->connect_edge_array = new std::vector<Edge*>();
@@ -477,8 +480,8 @@ void CDT_3D_01(CDT_3D_01_datastruct::PLC& plc, Delaunay3D_01_datastruct::BW_DT_s
 				mark_edge(new_edge);
 				};
 
-			int iter_times = 0;
-			debug_cout("begin edge protection algorithm step 2");
+			//int iter_times = 0;
+			//debug_cout("begin edge protection algorithm step 2");
 
 			while (true) {
 				debug_cout("split iter: " + std::to_string(iter_times));
@@ -499,7 +502,6 @@ void CDT_3D_01(CDT_3D_01_datastruct::PLC& plc, Delaunay3D_01_datastruct::BW_DT_s
 						}
 					}
 				}
-
 
 				if (non_strongly_delaunay_edge_array.size() == 0)
 					//When every subsegment is strongly Delaunay, the PLC is edge-protected and the algorithm terminates.
