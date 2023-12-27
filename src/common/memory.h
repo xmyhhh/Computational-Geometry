@@ -200,7 +200,7 @@ public:
 			traversalInit();
 			auto loop = traverse();
 			int idx = 0;
-			while (loop != (void*)NULL)
+			while (loop != nullptr)
 			{
 				index_array[idx++] = loop;
 				loop = traverse();
@@ -213,7 +213,7 @@ public:
 			traversalInit();
 			auto loop = traverse();
 			int idx = 0;
-			while (loop != (void*)NULL)
+			while (loop != nullptr)
 			{
 				index_array[idx++] = loop;
 				loop = traverse();
@@ -232,7 +232,7 @@ public:
 		int res = 0;
 		traversalInit();
 		auto loop = traverse();
-		while (loop != (void*)NULL)
+		while (loop != nullptr)
 		{
 			if (loop == p) {
 				return res;
