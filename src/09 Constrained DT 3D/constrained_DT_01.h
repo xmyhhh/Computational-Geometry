@@ -9,6 +9,7 @@ extern void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_dat
 namespace CDT_3D_01_datastruct {
 	struct PLC {
 		std::vector<cv::Point3d> vertex_array;
+		std::vector<base_type::Triangle_Index> face_index_array;
 		int size = 40;
 
 		bool init_from_file(std::string path) {
@@ -42,6 +43,13 @@ namespace CDT_3D_01_datastruct {
 					vertex_array.push_back({ x * size, y * size, z * size }
 					);
 				}
+				else if (is_line_type(buffer, "f")) {
+					uint x, y, z;
+					sscanf(bufferp, "%*s %d %d %d", &x, &y, &z);
+
+					face_index_array.push_back({ x , y, z });
+
+				}
 
 			}
 			fclose(fp);
@@ -62,6 +70,19 @@ namespace CDT_3D_01_datastruct {
 				vulkan_data.points[i * 3 + 2] = vertex_array[i].z;
 			}
 
+			//edge
+			vulkan_data.numberOfTriangle = face_index_array.size();
+			vulkan_data.triangles = (int*)malloc(vulkan_data.numberOfTriangle * 3 * sizeof(int));
+			//int min_index = 999;
+
+			for (int i = 0; i < face_index_array.size(); i++) {
+				auto& face = face_index_array[i];
+				vulkan_data.triangles[i * 3] = face.p1-1;
+				vulkan_data.triangles[i * 3 + 1] = face.p2-1;
+				vulkan_data.triangles[i * 3 + 2] = face.p3-1;
+				
+			}
+			
 			return vulkan_data;
 		}
 	};
@@ -72,7 +93,7 @@ namespace CDT_3D_01_datastruct {
 void CDT_3D_01(CDT_3D_01_datastruct::PLC& plc, Delaunay3D_01_datastruct::BW_DT_struct& bw_dt_struct) {
 	//Bowyer-Watson Algorithm 3d
 	using namespace CDT_3D_01_datastruct;
-	
+
 	Delaunay_3D_01(plc.vertex_array, bw_dt_struct);
 
 }

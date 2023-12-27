@@ -28,7 +28,7 @@ void ConstrainedDelaunay3D(HINSTANCE hInstance) {
     CDT_3D_01(plc, bw_dt_struct);
 
     cdt_Vulkan_app = new Delaunay3D_Vulkan();
-    cdt_Vulkan_app->SetData(bw_dt_struct.toVulkanDrawData());
+    cdt_Vulkan_app->SetData(plc.toVulkanDrawData());
     cdt_Vulkan_app->initVulkan();
     cdt_Vulkan_app->setupWindow(hInstance, ConstrainedDelaunay3D_WndProc);
     cdt_Vulkan_app->prepare();
