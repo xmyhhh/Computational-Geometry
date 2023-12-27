@@ -195,7 +195,6 @@ public:
 	void* operator[](const int index)
 	{
 
-		void** index_array = nullptr;
 		if (index_array == nullptr) {
 			index_array = (void**)malloc(items * sizeof(void*));
 			traversalInit();
@@ -222,11 +221,29 @@ public:
 			dirty = false;
 		}
 		return index_array[index];
-
 	}
+
 	size_t size() {
 		return items;
 	}
+
+
+	int get_index(void* p) {
+		int res = 0;
+		traversalInit();
+		auto loop = traverse();
+		while (loop != (void*)NULL)
+		{
+			if (loop == p) {
+				return res;
+			}
+			res++;
+			loop = traverse();
+		}
+		return -1;
+	}
 private:
 	bool dirty = false;
+
+	void** index_array = nullptr;
 };
