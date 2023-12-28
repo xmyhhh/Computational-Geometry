@@ -153,7 +153,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
 
 
-	exactinit(0, 0, 0, 1000, 1000, 1000);
+	exactinit(0, 0, 0, 500, 500, 500);
 
 
 	//opencv test

@@ -3,8 +3,8 @@
 #include "common/helper.h"
 #include "common/timer/timer.h"
 
-void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct::BW_DT_struct& bw_dt_struct) {
-	//Bowyer-Watson Algorithm 3d
+void Delaunay_3D_02(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct::BW_DT_struct& bw_dt_struct) {
+	//Bowyer-Watson Algorithm 3d ++
 	using namespace Delaunay3D_01_datastruct;
 
 	auto n_simplices_bounding_sphere_cal = [&bw_dt_struct](n_simplices& _n_simplices) {
@@ -42,6 +42,32 @@ void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 			free(pe);
 			return res;
 		}
+
+
+		};
+
+	auto inside_simplices = [&bw_dt_struct](const cv::Point3d vertex_position, n_simplices _n_simplices) {
+
+
+		auto get_position = [&bw_dt_struct](int index) {return bw_dt_struct.all_point[index]; };
+		REAL* pa = new REAL[3](get_position(_n_simplices.index_p1).x, get_position(_n_simplices.index_p1).y, get_position(_n_simplices.index_p1).z);
+
+		REAL* pb = new REAL[3](get_position(_n_simplices.index_p2).x, get_position(_n_simplices.index_p2).y, get_position(_n_simplices.index_p2).z);
+		REAL* pc = new REAL[3](get_position(_n_simplices.index_p3).x, get_position(_n_simplices.index_p3).y, get_position(_n_simplices.index_p3).z);
+		REAL* pd = new REAL[3](get_position(_n_simplices.index_p4).x, get_position(_n_simplices.index_p4).y, get_position(_n_simplices.index_p4).z);
+		REAL* pe = new REAL[3](vertex_position.x, vertex_position.y, vertex_position.z);
+
+		auto b1 = orient3dexact(pa, pb, pc, pe) > 0;
+		auto b2 = orient3dexact(pb, pd, pc, pe) > 0;
+		auto b3 = orient3dexact(pc, pd, pa, pe) > 0;
+		auto b4 = orient3dexact(pa, pd, pb, pe) > 0;
+		free(pa);
+		free(pb);
+		free(pc);
+		free(pd);
+		free(pe);
+		return (b1 == b2) && (b2 == b3) && (b3 == b4);
+
 
 
 		};
@@ -110,11 +136,11 @@ void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 				bad_n_simplices_list.push_back(simplices);
 			}
 		}
-		//Any data point found to be in non-general position is rejectedbecause it leads to a non-unique tessellation.
-		ASSERT(bad_n_simplices_list.size() > 0); //may raise error 
+
+		ASSERT(bad_n_simplices_list.size() > 0);
 
 		//Stage 2:
-		bool use_map = false;
+		bool use_map = true;
 		std::vector<n_simplices_face> n_simplices_face_to_reserve_list;
 		if (use_map) {
 			std::unordered_map<std::string, n_simplices_face> n_simplices_face_to_reserve_map;
@@ -219,14 +245,47 @@ void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 		}
 		};
 
+
+	double min_x = 9999, max_x = -9999;
+	double min_y = 9999, max_y = -9999;
+	double min_z = 9999, max_z = -9999;
+	for (auto p : all_dots) {
+		if (p.x < min_x)
+			min_x = p.x;
+		if (p.x > max_x)
+			max_x = p.x;
+
+		if (p.y < min_y)
+			min_y = p.y;
+		if (p.y > max_y)
+			max_y = p.y;
+
+		if (p.z < min_z)
+			min_z = p.z;
+		if (p.z > max_z)
+			max_z = p.z;
+	}
+
+
 	//init BW_DT_struct
 	if (bw_dt_struct.all_point.size() < 4) {
 		//uses a boundary tetrahedron to enclose the whole set of points
 
-		bw_dt_struct.all_point.push_back({ 0,0,0 });
-		bw_dt_struct.all_point.push_back({ 150,0,0 });
-		bw_dt_struct.all_point.push_back({ 0,150,0 });
-		bw_dt_struct.all_point.push_back({ 0,0,150 });
+		//(x - max_x) +(y - max_y) +(z - max_z) = 0
+		//if y=x=0   ->     (z) =(  max_x) +(  max_y)+  max_z
+		double offset = std::min(std::min(min_x, min_y), min_z);
+		if (offset <= 0) {
+			offset = -offset;
+			offset += 10;
+		}
+		else {
+			offset = 0;
+		}
+		double b = max_x + max_y + max_z + 10 + offset;
+		bw_dt_struct.all_point.push_back({ -1000,-1000,-1000 });
+		bw_dt_struct.all_point.push_back({ 2000,0,0 });
+		bw_dt_struct.all_point.push_back({ 0,2000,0 });
+		bw_dt_struct.all_point.push_back({ 0,0,2000 });
 
 		bw_dt_struct.n_simplices_list.push_back({ 0,1,2,3 });
 		n_simplices_bounding_sphere_cal(bw_dt_struct.n_simplices_list[0]);
@@ -238,6 +297,11 @@ void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 	for (const auto& point : all_dots) {
 		debug_cout("Incremental_construction pt " + std::to_string(i));
 		i++;
+		//if (i == 8)
+		//{
+		//	bw_dt_struct.all_point.push_back(point);
+		//	break;
+		//}
 
 		Incremental_construction(point, bw_dt_struct);
 	}

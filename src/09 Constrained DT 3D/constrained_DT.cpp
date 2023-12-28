@@ -21,14 +21,15 @@ void ConstrainedDelaunay3D(HINSTANCE hInstance) {
     std::vector<cv::Point3d> all_dots;
 
     CDT_3D_01_datastruct::PLC plc;
-    ASSERT(plc.init_from_file(getAssetPath() + "suzanne.obj"));
+    ASSERT(plc.init_from_file(getAssetPath() + "doughnut.obj"));
 
 
 
-    CDT_3D_01(plc);
+   auto res =  CDT_3D_01(plc);
 
     cdt_Vulkan_app = new Delaunay3D_Vulkan();
-    cdt_Vulkan_app->SetData(plc.toVulkanDrawData());
+    //cdt_Vulkan_app->SetData(plc.toVulkanDrawData());
+    cdt_Vulkan_app->SetData(res.toVulkanDrawData());
     cdt_Vulkan_app->initVulkan();
     cdt_Vulkan_app->setupWindow(hInstance, ConstrainedDelaunay3D_WndProc);
     cdt_Vulkan_app->prepare();

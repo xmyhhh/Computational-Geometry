@@ -4,7 +4,7 @@
 #include "common/file/format_convert.h"
 #include "common/memory.h"
 
-extern void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct::BW_DT_struct& bw_dt_struct);
+extern void Delaunay_3D_02(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct::BW_DT_struct& bw_dt_struct);
 
 namespace CDT_3D_01_datastruct {
 	struct Edge;
@@ -229,7 +229,7 @@ namespace CDT_3D_01_datastruct {
 }
 
 
-void CDT_3D_01(CDT_3D_01_datastruct::PLC& plc) {
+Delaunay3D_01_datastruct::BW_DT_struct CDT_3D_01(CDT_3D_01_datastruct::PLC& plc) {
 	//Constrained Delaunay Tetrahedralizations and Provably Good Boundary Recovery （Shewchuk）
 	using namespace CDT_3D_01_datastruct;
 
@@ -487,7 +487,7 @@ void CDT_3D_01(CDT_3D_01_datastruct::PLC& plc) {
 				double d = (pa.x - checkpt.x) * (pb.x - checkpt.x)
 					+ (pa.y - checkpt.y) * (pb.y - checkpt.y)
 					+ (pa.z - checkpt.z) * (pb.z - checkpt.z);
-				return d < 0.; // cos\theta < 0. ==> 90 < theta <= 180 degree.
+				return d < 0.; // cos\theta < 0. ==> 90 < theta <= 180 degree.  inside
 			};
 
 		while (true) {
@@ -545,6 +545,9 @@ void CDT_3D_01(CDT_3D_01_datastruct::PLC& plc) {
 
 		Delaunay3D_01_datastruct::BW_DT_struct bw_dt_struct;
 		debug_cout("begin Delaunay_3D_01, total vtx:" + std::to_string(all_dots.size()));
-		//Delaunay_3D_01(all_dots, bw_dt_struct);
+
+		Delaunay_3D_02(all_dots, bw_dt_struct);
+
+		return bw_dt_struct;
 	}
 }

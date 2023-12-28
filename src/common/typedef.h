@@ -179,7 +179,29 @@ namespace Delaunay3D_01_datastruct {
 		std::vector<n_simplices> n_simplices_list;
 		std::vector<cv::Point3d> all_point;
 
+		void clear_bounding_box() {
+			auto it = n_simplices_list.begin();
+			auto index_bounding_box = [](int index) {
+				return index == 0 || index == 1 || index == 2 || index == 3;
+				};
+			while (it != n_simplices_list.end()) {
+				if (index_bounding_box((*it).index_p1) || index_bounding_box((*it).index_p2) || index_bounding_box((*it).index_p3) || index_bounding_box((*it).index_p4)) {
+					it = n_simplices_list.erase(it);
+				}
+				else {
+					(*it).index_p1 -= 4;
+					(*it).index_p2 -= 4;
+					(*it).index_p3 -= 4;
+					(*it).index_p4 -= 4;
+					it++;
+				}
+			}
+			all_point = std::vector<cv::Point3d>(all_point.begin() + 4, all_point.end());
+		}
+
 		VulkanDrawData toVulkanDrawData() {
+			clear_bounding_box();
+
 			VulkanDrawData data;
 
 			data.numberOfPoint = all_point.size();
@@ -193,19 +215,8 @@ namespace Delaunay3D_01_datastruct {
 			data.numberOfPointAttr = 4;
 			data.attr = (double*)malloc(sizeof(double) * data.numberOfPointAttr * data.numberOfPoint);
 			for (int i = 0; i < data.numberOfPoint; i++) {
-				if (i < 2) {
-					data.attr[i * 4 + 0] = 254;
-					data.attr[i * 4 + 1] = 0;
-					data.attr[i * 4 + 2] = 0;
-					data.attr[i * 4 + 3] = 1;
-				}
-				else if (i == 2) {
-					data.attr[i * 4 + 0] = 0;
-					data.attr[i * 4 + 1] = 0;
-					data.attr[i * 4 + 2] = 254;
-					data.attr[i * 4 + 3] = 1;
-				}
-				else if (i == 3) {
+
+				if (i == data.numberOfPoint - 1) { //last one
 					data.attr[i * 4 + 0] = 0;
 					data.attr[i * 4 + 1] = 254;
 					data.attr[i * 4 + 2] = 0;
@@ -238,8 +249,6 @@ namespace Delaunay3D_01_datastruct {
 				data.triangles[i * 4 * 3 + 3 * 3 + 1] = tetrahedrons.index_p3;
 				data.triangles[i * 4 * 3 + 3 * 3 + 2] = tetrahedrons.index_p3;
 			}
-
-
 
 			return data;
 		}
