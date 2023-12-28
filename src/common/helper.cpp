@@ -143,7 +143,56 @@ bool InCircle2D(const cv::Point2d& p1, const cv::Point2d& p2, const cv::Point2d&
 	double value = a11 * a22 * a33 + a12 * a23 * a31 + a13 * a21 * a32 - a31 * a22 * a13 - a32 * a23 * a11 - a21 * a12 * a33;
 
 	return value > 0.0;
-};
+}
+bool InCircle3D(const cv::Point3d& a, const cv::Point3d& b, const cv::Point3d& c, const cv::Point3d& d, const cv::Point3d& e)
+{
+	double a11, a12, a13, a14;
+	double a21, a22, a23, a24;
+	double a31, a32, a33, a34;
+	double a41, a42, a43, a44;
+
+
+	a11 = a.x - e.x; a12 = a.y - e.y; a13 = a.z - e.z; a14 = (a.x - e.x) * (a.x - e.x) + (a.y - e.y) * (a.y - e.y) + (a.z - e.z) * (a.z - e.z);
+	a21 = b.x - e.x; a22 = b.y - e.y; a23 = b.z - e.z; a24 = (b.x - e.x) * (b.x - e.x) + (b.y - e.y) * (b.y - e.y) + (b.z - e.z) * (b.z - e.z);
+	a31 = c.x - e.x; a32 = c.y - e.y; a33 = c.z - e.z; a34 = (c.x - e.x) * (c.x - e.x) + (c.y - e.y) * (c.y - e.y) + (c.z - e.z) * (c.z - e.z);
+	a41 = d.x - e.x; a42 = d.y - e.y; a43 = d.z - e.z; a44 = (d.x - e.x) * (d.x - e.x) + (d.y - e.y) * (d.y - e.y) + (d.z - e.z) * (d.z - e.z);
+
+	double determinant =
+		a11 * a22 * a33 * a44
+		+ a11 * a23 * a34 * a42
+		+ a11 * a24 * a32 * a43
+
+		- a11 * a24 * a33 * a42
+		- a11 * a23 * a32 * a44
+		- a11 * a22 * a34 * a43
+
+		- a12 * a21 * a33 * a44
+		- a13 * a21 * a34 * a42
+		- a14 * a21 * a32 * a43
+
+		+ a14 * a21 * a33 * a42
+		+ a13 * a21 * a32 * a44
+		+ a12 * a21 * a34 * a43
+
+		+ a12 * a23 * a31 * a44
+		+ a13 * a24 * a31 * a42
+		+ a14 * a22 * a31 * a43
+
+		- a14 * a23 * a31 * a42
+		- a13 * a22 * a31 * a44
+		- a12 * a24 * a31 * a43
+
+		- a12 * a23 * a34 * a41
+		- a13 * a24 * a32 * a41
+		- a14 * a22 * a33 * a41
+
+		+ a14 * a23 * a32 * a41
+		+ a13 * a22 * a34 * a41
+		+ a12 * a24 * a33 * a41;
+
+	return determinant > 0;
+}
+;
 
 
 IntersectionResult LineIntersectionCalulate(Line l1, Line l2) {

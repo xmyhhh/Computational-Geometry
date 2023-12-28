@@ -26,7 +26,7 @@ void Delaunay3D(HINSTANCE hInstance) {
 #define use_random_point 1
 
 	if (use_random_point) {
-		int size = 500;
+		int size =10;
 		for (int i = 0; i < size; i++)
 		{
 			all_dots.push_back(cv::Point3d(rand() % width + 1, rand() % height + 1, rand() % deepth + 1));

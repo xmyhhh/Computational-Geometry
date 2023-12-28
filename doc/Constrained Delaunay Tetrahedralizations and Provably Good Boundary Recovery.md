@@ -106,7 +106,7 @@ https://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
     * Imagine a PLC X whose CDT T has been constructed. Let f be a facet we would like to insert into the PLC (and recover in the tetrahedralization). <b>The segments that bound f must already be present in X, and they must appear as edges in T.</b>
     * The goal of a facet insertion algorithm is to convert T into T^f. 
     * To find the CDT of an edge-protected PLC Y , let X be a PLC containing all the vertices and segments of Y , but no facets. (Note that there is no need for the algorithm to actually store X; X is just a mathematical construction for our understanding.)
-    * Let T be the Delaunay tetrahedralization of the vertices in X. Because Y is fully edge-protected, every segment in X is strongly Delaunay, so T is the CDT of X???
+    * Let T be the Delaunay tetrahedralization of the vertices in X. Because Y is fully edge-protected, every segment in X is strongly Delaunay, so <b>T is the CDT of X</b>
     * Next, insert the facets of Y into X, one by one. With each facet insertion, update T so it is still the CDT of X. 
     * The key observation is that because X always remains edge-protected, this update is always possible. 
     * When all the facets have been inserted, X = Y and T is the CDT of Y —or would be if T didn’t cover the entire convex hull of the triangulation domain.

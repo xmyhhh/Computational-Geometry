@@ -14,13 +14,36 @@ void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 			bw_dt_struct.all_point[_n_simplices.index_p3],
 			bw_dt_struct.all_point[_n_simplices.index_p4],
 			_n_simplices.coordinates,
-			_n_simplices.radius
+			_n_simplices.radius,
+			_n_simplices.radius2
 		);
 		};
 
-	auto inside_simplices_sphere = [](const cv::Point3d vertex_position, n_simplices _n_simplices) {
+	auto inside_simplices_sphere = [&bw_dt_struct](const cv::Point3d vertex_position, n_simplices _n_simplices) {
 		double distance = VectorLengthSqr(vertex_position, _n_simplices.coordinates);
-		return  distance < _n_simplices.radius * _n_simplices.radius;
+
+		if (abs(distance - _n_simplices.radius2) > 0.00001 && false) {
+			return  distance < _n_simplices.radius2;
+		}
+		else {
+			auto get_position = [&bw_dt_struct](int index) {return bw_dt_struct.all_point[index]; };
+			REAL* pa = new REAL[3](get_position(_n_simplices.index_p1).x, get_position(_n_simplices.index_p1).y, get_position(_n_simplices.index_p1).z);
+
+			REAL* pb = new REAL[3](get_position(_n_simplices.index_p2).x, get_position(_n_simplices.index_p2).y, get_position(_n_simplices.index_p2).z);
+			REAL* pc = new REAL[3](get_position(_n_simplices.index_p3).x, get_position(_n_simplices.index_p3).y, get_position(_n_simplices.index_p3).z);
+			REAL* pd = new REAL[3](get_position(_n_simplices.index_p4).x, get_position(_n_simplices.index_p4).y, get_position(_n_simplices.index_p4).z);
+			REAL* pe = new REAL[3](vertex_position.x, vertex_position.y, vertex_position.z);
+
+			auto res = insphereexact(pa, pb, pc, pd, pe)* orient3dexact(pa, pb, pc, pd) > 0;
+			free(pa);
+			free(pb);
+			free(pc);
+			free(pd);
+			free(pe);
+			return res;
+		}
+
+
 		};
 
 	auto is_face_inside_facelist = [](n_simplices_face& face, std::vector<n_simplices_face>& n_simplices_face_to_reserve_list, bool find_and_remove) {
@@ -91,7 +114,7 @@ void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 		ASSERT(bad_n_simplices_list.size() > 0);
 
 		//Stage 2:
-		bool use_map = true;
+		bool use_map = false;
 		std::vector<n_simplices_face> n_simplices_face_to_reserve_list;
 		if (use_map) {
 			std::unordered_map<std::string, n_simplices_face> n_simplices_face_to_reserve_map;
@@ -196,8 +219,6 @@ void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 		}
 		};
 
-
-
 	//init BW_DT_struct
 	if (bw_dt_struct.all_point.size() < 4) {
 		//uses a boundary tetrahedron to enclose the whole set of points
@@ -221,10 +242,5 @@ void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 	}
 	auto t = MyTimer::GetTime();
 	std::cout << "run time:" + std::to_string(t);
-
-
-
-
-
 
 }

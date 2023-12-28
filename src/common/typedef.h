@@ -168,6 +168,7 @@ namespace Delaunay3D_01_datastruct {
 		//Each (n + 1)-tuple of indices is associated with coordinates/radius of circumsphere
 		cv::Point3d coordinates;
 		double radius;
+		double radius2;
 
 		bool mark_delation = false;
 	};

@@ -8,7 +8,7 @@
 #include <ShellScalingAPI.h>
 #include <iostream>
 #include "common/timer/timer.h"
-
+#include "common/predicates/predicates.h"
 
 
 extern void ShowTriangle();
@@ -148,6 +148,12 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
 
 	CreateNewConsole(1024);
+
+
+
+
+
+	exactinit(0, 0, 0, 1000, 1000, 1000);
 
 
 	//opencv test

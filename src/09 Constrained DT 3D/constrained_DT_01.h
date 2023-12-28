@@ -27,9 +27,12 @@ namespace CDT_3D_01_datastruct {
 		Vertex* p3;
 	};
 
+
+
 	struct Edge {
 		Vertex* orig;
 		Vertex* end;
+
 
 		//for draw debug
 		bool draw_red = false;
@@ -226,7 +229,7 @@ namespace CDT_3D_01_datastruct {
 }
 
 
-void CDT_3D_01(CDT_3D_01_datastruct::PLC& plc, Delaunay3D_01_datastruct::BW_DT_struct& bw_dt_struct) {
+void CDT_3D_01(CDT_3D_01_datastruct::PLC& plc) {
 	//Constrained Delaunay Tetrahedralizations and Provably Good Boundary Recovery （Shewchuk）
 	using namespace CDT_3D_01_datastruct;
 
@@ -242,6 +245,7 @@ void CDT_3D_01(CDT_3D_01_datastruct::PLC& plc, Delaunay3D_01_datastruct::BW_DT_s
 		new_e->draw_red = false;
 		new_e->orig = a;
 		new_e->end = b;
+
 		return new_e;
 
 		};
@@ -264,11 +268,11 @@ void CDT_3D_01(CDT_3D_01_datastruct::PLC& plc, Delaunay3D_01_datastruct::BW_DT_s
 		e->draw_red = false;
 		};
 
-	//Delaunay_3D_01(plc.vertex_array, bw_dt_struct);
+
 
 	//edge protection algorithm
 	{
-		//Step 1: uses protecting spheres centered at input vertices to choose locations to insert new vertices.
+#pragma region Step 1: uses protecting spheres centered at input vertices to choose locations to insert new vertices.
 		{
 			//find vtx that at least two segments meet at an angle less than 90◦
 			auto is_segments_angle_less_90 = [](Vertex* vtx)->bool {
@@ -449,70 +453,98 @@ void CDT_3D_01(CDT_3D_01_datastruct::PLC& plc, Delaunay3D_01_datastruct::BW_DT_s
 				}
 			}
 		}
+#pragma endregion
 
-
-
-		//Step 2: The second step recovers the segments that are not ends by recursive bisection（递归平分）
-		{
-			//Any segment that is not strongly Delaunay is split in two with a new vertex at its midpoint
+#pragma region Step 2: The second step recovers the segments that are not ends by recursive bisection（递归平分）
+		//Any segment that is not strongly Delaunay is split in two with a new vertex at its midpoint
 			//<b>The simplex s is strongly Delaunay</b>: if there is a circumsphere S of s such that no vertex of X lies inside or on S, except the vertices of s.
 
-			auto edge_split = [&plc, mark_edge, remove_edge_in_array, vertex_pool_allocate_default, edge_pool_allocate_default](Edge* edge_to_split) {
-				Vertex* start = edge_to_split->orig;
-				Vertex* end = edge_to_split->end;
+		auto edge_split = [&plc, mark_edge, remove_edge_in_array, vertex_pool_allocate_default, edge_pool_allocate_default](Edge* edge_to_split) {
+			Vertex* start = edge_to_split->orig;
+			Vertex* end = edge_to_split->end;
 
-				auto new_vtx = vertex_pool_allocate_default((edge_to_split->orig->position + edge_to_split->end->position) / 2);
-				auto new_edge = edge_pool_allocate_default(new_vtx, end);
+			auto new_vtx = vertex_pool_allocate_default((edge_to_split->orig->position + edge_to_split->end->position) / 2);
+			auto new_edge = edge_pool_allocate_default(new_vtx, end);
 
-				new_vtx->connect_edge_array->push_back(new_edge);
-				new_vtx->connect_edge_array->push_back(edge_to_split);
+			new_vtx->connect_edge_array->push_back(new_edge);
+			new_vtx->connect_edge_array->push_back(edge_to_split);
 
-				ASSERT(remove_edge_in_array(edge_to_split, *end->connect_edge_array));
-				(*end->connect_edge_array).push_back(new_edge);
+			ASSERT(remove_edge_in_array(edge_to_split, *end->connect_edge_array));
+			(*end->connect_edge_array).push_back(new_edge);
 
-				edge_to_split->end = new_vtx;
+			edge_to_split->end = new_vtx;
 
-				mark_edge(edge_to_split);
-				mark_edge(new_edge);
-				};
+			mark_edge(edge_to_split);
+			mark_edge(new_edge);
 
-			int iter_times = 0;
-			debug_cout("begin edge protection algorithm step 2");
+			};
 
-			while (true) {
-				debug_cout("split iter: " + std::to_string(iter_times));
-				std::vector<Edge*> non_strongly_delaunay_edge_array;
+		int iter_times = 0;
+		debug_cout("begin edge protection algorithm step 2");
 
-				for (int i = 0; i < plc.edge_pool.size(); i++) {
-					auto e = (Edge*)plc.edge_pool[i];
-					cv::Point3d circumsphere_center = (e->end->position + e->orig->position) / 2.0;
-					double circumsphere_radius_sqr = VectorLengthSqr(e->end->position - circumsphere_center);
-					for (int j = 0; j < plc.vertex_pool.size(); j++) {
-						auto v = (Vertex*)plc.vertex_pool[j];
-						if (e->end == v || e->orig == v)
-							continue;
+		auto check_encroachment = [](const cv::Point3d& pa, const cv::Point3d& pb, const cv::Point3d& checkpt)
+			{
+				double d = (pa.x - checkpt.x) * (pb.x - checkpt.x)
+					+ (pa.y - checkpt.y) * (pb.y - checkpt.y)
+					+ (pa.z - checkpt.z) * (pb.z - checkpt.z);
+				return d < 0.; // cos\theta < 0. ==> 90 < theta <= 180 degree.
+			};
 
-						if (VectorLengthSqr(v->position - circumsphere_center) <= circumsphere_radius_sqr) {
-							non_strongly_delaunay_edge_array.push_back(e);
-							break;
-						}
+		while (true) {
+			debug_cout("split iter: " + std::to_string(iter_times));
+			std::vector<Edge*> non_strongly_delaunay_edge_array;
+
+			for (int i = 0; i < plc.edge_pool.size(); i++) {
+				auto e = (Edge*)plc.edge_pool[i];
+
+				for (int j = 0; j < plc.vertex_pool.size(); j++) {
+					auto v = (Vertex*)plc.vertex_pool[j];
+					if (e->end == v || e->orig == v)
+						continue;
+
+					if (check_encroachment(e->end->position, e->orig->position,v->position)) {
+						non_strongly_delaunay_edge_array.push_back(e);
+						break;
 					}
 				}
-
-				if (non_strongly_delaunay_edge_array.size() == 0)
-					//When every subsegment is strongly Delaunay, the PLC is edge-protected and the algorithm terminates.
-					break;
-
-				debug_cout("find non_strongly_delaunay_edge: " + std::to_string(non_strongly_delaunay_edge_array.size()));
-				for (int i = 0; i < non_strongly_delaunay_edge_array.size(); i++) {
-					auto bad_e = non_strongly_delaunay_edge_array[i];
-					edge_split(bad_e);
-					//mark_edge(bad_e);
-				}
-				
-				iter_times++;
 			}
+
+			if (non_strongly_delaunay_edge_array.size() == 0)
+				//When every subsegment is strongly Delaunay, the PLC is edge-protected and the algorithm terminates.
+				break;
+
+			debug_cout("find non_strongly_delaunay_edge: " + std::to_string(non_strongly_delaunay_edge_array.size()));
+			for (int i = 0; i < non_strongly_delaunay_edge_array.size(); i++) {
+				auto bad_e = non_strongly_delaunay_edge_array[i];
+				edge_split(bad_e);
+				//mark_edge(bad_e);
+			}
+
+			iter_times++;
 		}
+
+#pragma endregion
 	}
 
+
+	//Incremental Facet Insertion algorithm
+	{
+		//The algorithm begins with a Delaunay tetrahedralization of the vertices of a fully edge-protected PLC and incrementally recovers the missing facets one by one
+
+		auto incremental_facet_insertion = [](CDT_3D_01_datastruct::PLC& plc, Face f) {
+			//The goal of a facet insertion algorithm is to convert T into T^f. 
+
+
+			};
+
+		std::vector<cv::Point3d> all_dots;
+		for (int i = 0; i < plc.vertex_pool.size(); i++) {
+			auto v = (Vertex*)plc.vertex_pool[i];
+			all_dots.push_back(v->position);
+		}
+
+		Delaunay3D_01_datastruct::BW_DT_struct bw_dt_struct;
+		debug_cout("begin Delaunay_3D_01, total vtx:" + std::to_string(all_dots.size()));
+		//Delaunay_3D_01(all_dots, bw_dt_struct);
+	}
 }

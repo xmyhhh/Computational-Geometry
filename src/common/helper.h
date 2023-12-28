@@ -1,5 +1,6 @@
 #pragma once
 #include "typedef.h"
+#include "predicates/predicates.h"
 //liner linear algebra
 //PLU 分解;
 bool lu_decmp(double lu[4][4], int n, int* ps, double* d, int N);
@@ -11,6 +12,8 @@ bool ToLeft(const cv::Point& p1, const cv::Point& p2, const cv::Point& p3);
 bool ToLeft(const cv::Point2d& p1, const cv::Point2d& p2, const cv::Point2d& s);
 
 bool InCircle2D(const cv::Point2d& p1, const cv::Point2d& p2, const cv::Point2d& p3, const cv::Point2d& s);
+
+bool InCircle3D(const cv::Point3d& p1, const cv::Point3d& p2, const cv::Point3d& p3, const cv::Point3d& p4, const cv::Point3d& s);
 
 template<typename PointT >
 bool InTriangleTest(PointT& p1, PointT& p2, PointT& p3, const PointT& s) {
@@ -42,7 +45,6 @@ inline cv::Point2d Rotate(cv::Point2d point, double angle) {
 	return cv::Point2d((point.x * std::cos(angle_deg) - std::sin(angle_deg) * point.y), (point.x * std::sin(angle_deg) - std::cos(angle_deg) * point.y));
 }
 
-
 inline cv::Point3d cross(const cv::Point3d& p1, const cv::Point3d& p2)
 {
 	double s1, s2, s3;
@@ -63,7 +65,7 @@ inline double dot(double* p1, double* p2)
 }
 
 template<typename PointT >
-bool CalculateBoundingSphere(const PointT& pa, const PointT& pb, const PointT& pc, const PointT& pd, PointT& center, double& radius)
+bool CalculateBoundingSphere(const PointT& pa, const PointT& pb, const PointT& pc, const PointT& pd, PointT& center, double& radius, double& radius2)
 {
 
 	auto lu_solve = [](double lu[4][4], int n, int* ps, double* b, int N)
@@ -127,7 +129,9 @@ bool CalculateBoundingSphere(const PointT& pa, const PointT& pb, const PointT& p
 	center.y = pa.y + b[1];
 	center.z = pa.z + b[2];
 
-	radius = std::sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2]);
+	radius2 = b[0] * b[0] + b[1] * b[1] + b[2] * b[2];
+	radius = std::sqrt(radius2);
+
 	return true;
 }
 

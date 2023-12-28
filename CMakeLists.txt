@@ -32,7 +32,7 @@ include_directories(third/)
 
 
 file(GLOB_RECURSE  SOURCE_FILES 
-	${PROJECT_SOURCE_DIR}/src/*.cpp
+	${PROJECT_SOURCE_DIR}/src/*.cpp ${PROJECT_SOURCE_DIR}/src/*.c
 )
 
 file(GLOB_RECURSE  IMGUI_SOURCE_FILES 

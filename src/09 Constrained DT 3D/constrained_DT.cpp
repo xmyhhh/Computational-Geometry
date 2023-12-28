@@ -24,8 +24,8 @@ void ConstrainedDelaunay3D(HINSTANCE hInstance) {
     ASSERT(plc.init_from_file(getAssetPath() + "suzanne.obj"));
 
 
-    Delaunay3D_01_datastruct::BW_DT_struct bw_dt_struct;
-    CDT_3D_01(plc, bw_dt_struct);
+
+    CDT_3D_01(plc);
 
     cdt_Vulkan_app = new Delaunay3D_Vulkan();
     cdt_Vulkan_app->SetData(plc.toVulkanDrawData());
