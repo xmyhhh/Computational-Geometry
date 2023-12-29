@@ -534,6 +534,18 @@ Delaunay3D_01_datastruct::BW_DT_struct CDT_3D_01(CDT_3D_01_datastruct::PLC& plc)
 		auto incremental_facet_insertion = [](CDT_3D_01_datastruct::PLC& plc, Face f) {
 			//The goal of a facet insertion algorithm is to convert T into T^f. 
 
+
+			//How does T transform into Tf? 
+
+				//First, find all the tetrahedra in T that intersect the relative interior of f(找出所有与插入面相交的四面体).
+				// It may be that f is already represented as a union of triangular faces, in which case there is nothing to do.（如果插入面刚好是某些四面体的面，那就什么也不做）
+				//Otherwise, the next step is to delete from T each tetrahedron whose interior intersects f, as Figure 13 illustrates. (Tetrahedra that intersect f only on their boundaries stay put.) （如果存在这样的四面体，就删除它）
+				//It is easy to verify that every other tetrahedron is still constrained Delaunay, and so must be present in the new CDT.
+
+
+			//Next, use the gift-wrapping algorithm to retriangulate the polygonal cavities created on each side of f.(接下来，使用礼品包装算法对 f 两侧创建的多边形空腔进行重切分)
+			//Be forewarned that there may be more than one polygonal cavity on each side of f, because some triangular faces of the tetrahedralization might already conform to f before f is inserted.(请注意，插入面的某一边可能不止一个空腔)
+
 			};
 
 		auto bw_dt_struct_to_plc = [](CDT_3D_01_datastruct::PLC& plc, Delaunay3D_01_datastruct::BW_DT_struct& bw_dt_struct) {
