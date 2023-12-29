@@ -534,6 +534,13 @@ Delaunay3D_01_datastruct::BW_DT_struct CDT_3D_01(CDT_3D_01_datastruct::PLC& plc)
 		auto incremental_facet_insertion = [](CDT_3D_01_datastruct::PLC& plc, Face f) {
 			//The goal of a facet insertion algorithm is to convert T into T^f. 
 
+			};
+
+		auto bw_dt_struct_to_plc = [](CDT_3D_01_datastruct::PLC& plc, Delaunay3D_01_datastruct::BW_DT_struct& bw_dt_struct) {
+			
+			bw_dt_struct.clear_bounding_box();
+			ASSERT(bw_dt_struct.all_point.size()==plc.vertex_pool.size());
+
 
 			};
 
@@ -547,6 +554,11 @@ Delaunay3D_01_datastruct::BW_DT_struct CDT_3D_01(CDT_3D_01_datastruct::PLC& plc)
 		debug_cout("begin Delaunay_3D_01, total vtx:" + std::to_string(all_dots.size()));
 
 		Delaunay_3D_02(all_dots, bw_dt_struct);
+
+		//Next, insert the facets of Y into X, one by one. With each facet insertion, update T so it is still the CDT of X.
+
+		//incremental_facet_insertion();
+		bw_dt_struct_to_plc(plc, bw_dt_struct);
 
 		return bw_dt_struct;
 	}

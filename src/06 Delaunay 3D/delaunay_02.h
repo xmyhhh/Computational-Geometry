@@ -22,7 +22,7 @@ void Delaunay_3D_02(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 	auto inside_simplices_sphere = [&bw_dt_struct](const cv::Point3d vertex_position, n_simplices _n_simplices) {
 		double distance = VectorLengthSqr(vertex_position, _n_simplices.coordinates);
 
-		if (abs(distance - _n_simplices.radius2) > 0.00001 && false) {
+		if (abs(distance - _n_simplices.radius2) > 0.0000001) {
 			return  distance < _n_simplices.radius2;
 		}
 		else {
@@ -34,7 +34,7 @@ void Delaunay_3D_02(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 			REAL* pd = new REAL[3](get_position(_n_simplices.index_p4).x, get_position(_n_simplices.index_p4).y, get_position(_n_simplices.index_p4).z);
 			REAL* pe = new REAL[3](vertex_position.x, vertex_position.y, vertex_position.z);
 
-			auto res = insphereexact(pa, pb, pc, pd, pe) * orient3dexact(pa, pb, pc, pd) > 0;
+			auto res = insphere(pa, pb, pc, pd, pe) * orient3d(pa, pb, pc, pd) > 0;
 			free(pa);
 			free(pb);
 			free(pc);
@@ -67,9 +67,6 @@ void Delaunay_3D_02(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 		free(pd);
 		free(pe);
 		return (b1 == b2) && (b2 == b3) && (b3 == b4);
-
-
-
 		};
 
 	auto is_face_inside_facelist = [](n_simplices_face& face, std::vector<n_simplices_face>& n_simplices_face_to_reserve_list, bool find_and_remove) {
@@ -286,7 +283,7 @@ void Delaunay_3D_02(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 		bw_dt_struct.all_point.push_back({ 2000,0,0 });
 		bw_dt_struct.all_point.push_back({ 0,2000,0 });
 		bw_dt_struct.all_point.push_back({ 0,0,2000 });
-
+		bw_dt_struct.has_bounding_box = true;
 		bw_dt_struct.n_simplices_list.push_back({ 0,1,2,3 });
 		n_simplices_bounding_sphere_cal(bw_dt_struct.n_simplices_list[0]);
 	}
@@ -295,7 +292,8 @@ void Delaunay_3D_02(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 
 	debug_cout("beging Incremental_construction pt");
 	for (const auto& point : all_dots) {
-		debug_cout("Incremental_construction pt " + std::to_string(i));
+		if (i % 100 == 0)
+			debug_cout("Incremental_construction pt " + std::to_string(i));
 		i++;
 		//if (i == 8)
 		//{

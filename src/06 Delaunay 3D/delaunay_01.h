@@ -227,7 +227,7 @@ void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 		bw_dt_struct.all_point.push_back({ 150,0,0 });
 		bw_dt_struct.all_point.push_back({ 0,150,0 });
 		bw_dt_struct.all_point.push_back({ 0,0,150 });
-
+		bw_dt_struct.has_bounding_box = true;
 		bw_dt_struct.n_simplices_list.push_back({ 0,1,2,3 });
 		n_simplices_bounding_sphere_cal(bw_dt_struct.n_simplices_list[0]);
 	}

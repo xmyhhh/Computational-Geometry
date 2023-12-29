@@ -97,8 +97,26 @@ https://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
 * There are two known algorithms that can construct the CDT of any PLC X that has a CDT, including any weakly edgeprotected PLC—if no five vertices of X are cospherical. (If the latter condition is not satisfied, see Section 9.) These are naive gift wrapping, and a sweep algorithm.
 
 * Gift-wrapping
-    * begins by choosing one constraining triangle, which serves as a seed upon which the constrained Delaunay tetrahedra crystallize one by one. Both sides of this triangle, plus each face of every crystallized tetrahedron, is used as a base from which to search for the vertex that serves as the apex of an adjacent tetrahedron.(首先选择一个约束三角形，将其作为种子，在此基础上逐个结晶出约束德劳内四面体。这个三角形的两边，加上每个结晶四面体的每个面，都将作为一个基点，用来寻找作为相邻四面体顶点的顶点。)
-    * Because the na¨ıve gift wrapping algorithm is slow, and the faster sweep algorithm takes a good deal of effort to implement and is difficult to make robust, I suggest a third CDT construction algorithm
+    * basic
+        * usually fast enough to be used for incremental facet insertion
+        * begins by choosing one constraining triangle, which serves as a seed upon which the constrained Delaunay tetrahedra crystallize one by one. Both sides of this triangle, plus each face of every crystallized tetrahedron, is used as a base from which to search for the vertex that serves as the apex of an adjacent tetrahedron.(首先选择一个约束三角形，将其作为种子，在此基础上逐个结晶出约束德劳内四面体。这个三角形的两边，加上每个结晶四面体的每个面，都将作为一个基点，用来寻找作为相邻四面体顶点的顶点。)
+        * Because the na¨ıve gift wrapping algorithm is slow, and the faster sweep algorithm takes a good deal of effort to implement and is difficult to make robust, I suggest a third CDT construction algorithm
+   * method
+        * Gift-wrapping is based on a straightforward procedure for “growing” a tetrahedron from a triangle
+        ![Alt text](image/Gift-wrapping.png)
+        * Let f be either a constraining triangle or a face of a constrained Delaunay tetrahedron. (假设f是一个约束三角形，或者cdt的一个面)
+        * Assume without loss of generality that f is oriented horizontally, and the constrained Delaunay tetrahedron immediately above f is sought(不失一般性的假设f是水平的，并且正在寻找的cdt在f上面)， Suppose that at least one vertex of X lies above f （那么f上至少有一个点）
+        * Let S be a sphere that can shrink or expand, but always circumscribes f. （假设S是一个始终外接f并且可以缩放的球）；Suppose the center O of S is initially infinitely far below f, so that the “inside” of S is the open halfspace below f; （假设S的球心O一开始在无限远处，所以球内占据整个开空间的一半）
+        * then O moves up until the portion of S above f touches the first vertex v that is visible from some point (any fixed point will do) in the interior of f.（然后 O 向上移动，直到 S 在 f 上方的部分触及从 f 内部某一点（任何定点都可以）可见的第一个顶点 v）
+        * Let t be the tetrahedron conv(f ∪ v). If a CDT of X exists, then t is constrained Delaunay. If no eligible vertex can be found, or if t is not constrained Delaunay, then X has no CDT.（假设t表示由面f和点v组成的四面体，如果X的cdt存在，那么t就是约束得劳的，  如果找不到符合条件的顶点，或者 t 不是受约束的 Delaunay，那么 X 就没有 CDT）
+
+    * Define of unfinished 
+        * Let f be the seed triangle. Say that both sides of f are unfinished. Thereafter, say that a triangular face of the growing tetrahedralization is unfinished if the algorithm has not yet identified the second constrained Delaunay tetrahedron that shares the face. （f是种子三角形，一开始两边都是unfinished的，因此，如果算法没有找到共享f的第二个cdt，那么称“不断增长的四面体的一个三角形面未完成”）
+        * To finish a face is to construct the second tetrahedron, or to determine that the face adjoins the exterior domain and there is no second tetrahedron （完成一个面就是构建第二个四面体，或者确定该面与外部域相邻，且不存在第二个四面体）
+    * The gift-wrapping algorithm maintains a dictionary (i.e. a hash table) of unfinished faces, which initially contains both sides of f.（g-w算法维护一个未完成面的哈希表，初始包含了种子f的两边）
+    * Repeat the following steps: remove an arbitrary unfinished face f from the dictionary and search for a vertex v that finishes f. If no vertex is above f, then f lies on the boundary of the convex hull.（不断重复这些步骤：移除未完成面f，然后搜索顶点v用于完成f；如果没有顶点v，那么f在凸包的边界上）
+    * If f does not lie on the convex hull boundary and does not bear a notation that indicates that it adjoins the exterior domain, find v through the growth procedure and add t = conv(f ∪ v) to the growing tetrahedralization.（如果f没有在凸包的边界上，并且不邻接外域，通过增量式步骤找到v然后将四面体t添加到增长的四面体）
+    * Check each face of t, except f, against the dictionary. If a face is already present in the dictionary, then the face is now finished, so remove it from the dictionary. Otherwise, the face is new and has one unfinished side, so insert it into the dictionary. (检查t的每个面（除了f），如果某个面已经在字典里面，那么这个面就完成了，把它从字典里面移除。否则，这个面是新的，它有一个未完成的side，把它加入到字典)
 
 * Incremental Facet Insertion
     * The algorithm begins with a Delaunay tetrahedralization of the vertices of a fully edge-protected PLC and incrementally recovers the missing facets one by one

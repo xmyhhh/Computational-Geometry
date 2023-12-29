@@ -178,8 +178,13 @@ namespace Delaunay3D_01_datastruct {
 		//* A list of(n + 1)-tuples of indices to the nuclei or datapoints
 		std::vector<n_simplices> n_simplices_list;
 		std::vector<cv::Point3d> all_point;
+		bool has_bounding_box = false;
 
 		void clear_bounding_box() {
+			if (!has_bounding_box) {
+				return;
+			}
+			has_bounding_box = false;
 			auto it = n_simplices_list.begin();
 			auto index_bounding_box = [](int index) {
 				return index == 0 || index == 1 || index == 2 || index == 3;
