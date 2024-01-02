@@ -111,7 +111,7 @@ https://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
         * Let t be the tetrahedron conv(f ∪ v). If a CDT of X exists, then t is constrained Delaunay. If no eligible vertex can be found, or if t is not constrained Delaunay, then X has no CDT.（假设t表示由面f和点v组成的四面体，如果X的cdt存在，那么t就是约束得劳的，  如果找不到符合条件的顶点，或者 t 不是受约束的 Delaunay，那么 X 就没有 CDT）
 
     * Define of unfinished 
-        * Let f be the seed triangle. Say that both sides of f are unfinished. Thereafter, say that a triangular face of the growing tetrahedralization is unfinished if the algorithm has not yet identified the second constrained Delaunay tetrahedron that shares the face. （f是种子三角形，一开始两边都是unfinished的，因此，如果算法没有找到共享f的第二个cdt，那么称“不断增长的四面体的一个三角形面未完成”）
+        * Let f be the seed triangle. Say that <b>both sides</b> of f are unfinished. Thereafter, say that a triangular face of the growing tetrahedralization is unfinished if the algorithm has not yet identified the second constrained Delaunay tetrahedron that shares the face. （f是种子三角形，一开始两边都是unfinished的，因此，如果算法没有找到共享f的第二个cdt，那么称“不断增长的四面体的一个三角形面未完成”）
         * To finish a face is to construct the second tetrahedron, or to determine that the face adjoins the exterior domain and there is no second tetrahedron （完成一个面就是构建第二个四面体，或者确定该面与外部域相邻，且不存在第二个四面体）
     * The gift-wrapping algorithm maintains a dictionary (i.e. a hash table) of unfinished faces, which initially contains both sides of f.（g-w算法维护一个未完成面的哈希表，初始包含了种子f的两边）
     * Repeat the following steps: remove an arbitrary unfinished face f from the dictionary and search for a vertex v that finishes f. If no vertex is above f, then f lies on the boundary of the convex hull.（不断重复这些步骤：移除未完成面f，然后搜索顶点v用于完成f；如果没有顶点v，那么f在凸包的边界上）
