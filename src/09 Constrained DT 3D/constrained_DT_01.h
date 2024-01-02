@@ -158,7 +158,6 @@ namespace CDT_3D_01_datastruct {
 					p3->connect_edge_array->push_back(e);
 					p1->connect_edge_array->push_back(e);
 				}
-
 			}
 
 			return true;
@@ -230,6 +229,9 @@ namespace CDT_3D_01_datastruct {
 		MemoryPool vertex_pool;
 		MemoryPool tetrahedra_pool;
 
+		//for draw
+		std::vector<Face> face_array;
+
 		void init_from_bw(Delaunay3D_01_datastruct::BW_DT_struct& bw_dt_struct) {
 			bw_dt_struct.clear_bounding_box();
 
@@ -266,7 +268,7 @@ namespace CDT_3D_01_datastruct {
 			}
 
 			//edge
-			vulkan_data.numberOfTriangle = tetrahedra_pool.size() * 4;
+			vulkan_data.numberOfTriangle = tetrahedra_pool.size() * 4 + face_array.size();
 			vulkan_data.triangles = (int*)malloc(vulkan_data.numberOfTriangle * 3/*xyz*/ * sizeof(int));
 			vulkan_data.triangleColoring = true;
 			vulkan_data.triangleColors = (double*)malloc(vulkan_data.numberOfTriangle * 3/*rgb*/ * sizeof(double));
@@ -315,7 +317,17 @@ namespace CDT_3D_01_datastruct {
 				}
 
 			}
+			for (int i = 0; i < face_array.size(); i++) {
+				int offset = tetrahedra_pool.size() * 3 * 4;
+				auto f = face_array[i];
+				vulkan_data.triangles[offset + i * 3] = vertex_pool.get_index(f.p1);
+				vulkan_data.triangles[offset + i * 3 + 1] = vertex_pool.get_index(f.p2);
+				vulkan_data.triangles[offset + i * 3 + 2] = vertex_pool.get_index(f.p3);
 
+				vulkan_data.triangleColors[offset + i * 3] = 0;
+				vulkan_data.triangleColors[offset + i * 3 + 1] = 1;
+				vulkan_data.triangleColors[offset + i * 3 + 2] = 0;
+			}
 
 			return vulkan_data;
 		}
@@ -624,20 +636,86 @@ CDT_3D_01_datastruct::Gift_Wrapping CDT_3D_01(CDT_3D_01_datastruct::PLC& plc) {
 		//The algorithm begins with a Delaunay tetrahedralization of the vertices of a fully edge-protected PLC and incrementally recovers the missing facets one by one
 
 		auto incremental_facet_insertion = [](Gift_Wrapping& gw, base_type::Triangle_Index f) {
+
+
 			//The goal of a facet insertion algorithm is to convert T into T^f.
 
 			//First, find all the tetrahedra in T that intersect the relative interior of f(找出所有与插入面相交的四面体).
 			// It may be that f is already represented as a union of triangular faces, in which case there is nothing to do.（如果插入面刚好是某些四面体的面，那就什么也不做）
 			//Otherwise, the next step is to delete from T each tetrahedron whose interior intersects f, as Figure 13 illustrates. (Tetrahedra that intersect f only on their boundaries stay put.) （如果存在这样的四面体，就删除它）
 
-			auto is_tetrahedra_intersect_with_face = []()->bool {return true; };
+			auto is_tetrahedra_intersect_with_face = [](const Tetrahedra& t, const Face& f)->bool {
+
+				auto face_p1 = f.p1;
+				auto face_p2 = f.p2;
+				auto face_p3 = f.p3;
+
+				auto tet_p1 = t.p1;
+				auto tet_p2 = t.p2;
+				auto tet_p3 = t.p3;
+				auto tet_p4 = t.p4;
+
+				bool intersect = false;
+
+				//tri may be tet face
+				{
+					int i = 0;
+					if (f.p1 == t.p1 || f.p1 == t.p2 || f.p1 == t.p3 || f.p1 == t.p4)
+						i++;
+					if (f.p2 == t.p1 || f.p2 == t.p2 || f.p2 == t.p3 || f.p2 == t.p4)
+						i++;
+					if (f.p3 == t.p1 || f.p3 == t.p2 || f.p3 == t.p3 || f.p3 == t.p4)
+						i++;
+					if (i == 3)
+						return false;
+				}
+
+				{
+					if (intersect == false) {
+						auto  r = TriangleIntersectionCalulate({ face_p1->position,face_p2->position ,face_p3->position }, { t.p1->position ,t.p2->position });
+						intersect = r.intersect;
+					}
+					if (intersect == false) {
+						auto  r = TriangleIntersectionCalulate({ face_p1->position,face_p2->position ,face_p3->position }, { t.p1->position ,t.p3->position });
+						intersect = r.intersect;
+					}
+					if (intersect == false) {
+						auto  r = TriangleIntersectionCalulate({ face_p1->position,face_p2->position ,face_p3->position }, { t.p1->position ,t.p4->position });
+						intersect = r.intersect;
+					}
+					/*if (intersect == false) {
+						auto  r = TriangleIntersectionCalulate({ face_p1->position,face_p2->position ,face_p3->position }, { t.p2->position ,t.p3->position });
+						intersect = r.intersect;
+					}
+					if (intersect == false) {
+						auto  r = TriangleIntersectionCalulate({ face_p1->position,face_p2->position ,face_p3->position }, { t.p3->position ,t.p4->position });
+						intersect = r.intersect;
+					}
+					if (intersect == false) {
+						auto  r = TriangleIntersectionCalulate({ face_p1->position,face_p2->position ,face_p3->position }, { t.p2->position ,t.p4->position });
+						intersect = r.intersect;
+					}*/
+				}
 
 
+				return intersect;
+
+				};
 
 			//Next, use the gift-wrapping algorithm to retriangulate the polygonal cavities created on each side of f.(接下来，使用礼品包装算法对 f 两侧创建的多边形空腔进行重切分)
 			//Be forewarned that there may be more than one polygonal cavity on each side of f, because some triangular faces of the tetrahedralization might already conform to f before f is inserted.(请注意，插入面的某一边可能不止一个空腔)
+			Face face = { (Vertex*)gw.vertex_pool[f.p1],(Vertex*)gw.vertex_pool[f.p2] ,(Vertex*)gw.vertex_pool[f.p3] };
+			gw.face_array.push_back(face);
 
+			for (int i = 0; i < gw.tetrahedra_pool.size(); i++) {
+				Tetrahedra* t = (Tetrahedra*)gw.tetrahedra_pool[i];
 
+				bool res = is_tetrahedra_intersect_with_face(*t, face);
+				if (res) {
+					t->draw_red = true;
+					
+				}
+			}
 
 			};
 
@@ -661,6 +739,8 @@ CDT_3D_01_datastruct::Gift_Wrapping CDT_3D_01(CDT_3D_01_datastruct::PLC& plc) {
 		for (int i = 0; i < plc.face_index_array.size(); i++) {
 			auto f = plc.face_index_array[i];
 			incremental_facet_insertion(gw, f);
+			//if (i == 3)
+			//	break;
 		}
 
 		return gw;

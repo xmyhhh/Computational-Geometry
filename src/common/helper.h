@@ -31,10 +31,15 @@ double Area2(PointT& p1, PointT& p2, PointT& s) {
 	return value;
 }
 
-base_type::IntersectionResult LineIntersectionCalulate(base_type::Line l1, base_type::Line l2);
 
 
 //geo cul
+base_type::IntersectionResult LineIntersectionCalulate(base_type::Line l1, base_type::Line l2);
+
+base_type::IntersectionResult3d PlaneIntersectionCalulate(base_type::Plane plane, base_type::Line3d line);
+
+base_type::IntersectionResult3d TriangleIntersectionCalulate(base_type::Triangle3d tri, base_type::Line3d line);
+
 base_type::PolygonRandom PolygonRandomGen(int width, int height, int size = 3, float miniAngle = 30);
 
 inline cv::Point2d Rotate(cv::Point2d point, double angle) {
@@ -47,6 +52,7 @@ inline cv::Point2d Rotate(cv::Point2d point, double angle) {
 
 inline cv::Point3d cross(const cv::Point3d& p1, const cv::Point3d& p2)
 {
+	//(u1, u2, u3) x(v1, v2, v3) = (u2v3 - u3v2; u3v1 - u1v3, u1v2 - u2v1)
 	double s1, s2, s3;
 	s1 = p1.y * p2.z - p1.z * p2.y;
 	s2 = p1.z * p2.x - p1.x * p2.z;

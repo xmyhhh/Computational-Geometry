@@ -95,7 +95,7 @@ public:
 		VkPipelineDepthStencilStateCreateInfo depthStencilState = vks::initializers::pipelineDepthStencilStateCreateInfo(VK_FALSE, VK_FALSE, VK_COMPARE_OP_LESS_OR_EQUAL);
 		VkPipelineViewportStateCreateInfo viewportState = vks::initializers::pipelineViewportStateCreateInfo(1, 1);
 		VkPipelineMultisampleStateCreateInfo multisampleState = vks::initializers::pipelineMultisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT);
-		std::vector<VkDynamicState> dynamicStateEnables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+		std::vector<VkDynamicState> dynamicStateEnables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR ,VK_DYNAMIC_STATE_LINE_WIDTH };
 		VkPipelineDynamicStateCreateInfo dynamicState = vks::initializers::pipelineDynamicStateCreateInfo(dynamicStateEnables);
 		VkGraphicsPipelineCreateInfo pipelineCI = vks::initializers::pipelineCreateInfo(pipelineLayout, renderPass);
 
@@ -202,10 +202,83 @@ public:
 				sphere.model.draw(drawCmdBuffers[i]);
 			}
 
+			
+			//line = { p1 = {x = 36.283328548589218 y = 8.6678188813818142 z = -1.2879014531027866 } p2 = {x = 30.990319999999997 y = 2.1977015552412240 z = 0} }
+			{
+				//{x=30.313119999999998 y=4.3388400000000003 z=-6.4432400000000003 } //1
+				auto pos = glm::vec3(36.283328548589218 ,-8.6678188813818142 , -1.2879014531027866);
+				auto size = glm::vec3(0.5, 0.5, 0.5);
+				PushBlock_Point pushblock;
+				pushblock.mvp = glm::translate(glm::mat4(1.0f), pos);
+				pushblock.mvp = glm::scale(pushblock.mvp, size);
+
+				pushblock.color = glm::vec4(1, 0, 1, 1);
+
+				vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushBlock_Point), (void*)&pushblock);
+				sphere.model.draw(drawCmdBuffers[i]);
+			}
+			{
+				//
+				auto pos = glm::vec3( 30.990319999999997, -2.1977015552412240 , 0);//2
+				auto size = glm::vec3(0.5, 0.5, 0.5);
+				PushBlock_Point pushblock;
+				pushblock.mvp = glm::translate(glm::mat4(1.0f), pos);
+				pushblock.mvp = glm::scale(pushblock.mvp, size);
+
+				pushblock.color = glm::vec4(1, 1, 0, 1);
+
+				vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushBlock_Point), (void*)&pushblock);
+				sphere.model.draw(drawCmdBuffers[i]);
+			}
+
+			//tri
+
+			{
+				//{x=30.313119999999998 y=4.3388400000000003 z=-6.4432400000000003 } //1
+				auto pos = glm::vec3(30.313119999999998, -4.3388400000000003, -6.4432400000000003);
+				auto size = glm::vec3(0.5, 0.5, 0.5);
+				PushBlock_Point pushblock;
+				pushblock.mvp = glm::translate(glm::mat4(1.0f), pos);
+				pushblock.mvp = glm::scale(pushblock.mvp, size);
+
+				pushblock.color = glm::vec4(1, 0, 0, 1);
+
+				vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushBlock_Point), (void*)&pushblock);
+				sphere.model.draw(drawCmdBuffers[i]);
+			}
+			{
+				//
+				auto pos = glm::vec3(30.990319999999997, 4.3388400000000003, 0.0000000000000000);//2
+				auto size = glm::vec3(0.5, 0.5, 0.5);
+				PushBlock_Point pushblock;
+				pushblock.mvp = glm::translate(glm::mat4(1.0f), pos);
+				pushblock.mvp = glm::scale(pushblock.mvp, size);
+
+				pushblock.color = glm::vec4(0, 1, 0, 1);
+
+				vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushBlock_Point), (void*)&pushblock);
+				sphere.model.draw(drawCmdBuffers[i]);
+			}
+
+
+			{
+				//{{x=30.990319999999997 y=4.3388400000000003 z=0.0000000000000000 }//3
+				auto pos = glm::vec3(30.990319999999997 , -4.3388400000000003 , 0.0000000000000000);
+				auto size = glm::vec3(0.5, 0.5, 0.5);
+				PushBlock_Point pushblock;
+				pushblock.mvp = glm::translate(glm::mat4(1.0f), pos);
+				pushblock.mvp = glm::scale(pushblock.mvp, size);
+
+				pushblock.color = glm::vec4(0, 0, 1, 1);
+
+				vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushBlock_Point), (void*)&pushblock);
+				sphere.model.draw(drawCmdBuffers[i]);
+			}
+			
+
 			drawUI(drawCmdBuffers[i]);
 
 			vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipline_triangle);
-
 
 			scissor = vks::initializers::rect2D(width, height, 0, 0);
 			vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);
@@ -213,6 +286,7 @@ public:
 			vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout_triangle, 0, 1, &descriptorSet, 0, NULL);
 
 			for (int j = 0; j < data.numberOfTriangle; j++) {
+				
 				auto tr = &data.triangles[j * 3];
 
 				glm::vec4 p1 = glm::vec4(data.points[tr[0] * 3], data.points[tr[0] * 3 + 1], data.points[tr[0] * 3 + 2], 1);
@@ -225,13 +299,35 @@ public:
 				else {
 					tr_color = glm::vec4(data.triangleColors[j * 3], data.triangleColors[j * 3 + 1], data.triangleColors[j * 3 + 2], 1);
 				}
+				vkCmdSetLineWidth(drawCmdBuffers[i], 1);
 				vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::vec4), &p1);
 				vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::vec4), sizeof(glm::vec4), &p2);
 				vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::vec4) * 2, sizeof(glm::vec4), &p3);
 				vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::vec4) * 3, sizeof(glm::vec4), &tr_color);
 				vkCmdDraw(drawCmdBuffers[i], 3, 1, 0, 0);
 			}
+			for (int j = 0; j < data.numberOfTriangle; j++) {
+				auto tr = &data.triangles[j * 3];
 
+				glm::vec4 p1 = glm::vec4(data.points[tr[0] * 3], data.points[tr[0] * 3 + 1], data.points[tr[0] * 3 + 2], 1);
+				glm::vec4 p2 = glm::vec4(data.points[tr[1] * 3], data.points[tr[1] * 3 + 1], data.points[tr[1] * 3 + 2], 1);
+				glm::vec4 p3 = glm::vec4(data.points[tr[2] * 3], data.points[tr[2] * 3 + 1], data.points[tr[2] * 3 + 2], 1);
+				glm::vec4 tr_color;
+				if (data.triangleColoring) {
+				
+					tr_color = glm::vec4(data.triangleColors[j * 3], data.triangleColors[j * 3 + 1], data.triangleColors[j * 3 + 2], 1);
+					
+				}
+				if (tr_color != glm::vec4(1)) {
+					vkCmdSetLineWidth(drawCmdBuffers[i], 3);
+					vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::vec4), &p1);
+					vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::vec4), sizeof(glm::vec4), &p2);
+					vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::vec4) * 2, sizeof(glm::vec4), &p3);
+					vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::vec4) * 3, sizeof(glm::vec4), &tr_color);
+					vkCmdDraw(drawCmdBuffers[i], 3, 1, 0, 0);
+				}
+				
+			}
 
 
 			vkCmdEndRenderPass(drawCmdBuffers[i]);

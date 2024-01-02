@@ -30,6 +30,10 @@ link_directories(third/ktx/lib)
 include_directories(third/imgui)
 include_directories(third/)
 
+include_directories(third/CDT)
+
+add_subdirectory(third/CDT)
+
 
 file(GLOB_RECURSE  SOURCE_FILES 
 	${PROJECT_SOURCE_DIR}/src/*.cpp ${PROJECT_SOURCE_DIR}/src/*.c
@@ -40,7 +44,7 @@ file(GLOB_RECURSE  IMGUI_SOURCE_FILES
 )
 
 add_executable(MAIN ${SOURCE_FILES} ${IMGUI_SOURCE_FILES})
-target_link_libraries(MAIN  ${OpenCV_LIBS} ${Vulkan_LIBRARY} ktx)
+target_link_libraries(MAIN  ${OpenCV_LIBS} ${Vulkan_LIBRARY} ktx CDT)
 
 
 file(GLOB  Opencv_Dll 

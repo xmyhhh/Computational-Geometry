@@ -4,7 +4,6 @@ using namespace base_type;
 
 extern void Intersection_01(std::vector<Line>& all_lines, std::vector <IntersectionResult>& intersectionResults);
 
-
 bool lu_decmp(double lu[4][4], int n, int* ps, double* d, int N)
 {
 	double scales[4];
@@ -103,7 +102,6 @@ void lu_solve(double lu[4][4], int n, int* ps, double* b, int N)
 	for (i = N; i < n + N; i++) b[i] = X[i];
 }
 
-
 bool ToLeft(const cv::Point& p1, const cv::Point& p2, const cv::Point& s)
 {
 	double value = p1.x * p2.y - p1.y * p2.x
@@ -111,7 +109,6 @@ bool ToLeft(const cv::Point& p1, const cv::Point& p2, const cv::Point& s)
 		+ s.x * p1.y - s.y * p1.x;
 	return value > 0;
 }
-
 
 bool ToLeft(const cv::Point2d& p1, const cv::Point2d& p2, const cv::Point2d& s)
 {
@@ -144,6 +141,7 @@ bool InCircle2D(const cv::Point2d& p1, const cv::Point2d& p2, const cv::Point2d&
 
 	return value > 0.0;
 }
+
 bool InCircle3D(const cv::Point3d& a, const cv::Point3d& b, const cv::Point3d& c, const cv::Point3d& d, const cv::Point3d& e)
 {
 	double a11, a12, a13, a14;
@@ -191,8 +189,7 @@ bool InCircle3D(const cv::Point3d& a, const cv::Point3d& b, const cv::Point3d& c
 		+ a12 * a24 * a33 * a41;
 
 	return determinant > 0;
-}
-;
+};
 
 
 IntersectionResult LineIntersectionCalulate(Line l1, Line l2) {
@@ -219,6 +216,71 @@ IntersectionResult LineIntersectionCalulate(Line l1, Line l2) {
 		}
 	}
 	return  { l1 ,l2 ,{inter_x, inter_y} };
+}
+
+base_type::IntersectionResult3d PlaneIntersectionCalulate(base_type::Plane plane, base_type::Line3d line) {
+	auto ray_dir = VectorNormal(line.p1 - line.p2);
+	auto ray_origin = line.p2;
+
+	auto denom = dot(plane.normal, ray_dir);
+	if (fabs(denom) < 1e-8) {
+		return { false };
+	}
+
+	double D = dot(plane.normal, plane.p);
+
+	double t = (D - dot(plane.normal, ray_origin)) / denom;
+
+	if (t > 1 || t < 0) {
+		return { false };
+	}
+
+
+	return { true ,ray_origin + ray_dir * t };
+}
+
+base_type::IntersectionResult3d TriangleIntersectionCalulate(base_type::Triangle3d tri, base_type::Line3d line) {
+	auto ray_dir = VectorNormal(line.p1 - line.p2);
+	auto ray_origin = line.p2;
+
+	auto u = tri.p2 - tri.p1;
+	auto v = tri.p3 - tri.p1;
+	auto Q = tri.p1;
+
+	cv::Point3d cvu = cross(u, v);
+	cv::Point3d	plane_normal = VectorNormal(cvu);
+
+	auto denom = dot(plane_normal, ray_dir);
+	if (fabs(denom) < 1e-8) {
+		return { false };
+	}
+
+	auto w = cvu / dot(cvu, cvu);
+	double D = dot(plane_normal, Q);
+	double t = (D - dot(plane_normal, ray_origin)) / denom;
+	if (t > 1 || t < 0) {
+		return { false };
+	}
+	cv::Point3d intersection = ray_origin + ray_dir * t;
+	cv::Point3d planar_hitpt_vector = intersection - Q;
+
+	auto alpha = dot(w, cross(planar_hitpt_vector, v));
+	auto beta = dot(w, cross(u, planar_hitpt_vector));
+
+	//auto aa = alpha * u + beta * v + Q;
+
+	//ASSERT(VectorLengthSqr(aa - intersection) < 1e-8);
+
+	if (fabs(alpha) < 1e-8 || fabs(beta) < 1e-8) {
+		return { false };
+	}
+
+	if ((alpha + beta) < 0.99999999999 && alpha > 1e-8 && beta > 1e-8) {
+		return { true ,intersection };
+	}
+
+	return { false };
+
 }
 
 PolygonRandom PolygonRandomGen(int width, int height, int size, float miniAngle)
@@ -307,8 +369,6 @@ PolygonRandom PolygonRandomGen(int width, int height, int size, float miniAngle)
 	return val;
 }
 
-
-
 bool VectorSlop(cv::Point2d a, cv::Point2d b, double& slop) {
 	if (a == b)
 		return false;
@@ -324,8 +384,6 @@ bool VectorSlop(cv::Point2d a, cv::Point2d b, double& slop) {
 		return true;
 	}
 }
-
-
 
 void draw_line_origin_buttom_left(uint width, uint height, cv::InputOutputArray img, cv::Point pt1, cv::Point pt2, const cv::Scalar& color,
 	int thickness, int lineType, int shift) {

@@ -192,7 +192,7 @@ namespace CDT_01_datastruct {
         double region_right_x = -1;
     };
 
-    struct CDT {
+    struct MyCDT {
         MemoryPool vertex_pool;
 
         int number_of_constrained_edge;
@@ -202,7 +202,7 @@ namespace CDT_01_datastruct {
     };
 }
 
-void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::CDT &cdt) {
+void CDT_01(CDT_01_datastruct::PSLG &plsg, CDT_01_datastruct::MyCDT&cdt) {
     //CDT from L.P. Chew's alg
     //Chew's alg require at least one Constrained edge
     ASSERT(plsg.boundary_array.size() != 0);

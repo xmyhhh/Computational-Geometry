@@ -19,10 +19,16 @@
 #define  _Infinity  std::numeric_limits<double>::infinity() 
 
 namespace base_type {
-	struct Triangle {
-		cv::Point p1;
-		cv::Point p2;
-		cv::Point p3;
+	struct Triangle2d {
+		cv::Point2d p1;
+		cv::Point2d p2;
+		cv::Point2d p3;
+	};
+
+	struct Triangle3d {
+		cv::Point3d p1;
+		cv::Point3d p2;
+		cv::Point3d p3;
 	};
 
 	struct Edge {
@@ -38,6 +44,17 @@ namespace base_type {
 	struct Line3d {
 		cv::Point3d p1;
 		cv::Point3d p2;
+	};
+
+	struct Plane {
+		cv::Point3d p;
+		cv::Point3d normal;
+	};
+
+	struct IntersectionResult3d {
+
+		bool intersect;
+		cv::Point3d intersectionPoint;
 	};
 
 	struct IntersectionResult {

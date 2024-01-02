@@ -7,7 +7,7 @@ void ShowTriangle() {
 	int height = 1080 / 2;
 	cv::Mat img = cv::Mat::zeros(cv::Size(width, height), CV_8UC3);
 
-	std::vector<Triangle> all_triangles;
+	std::vector<Triangle2d> all_triangles;
 
 	int size = 3;
 	for (int i = 0; i < size; i++)
@@ -21,7 +21,7 @@ void ShowTriangle() {
 
 	for (size_t i = 0; i < all_triangles.size(); i++)
 	{
-		Triangle tri = all_triangles[i];
+		Triangle2d tri = all_triangles[i];
 
 		cv::Point points[3] = { cv::Point(tri.p1.x,tri.p1.y),cv::Point(tri.p2.x,tri.p2.y),cv::Point(tri.p3.x,tri.p3.y) };
 		const cv::Point* ppt[1] = { points };

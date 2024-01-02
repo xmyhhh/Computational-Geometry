@@ -1,7 +1,7 @@
 
 #include "constrained_DT_01.h"
 #include <common/vulkan/VulkanTools.h>
-
+#include "CDT.h"
 
 void constrained_DT() {
     //this alg in not working
@@ -30,8 +30,17 @@ void constrained_DT() {
     }
     plsg.init_from_file(plsg_path);
 
-    CDT cdt;
+    CDT_01_datastruct::MyCDT cdt;
     CDT_01(plsg, cdt);
+
+    CDT::Triangulation<double> cdt2 ;
+    {
+        cdt2.insertVertices(/* points */);
+        cdt.insertEdges(/* boundary edges */);
+        cdt2.eraseSuperTriangle();
+    }
+
+
 
     //draw code begin
     debug_cout("\n*********start draw*********");
