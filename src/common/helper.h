@@ -38,6 +38,8 @@ base_type::IntersectionResult LineIntersectionCalulate(base_type::Line l1, base_
 
 base_type::IntersectionResult3d PlaneIntersectionCalulate(base_type::Plane plane, base_type::Line3d line);
 
+bool isPointOnTriangle(base_type::Triangle3d tri, cv::Point3d p);
+
 base_type::IntersectionResult3d TriangleIntersectionCalulate(base_type::Triangle3d tri, base_type::Line3d line);
 
 base_type::PolygonRandom PolygonRandomGen(int width, int height, int size = 3, float miniAngle = 30);

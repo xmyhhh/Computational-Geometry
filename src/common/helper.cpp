@@ -239,6 +239,16 @@ base_type::IntersectionResult3d PlaneIntersectionCalulate(base_type::Plane plane
 	return { true ,ray_origin + ray_dir * t };
 }
 
+bool isPointOnTriangle(base_type::Triangle3d tri, cv::Point3d p) {
+	auto Q = tri.p1;
+	auto u = tri.p2 - tri.p1;
+	auto v = tri.p3 - tri.p1;
+
+	cv::Point3d cvu = cross(u, v);
+	cv::Point3d	plane_normal = VectorNormal(cvu);
+	return fabs(dot(Q - p, plane_normal)) < 1e-8;
+}
+
 base_type::IntersectionResult3d TriangleIntersectionCalulate(base_type::Triangle3d tri, base_type::Line3d line) {
 	auto ray_dir = VectorNormal(line.p1 - line.p2);
 	auto ray_origin = line.p2;

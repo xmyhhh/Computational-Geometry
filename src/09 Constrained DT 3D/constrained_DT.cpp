@@ -21,7 +21,8 @@ void ConstrainedDelaunay3D(HINSTANCE hInstance) {
 	std::vector<cv::Point3d> all_dots;
 
 	CDT_3D_01_datastruct::PLC plc;
-	ASSERT(plc.init_from_file(getAssetPath() + "doughnut.obj"));
+	ASSERT(plc.init_from_file(getAssetPath() + "tet.obj"));
+	//ASSERT(plc.init_from_file(getAssetPath() + "doughnut.obj"));
 	//ASSERT(plc.init_from_file(getAssetPath() + "suzanne.obj"));
 
 

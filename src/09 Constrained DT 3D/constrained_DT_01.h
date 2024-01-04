@@ -234,8 +234,8 @@ namespace CDT_3D_01_datastruct {
 		MemoryPool vertex_pool;
 		MemoryPool tetrahedra_pool;
 		MemoryPool face_pool;
-		//for draw
-		std::vector<Face> face_array;
+
+
 
 		void update_tet_neightbors() {
 
@@ -253,19 +253,7 @@ namespace CDT_3D_01_datastruct {
 				return i == 3;
 
 				};
-			auto is_tetrahedra_neighbors = [](Tetrahedra* t1, Tetrahedra* t2) {
-
-				for (int i = 0; i < 4; i++) {
-					for (int j = 0; j < 4; j++) {
-						if (t1->neighbors[i] == nullptr || t2->neighbors[j] == nullptr)
-							break;
-
-						if (t1->neighbors[i] == t2 || t2->neighbors[j] == t1)
-							return true;
-					}
-				}
-				return false;
-				};
+		
 			auto find_disjoin_tet_non_share_vtx_index_in_t2 = [](Tetrahedra* t1, Tetrahedra* t2) {
 				bool is_vtx1_share = 0, is_vtx2_share = 0, is_vtx3_share = 0, is_vtx4_share = 0;
 				is_vtx1_share = (t2->p1 == t1->p1 || t2->p1 == t1->p2 || t2->p1 == t1->p3 || t2->p1 == t1->p4);
@@ -408,6 +396,7 @@ namespace CDT_3D_01_datastruct {
 						}
 						if (t->faces[tet_face_index] == nullptr) {
 							auto f = (Face*)face_pool.allocate();
+							f->face_from_plc = false;
 							f->p1 = t->p1;
 							f->p2 = t->p2;
 							f->p3 = t->p3;
@@ -437,10 +426,19 @@ namespace CDT_3D_01_datastruct {
 			}
 
 			//edge
-			vulkan_data.numberOfTriangle = tetrahedra_pool.size() * 4 + face_array.size();
+
+			bool draw_tet = false;
+			bool draw_face = true;
+			if (draw_tet)
+				vulkan_data.numberOfTriangle += tetrahedra_pool.size() * 4;
+			if (draw_face)
+				vulkan_data.numberOfTriangle += face_pool.size();
+
+
 			vulkan_data.triangles = (int*)malloc(vulkan_data.numberOfTriangle * 3/*xyz*/ * sizeof(int));
 			vulkan_data.triangleColoring = true;
 			vulkan_data.triangleColors = (double*)malloc(vulkan_data.numberOfTriangle * 3/*rgb*/ * sizeof(double));
+
 
 			for (int i = 0; i < vulkan_data.numberOfTriangle/* tetrahedra_pool.size() * 4 * 3 */; i++) {
 				vulkan_data.triangleColors[i * 3] = 1;
@@ -448,55 +446,70 @@ namespace CDT_3D_01_datastruct {
 				vulkan_data.triangleColors[i * 3 + 2] = 1;
 			}
 
-			for (int i = 0; i < tetrahedra_pool.size(); i++) {
-				auto t = (Tetrahedra*)tetrahedra_pool[i];
+			if (draw_tet)
+				for (int i = 0; i < tetrahedra_pool.size(); i++) {
+					auto t = (Tetrahedra*)tetrahedra_pool[i];
 
-				vulkan_data.triangles[i * 3 * 4] = vertex_pool.get_index(t->p1);
-				vulkan_data.triangles[i * 3 * 4 + 1] = vertex_pool.get_index(t->p2);
-				vulkan_data.triangles[i * 3 * 4 + 2] = vertex_pool.get_index(t->p3);
+					vulkan_data.triangles[i * 3 * 4] = vertex_pool.get_index(t->p1);
+					vulkan_data.triangles[i * 3 * 4 + 1] = vertex_pool.get_index(t->p2);
+					vulkan_data.triangles[i * 3 * 4 + 2] = vertex_pool.get_index(t->p3);
 
-				vulkan_data.triangles[i * 3 * 4 + 3] = vertex_pool.get_index(t->p1);
-				vulkan_data.triangles[i * 3 * 4 + 4] = vertex_pool.get_index(t->p2);
-				vulkan_data.triangles[i * 3 * 4 + 5] = vertex_pool.get_index(t->p4);
+					vulkan_data.triangles[i * 3 * 4 + 3] = vertex_pool.get_index(t->p1);
+					vulkan_data.triangles[i * 3 * 4 + 4] = vertex_pool.get_index(t->p2);
+					vulkan_data.triangles[i * 3 * 4 + 5] = vertex_pool.get_index(t->p4);
 
-				vulkan_data.triangles[i * 3 * 4 + 6] = vertex_pool.get_index(t->p1);
-				vulkan_data.triangles[i * 3 * 4 + 7] = vertex_pool.get_index(t->p3);
-				vulkan_data.triangles[i * 3 * 4 + 8] = vertex_pool.get_index(t->p4);
+					vulkan_data.triangles[i * 3 * 4 + 6] = vertex_pool.get_index(t->p1);
+					vulkan_data.triangles[i * 3 * 4 + 7] = vertex_pool.get_index(t->p3);
+					vulkan_data.triangles[i * 3 * 4 + 8] = vertex_pool.get_index(t->p4);
 
-				vulkan_data.triangles[i * 3 * 4 + 9] = vertex_pool.get_index(t->p2);
-				vulkan_data.triangles[i * 3 * 4 + 10] = vertex_pool.get_index(t->p3);
-				vulkan_data.triangles[i * 3 * 4 + 11] = vertex_pool.get_index(t->p4);
+					vulkan_data.triangles[i * 3 * 4 + 9] = vertex_pool.get_index(t->p2);
+					vulkan_data.triangles[i * 3 * 4 + 10] = vertex_pool.get_index(t->p3);
+					vulkan_data.triangles[i * 3 * 4 + 11] = vertex_pool.get_index(t->p4);
 
-				if (t->draw_red) {
-					vulkan_data.triangleColors[i * 3 * 4] = 1;
-					vulkan_data.triangleColors[i * 3 * 4 + 1] = 0;
-					vulkan_data.triangleColors[i * 3 * 4 + 2] = 0;
+					if (t->draw_red) {
+						vulkan_data.triangleColors[i * 3 * 4] = 1;
+						vulkan_data.triangleColors[i * 3 * 4 + 1] = 0;
+						vulkan_data.triangleColors[i * 3 * 4 + 2] = 0;
 
-					vulkan_data.triangleColors[i * 3 * 4 + 3] = 1;
-					vulkan_data.triangleColors[i * 3 * 4 + 4] = 0;
-					vulkan_data.triangleColors[i * 3 * 4 + 5] = 0;
+						vulkan_data.triangleColors[i * 3 * 4 + 3] = 1;
+						vulkan_data.triangleColors[i * 3 * 4 + 4] = 0;
+						vulkan_data.triangleColors[i * 3 * 4 + 5] = 0;
 
-					vulkan_data.triangleColors[i * 3 * 4 + 6] = 1;
-					vulkan_data.triangleColors[i * 3 * 4 + 7] = 0;
-					vulkan_data.triangleColors[i * 3 * 4 + 8] = 0;
+						vulkan_data.triangleColors[i * 3 * 4 + 6] = 1;
+						vulkan_data.triangleColors[i * 3 * 4 + 7] = 0;
+						vulkan_data.triangleColors[i * 3 * 4 + 8] = 0;
 
-					vulkan_data.triangleColors[i * 3 * 4 + 9] = 1;
-					vulkan_data.triangleColors[i * 3 * 4 + 10] = 0;
-					vulkan_data.triangleColors[i * 3 * 4 + 11] = 0;
+						vulkan_data.triangleColors[i * 3 * 4 + 9] = 1;
+						vulkan_data.triangleColors[i * 3 * 4 + 10] = 0;
+						vulkan_data.triangleColors[i * 3 * 4 + 11] = 0;
+					}
+
 				}
 
-			}
-			for (int i = 0; i < face_array.size(); i++) {
-				int offset = tetrahedra_pool.size() * 3 * 4;
-				auto f = face_array[i];
-				vulkan_data.triangles[offset + i * 3] = vertex_pool.get_index(f.p1);
-				vulkan_data.triangles[offset + i * 3 + 1] = vertex_pool.get_index(f.p2);
-				vulkan_data.triangles[offset + i * 3 + 2] = vertex_pool.get_index(f.p3);
+			if (draw_face)
+				for (int i = 0; i < face_pool.size(); i++) {
+					int offset = tetrahedra_pool.size() * 3 * 4;
+					if (!draw_tet)
+						offset = 0;
+					auto f = (Face*)face_pool[i];
+					ASSERT(f->p1!= f->p2);
+					ASSERT(f->p2 != f->p3);
+					ASSERT(f->p1 != f->p3);
+					vulkan_data.triangles[offset + i * 3] = vertex_pool.get_index(f->p1);
+					vulkan_data.triangles[offset + i * 3 + 1] = vertex_pool.get_index(f->p2);
+					vulkan_data.triangles[offset + i * 3 + 2] = vertex_pool.get_index(f->p3);
 
-				vulkan_data.triangleColors[offset + i * 3] = 0;
-				vulkan_data.triangleColors[offset + i * 3 + 1] = 1;
-				vulkan_data.triangleColors[offset + i * 3 + 2] = 0;
-			}
+					if (f->face_from_plc) {
+						vulkan_data.triangleColors[offset + i * 3] = 0;
+						vulkan_data.triangleColors[offset + i * 3 + 1] = 1;
+						vulkan_data.triangleColors[offset + i * 3 + 2] = 0;
+					}
+					else {
+						vulkan_data.triangleColors[offset + i * 3] = 1;
+						vulkan_data.triangleColors[offset + i * 3 + 1] = 0;
+						vulkan_data.triangleColors[offset + i * 3 + 2] = 0;
+					}
+				}
 
 			return vulkan_data;
 		}
@@ -808,17 +821,68 @@ CDT_3D_01_datastruct::Gift_Wrapping CDT_3D_01(CDT_3D_01_datastruct::PLC& plc) {
 			//First, find all the tetrahedra in T that intersect the relative interior of f(找出所有与插入面相交的四面体).
 			// It may be that f is already represented as a union of triangular faces, in which case there is nothing to do.（如果插入面刚好是某些四面体的面，那就什么也不做）
 			//Otherwise, the next step is to delete from T each tetrahedron whose interior intersects f, as Figure 13 illustrates. (Tetrahedra that intersect f only on their boundaries stay put.) （如果存在这样的四面体，就删除它）
-			auto is_face_belong_tetrahedras = [](const Tetrahedra& t, const Face& f)->bool {
+			auto is_face_belong_tetrahedras = [](const Tetrahedra& t, const Face& f)->int {
 				int i = 0;
-				if (f.p1 == t.p1 || f.p1 == t.p2 || f.p1 == t.p3 || f.p1 == t.p4)
-					i++;
-				if (f.p2 == t.p1 || f.p2 == t.p2 || f.p2 == t.p3 || f.p2 == t.p4)
-					i++;
-				if (f.p3 == t.p1 || f.p3 == t.p2 || f.p3 == t.p3 || f.p3 == t.p4)
-					i++;
-				if (i == 3)
-					return true;
-				return false;
+
+				bool isP1OnTriangle = (t.p1 == f.p1 || t.p1 == f.p2 || t.p1 == f.p3);
+				bool isP2OnTriangle = (t.p2 == f.p1 || t.p2 == f.p2 || t.p2 == f.p3);
+				bool isP3OnTriangle = (t.p3 == f.p1 || t.p3 == f.p2 || t.p3 == f.p3);
+				bool isP4OnTriangle = (t.p4 == f.p1 || t.p4 == f.p2 || t.p4 == f.p3);
+
+				{
+					if (isP1OnTriangle)
+						i++;
+					if (isP2OnTriangle)
+						i++;
+					if (isP3OnTriangle)
+						i++;
+					if (isP4OnTriangle)
+						i++;
+
+					if (i == 3)
+					{
+						if (!isP1OnTriangle)
+							return 0;
+						if (!isP2OnTriangle)
+							return 1;
+						if (!isP3OnTriangle)
+							return 2;
+						if (!isP4OnTriangle)
+							return 3;
+					}
+				}
+
+
+				isP1OnTriangle = isPointOnTriangle({ f.p1->position, f.p2->position,f.p3->position }, t.p1->position);
+				isP2OnTriangle = isPointOnTriangle({ f.p1->position, f.p2->position,f.p3->position }, t.p2->position);
+				isP3OnTriangle = isPointOnTriangle({ f.p1->position, f.p2->position,f.p3->position }, t.p3->position);
+				isP4OnTriangle = isPointOnTriangle({ f.p1->position, f.p2->position,f.p3->position }, t.p4->position);
+
+				{
+					i = 0;
+					if (isP1OnTriangle)
+						i++;
+					if (isP2OnTriangle)
+						i++;
+					if (isP3OnTriangle)
+						i++;
+					if (isP4OnTriangle)
+						i++;
+
+					if (i == 3)
+					{
+						if (!isP1OnTriangle)
+							return 0;
+						if (!isP2OnTriangle)
+							return 1;
+						if (!isP3OnTriangle)
+							return 2;
+						if (!isP4OnTriangle)
+							return 3;
+					}
+				}
+
+				return -1;
 				};
 			auto is_tetrahedra_intersect_with_face = [](const Tetrahedra& t, const Face& f)->bool {
 
@@ -868,52 +932,22 @@ CDT_3D_01_datastruct::Gift_Wrapping CDT_3D_01(CDT_3D_01_datastruct::PLC& plc) {
 			//Next, use the gift-wrapping algorithm to retriangulate the polygonal cavities created on each side of f.(接下来，使用礼品包装算法对 f 两侧创建的多边形空腔进行重切分)
 			//Be forewarned that there may be more than one polygonal cavity on each side of f, because some triangular faces of the tetrahedralization might already conform to f before f is inserted.(请注意，插入面的某一边可能不止一个空腔)
 			Face face = { (Vertex*)gw.vertex_pool[f.p1],(Vertex*)gw.vertex_pool[f.p2] ,(Vertex*)gw.vertex_pool[f.p3] };
-			gw.face_array.push_back(face);
+
 
 			for (int i = 0; i < gw.tetrahedra_pool.size(); i++) {
 				Tetrahedra* t = (Tetrahedra*)gw.tetrahedra_pool[i];
 
-				bool res = is_face_belong_tetrahedras(*t, face);
-				if (res) {
+				int res = is_face_belong_tetrahedras(*t, face);
+				if (res != -1) {
 					//mark t's face
-					auto find_non_share_vtx_index_in_tet = [](Tetrahedra* t1, Face* f) {
-						bool is_vtx1_share, is_vtx2_share, is_vtx3_share, is_vtx4_share;
-						is_vtx1_share = (t1->p1 == f->p1 || t1->p1 == f->p2 || t1->p1 == f->p3);
-						is_vtx2_share = (t1->p2 == f->p1 || t1->p2 == f->p2 || t1->p2 == f->p3);
-						is_vtx3_share = (t1->p3 == f->p1 || t1->p3 == f->p2 || t1->p3 == f->p3);
-						is_vtx4_share = (t1->p4 == f->p1 || t1->p4 == f->p2 || t1->p4 == f->p3);
-
-						int i = 0;
-						int value = 0;
-						if (is_vtx1_share)
-							i++;
-						else
-							value = 0;
-						if (is_vtx2_share)
-							i++;
-						else
-							value = 1;
-						if (is_vtx3_share)
-							i++;
-						else
-							value = 2;
-						if (is_vtx4_share)
-							i++;
-						else
-							value = 3;
-
-						ASSERT(i == 3);
-
-						return value;
-						};
-					int face_index = find_non_share_vtx_index_in_tet(t, &face);
-					t->faces[face_index]->face_from_plc = true;
+					t->faces[res]->face_from_plc = true;
+					t->draw_red = true;
 					continue;
 				}
 
 				res = is_tetrahedra_intersect_with_face(*t, face);
 				if (res) {
-					t->draw_red = true;
+					//t->draw_red = true;
 
 				}
 
@@ -941,13 +975,13 @@ CDT_3D_01_datastruct::Gift_Wrapping CDT_3D_01(CDT_3D_01_datastruct::PLC& plc) {
 		//Next, insert the facets of Y into X, one by one. With each facet insertion, update T so it is still the CDT of X.
 		for (int i = 0; i < plc.face_index_array.size(); i++) {
 			auto f = plc.face_index_array[i];
-			incremental_facet_insertion(gw, f);
+			//incremental_facet_insertion(gw, f);
 			//if (i == 3)
 			//	break;
 		}
 
 		//delete Outer And Holes
-		gw.update_tet_neightbors();
+		
 		{
 			//depth mark
 
