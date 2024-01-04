@@ -29,7 +29,9 @@ namespace CDT_3D_01_datastruct {
 		Vertex* p3;
 
 		//for Gift_Wrapping
-		Face* twin;
+		bool face_from_plc = false;
+
+
 	};
 
 	struct Edge {
@@ -221,6 +223,9 @@ namespace CDT_3D_01_datastruct {
 		Vertex* p3;
 		Vertex* p4;
 
+		Tetrahedra* neighbors[4];
+		Face* faces[4];
+
 		//for draw
 		bool draw_red = false;
 	};
@@ -228,28 +233,192 @@ namespace CDT_3D_01_datastruct {
 	struct Gift_Wrapping {
 		MemoryPool vertex_pool;
 		MemoryPool tetrahedra_pool;
-
+		MemoryPool face_pool;
 		//for draw
 		std::vector<Face> face_array;
+
+		void update_tet_neightbors() {
+
+			auto is_tetrahedra_disjoin = [](Tetrahedra* t1, Tetrahedra* t2) {
+				int i = 0;
+				if (t1->p1 == t2->p1 || t1->p1 == t2->p2 || t1->p1 == t2->p3 || t1->p1 == t2->p4)
+					i++;
+				if (t1->p2 == t2->p1 || t1->p2 == t2->p2 || t1->p2 == t2->p3 || t1->p2 == t2->p4)
+					i++;
+				if (t1->p3 == t2->p1 || t1->p3 == t2->p2 || t1->p3 == t2->p3 || t1->p3 == t2->p4)
+					i++;
+				if (t1->p4 == t2->p1 || t1->p4 == t2->p2 || t1->p4 == t2->p3 || t1->p4 == t2->p4)
+					i++;
+
+				return i == 3;
+
+				};
+			auto is_tetrahedra_neighbors = [](Tetrahedra* t1, Tetrahedra* t2) {
+
+				for (int i = 0; i < 4; i++) {
+					for (int j = 0; j < 4; j++) {
+						if (t1->neighbors[i] == nullptr || t2->neighbors[j] == nullptr)
+							break;
+
+						if (t1->neighbors[i] == t2 || t2->neighbors[j] == t1)
+							return true;
+					}
+				}
+				return false;
+				};
+			auto find_disjoin_tet_non_share_vtx_index_in_t2 = [](Tetrahedra* t1, Tetrahedra* t2) {
+				bool is_vtx1_share = 0, is_vtx2_share = 0, is_vtx3_share = 0, is_vtx4_share = 0;
+				is_vtx1_share = (t2->p1 == t1->p1 || t2->p1 == t1->p2 || t2->p1 == t1->p3 || t2->p1 == t1->p4);
+				is_vtx2_share = (t2->p2 == t1->p1 || t2->p2 == t1->p2 || t2->p2 == t1->p3 || t2->p2 == t1->p4);
+				is_vtx3_share = (t2->p3 == t1->p1 || t2->p3 == t1->p2 || t2->p3 == t1->p3 || t2->p3 == t1->p4);
+				is_vtx4_share = (t2->p4 == t1->p1 || t2->p4 == t1->p2 || t2->p4 == t1->p3 || t2->p4 == t1->p4);
+
+				int i = 0;
+				int value = 0;
+				if (is_vtx1_share)
+					i++;
+				else
+					value = 0;
+
+				if (is_vtx2_share)
+					i++;
+				else
+					value = 1;
+
+				if (is_vtx3_share)
+					i++;
+				else
+					value = 2;
+
+				if (is_vtx4_share)
+					i++;
+				else
+					value = 3;
+
+				ASSERT(i == 3);
+
+				return value;
+				};
+
+			for (int i = 0; i < tetrahedra_pool.size(); i++) {
+				for (int j = 0; j < 4; j++) {
+					auto t1 = (Tetrahedra*)tetrahedra_pool[i];
+					t1->neighbors[j] = nullptr;
+				}
+			}
+
+			for (int i = 0; i < tetrahedra_pool.size(); i++) {
+				for (int j = 0; j < tetrahedra_pool.size(); j++) {
+					if (i == j)
+						continue;
+					auto t1 = (Tetrahedra*)tetrahedra_pool[i];
+					auto t2 = (Tetrahedra*)tetrahedra_pool[j];
+
+					if (is_tetrahedra_disjoin(t1, t2)) {
+						//mark t1 t2 as neighbor
+
+						int  k = find_disjoin_tet_non_share_vtx_index_in_t2(t1, t2);
+						t2->neighbors[k] = t1;
+
+						k = find_disjoin_tet_non_share_vtx_index_in_t2(t2, t1);
+						t1->neighbors[k] = t2;
+					}
+				}
+			}
+		}
 
 		void init_from_bw(Delaunay3D_01_datastruct::BW_DT_struct& bw_dt_struct) {
 			bw_dt_struct.clear_bounding_box();
 
 			vertex_pool.initializePool(sizeof(Vertex), bw_dt_struct.all_point.size() * 2, 8, 64);
 			tetrahedra_pool.initializePool(sizeof(Tetrahedra), bw_dt_struct.n_simplices_list.size() * 2, 8, 64);
+			face_pool.initializePool(sizeof(Face), bw_dt_struct.n_simplices_list.size(), 8, 64);
 
 			for (int i = 0; i < bw_dt_struct.all_point.size(); i++) {
 				auto p = (Vertex*)vertex_pool.allocate();
+
 				p->position = bw_dt_struct.all_point[i];
 				p->connect_edge_array = new std::vector<Edge*>();
 			}
+
 			for (int i = 0; i < bw_dt_struct.n_simplices_list.size(); i++) {
 				auto p = (Tetrahedra*)tetrahedra_pool.allocate();
-				p->draw_red = false;
+				{
+					p->draw_red = false;
+					p->neighbors[0] = nullptr;
+					p->neighbors[1] = nullptr;
+					p->neighbors[2] = nullptr;
+					p->neighbors[3] = nullptr;
+					p->faces[0] = nullptr;
+					p->faces[1] = nullptr;
+					p->faces[2] = nullptr;
+					p->faces[3] = nullptr;
+				}
 				p->p1 = (Vertex*)vertex_pool[bw_dt_struct.n_simplices_list[i].index_p1];
 				p->p2 = (Vertex*)vertex_pool[bw_dt_struct.n_simplices_list[i].index_p2];
 				p->p3 = (Vertex*)vertex_pool[bw_dt_struct.n_simplices_list[i].index_p3];
 				p->p4 = (Vertex*)vertex_pool[bw_dt_struct.n_simplices_list[i].index_p4];
+			}
+			update_tet_neightbors();
+
+			auto find_disjoin_tet_non_share_vtx_index_in_t2 = [](Tetrahedra* t1, Tetrahedra* t2) {
+				bool is_vtx1_share, is_vtx2_share, is_vtx3_share, is_vtx4_share;
+				is_vtx1_share = (t2->p1 == t1->p1 || t2->p1 == t1->p2 || t2->p1 == t1->p3 || t2->p1 == t1->p4);
+				is_vtx2_share = (t2->p2 == t1->p1 || t2->p2 == t1->p2 || t2->p2 == t1->p3 || t2->p2 == t1->p4);
+				is_vtx3_share = (t2->p3 == t1->p1 || t2->p3 == t1->p2 || t2->p3 == t1->p3 || t2->p3 == t1->p4);
+				is_vtx4_share = (t2->p4 == t1->p1 || t2->p4 == t1->p2 || t2->p4 == t1->p3 || t2->p4 == t1->p4);
+
+				int i = 0;
+				int value = 0;
+				if (is_vtx1_share)
+					i++;
+				else
+					value = 0;
+				if (is_vtx2_share)
+					i++;
+				else
+					value = 1;
+				if (is_vtx3_share)
+					i++;
+				else
+					value = 2;
+				if (is_vtx4_share)
+					i++;
+				else
+					value = 3;
+
+				ASSERT(i == 3);
+
+				return value;
+				};
+
+			//create face
+			for (int i = 0; i < tetrahedra_pool.size(); i++) {
+				auto t = (Tetrahedra*)tetrahedra_pool[i];
+
+				auto create_tet_face = [find_disjoin_tet_non_share_vtx_index_in_t2, this, &t](int tet_face_index) {
+					if (t->faces[tet_face_index] == nullptr) {
+						if (t->neighbors[tet_face_index] != nullptr) {
+							//find adjface_vtx_index
+							auto face_index = find_disjoin_tet_non_share_vtx_index_in_t2(t, t->neighbors[tet_face_index]);
+							auto face_in_neighbor = t->neighbors[tet_face_index]->faces[face_index];
+							if (face_in_neighbor != nullptr) {
+								t->faces[tet_face_index] = face_in_neighbor;
+							}
+						}
+						if (t->faces[tet_face_index] == nullptr) {
+							auto f = (Face*)face_pool.allocate();
+							f->p1 = t->p1;
+							f->p2 = t->p2;
+							f->p3 = t->p3;
+							t->faces[tet_face_index] = f;
+						}
+					}};
+
+				create_tet_face(0);
+				create_tet_face(1);
+				create_tet_face(2);
+				create_tet_face(3);
 			}
 		}
 
@@ -630,20 +799,27 @@ CDT_3D_01_datastruct::Gift_Wrapping CDT_3D_01(CDT_3D_01_datastruct::PLC& plc) {
 #pragma endregion
 	}
 
-
 	//Incremental Facet Insertion algorithm
 	{
 		//The algorithm begins with a Delaunay tetrahedralization of the vertices of a fully edge-protected PLC and incrementally recovers the missing facets one by one
-
 		auto incremental_facet_insertion = [](Gift_Wrapping& gw, base_type::Triangle_Index f) {
-
-
 			//The goal of a facet insertion algorithm is to convert T into T^f.
 
 			//First, find all the tetrahedra in T that intersect the relative interior of f(找出所有与插入面相交的四面体).
 			// It may be that f is already represented as a union of triangular faces, in which case there is nothing to do.（如果插入面刚好是某些四面体的面，那就什么也不做）
 			//Otherwise, the next step is to delete from T each tetrahedron whose interior intersects f, as Figure 13 illustrates. (Tetrahedra that intersect f only on their boundaries stay put.) （如果存在这样的四面体，就删除它）
-
+			auto is_face_belong_tetrahedras = [](const Tetrahedra& t, const Face& f)->bool {
+				int i = 0;
+				if (f.p1 == t.p1 || f.p1 == t.p2 || f.p1 == t.p3 || f.p1 == t.p4)
+					i++;
+				if (f.p2 == t.p1 || f.p2 == t.p2 || f.p2 == t.p3 || f.p2 == t.p4)
+					i++;
+				if (f.p3 == t.p1 || f.p3 == t.p2 || f.p3 == t.p3 || f.p3 == t.p4)
+					i++;
+				if (i == 3)
+					return true;
+				return false;
+				};
 			auto is_tetrahedra_intersect_with_face = [](const Tetrahedra& t, const Face& f)->bool {
 
 				auto face_p1 = f.p1;
@@ -656,19 +832,6 @@ CDT_3D_01_datastruct::Gift_Wrapping CDT_3D_01(CDT_3D_01_datastruct::PLC& plc) {
 				auto tet_p4 = t.p4;
 
 				bool intersect = false;
-
-				//tri may be tet face
-				{
-					int i = 0;
-					if (f.p1 == t.p1 || f.p1 == t.p2 || f.p1 == t.p3 || f.p1 == t.p4)
-						i++;
-					if (f.p2 == t.p1 || f.p2 == t.p2 || f.p2 == t.p3 || f.p2 == t.p4)
-						i++;
-					if (f.p3 == t.p1 || f.p3 == t.p2 || f.p3 == t.p3 || f.p3 == t.p4)
-						i++;
-					if (i == 3)
-						return false;
-				}
 
 				{
 					if (intersect == false) {
@@ -710,11 +873,51 @@ CDT_3D_01_datastruct::Gift_Wrapping CDT_3D_01(CDT_3D_01_datastruct::PLC& plc) {
 			for (int i = 0; i < gw.tetrahedra_pool.size(); i++) {
 				Tetrahedra* t = (Tetrahedra*)gw.tetrahedra_pool[i];
 
-				bool res = is_tetrahedra_intersect_with_face(*t, face);
+				bool res = is_face_belong_tetrahedras(*t, face);
+				if (res) {
+					//mark t's face
+					auto find_non_share_vtx_index_in_tet = [](Tetrahedra* t1, Face* f) {
+						bool is_vtx1_share, is_vtx2_share, is_vtx3_share, is_vtx4_share;
+						is_vtx1_share = (t1->p1 == f->p1 || t1->p1 == f->p2 || t1->p1 == f->p3);
+						is_vtx2_share = (t1->p2 == f->p1 || t1->p2 == f->p2 || t1->p2 == f->p3);
+						is_vtx3_share = (t1->p3 == f->p1 || t1->p3 == f->p2 || t1->p3 == f->p3);
+						is_vtx4_share = (t1->p4 == f->p1 || t1->p4 == f->p2 || t1->p4 == f->p3);
+
+						int i = 0;
+						int value = 0;
+						if (is_vtx1_share)
+							i++;
+						else
+							value = 0;
+						if (is_vtx2_share)
+							i++;
+						else
+							value = 1;
+						if (is_vtx3_share)
+							i++;
+						else
+							value = 2;
+						if (is_vtx4_share)
+							i++;
+						else
+							value = 3;
+
+						ASSERT(i == 3);
+
+						return value;
+						};
+					int face_index = find_non_share_vtx_index_in_tet(t, &face);
+					t->faces[face_index]->face_from_plc = true;
+					continue;
+				}
+
+				res = is_tetrahedra_intersect_with_face(*t, face);
 				if (res) {
 					t->draw_red = true;
-					
+
 				}
+
+
 			}
 
 			};
@@ -743,6 +946,13 @@ CDT_3D_01_datastruct::Gift_Wrapping CDT_3D_01(CDT_3D_01_datastruct::PLC& plc) {
 			//	break;
 		}
 
+		//delete Outer And Holes
+		gw.update_tet_neightbors();
+		{
+			//depth mark
+
+
+		}
 		return gw;
 	}
 }

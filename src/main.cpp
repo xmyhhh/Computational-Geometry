@@ -145,23 +145,15 @@ bool AttachParentConsole(int16_t minLength)
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	//int main() {
 
-
-
 	CreateNewConsole(1024);
 
-
-
-
-
 	exactinit(0, 0, 0, 500, 500, 500);
-
 
 	//opencv test
 	//ShowTriangle();
 	//ShowDot();
 	//ShowLine();
 	//FileConvert();
-
 
 	// 2D
 	//ConvexHull();
@@ -171,12 +163,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	//Voronoi();
 	//Delaunay();
 
-
 	// 3D
 	//Delaunay3D(hInstance);
-
-
-
 
 	//Interpolation4D(hInstance);
 
