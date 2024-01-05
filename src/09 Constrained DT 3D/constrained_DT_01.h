@@ -248,14 +248,10 @@ namespace CDT_3D_01_datastruct {
 			return d;
 		}
 
-		void update_pool_state() {
-
-		}
-
 		void tet_depth_mark() {
 			//depth mark
 
-			auto depth_mark = [&](auto&& depth_mark, int depth_current, Tetrahedra* tetrahedra)->void {
+			auto depth_mark = [](int depth_current, Tetrahedra* tetrahedra) {
 				ASSERT(tetrahedra->mark == false);
 
 				std::stack<Tetrahedra*> stack;
@@ -272,6 +268,21 @@ namespace CDT_3D_01_datastruct {
 						}
 					}
 				}
+				};
+
+
+			auto depth_mark_recurse = [](auto&& depth_mark_recurse, int depth_current, Tetrahedra* tetrahedra)->void {
+				ASSERT(tetrahedra->mark == false);
+
+				tetrahedra->mark = true;
+				tetrahedra->depth = depth_current;
+
+				for (int i = 0; i < 4; i++) {
+					if (!tetrahedra->faces[i]->face_from_plc && tetrahedra->neighbors[i] != nullptr && tetrahedra->neighbors[i]->mark == false) {
+						depth_mark_recurse(depth_mark_recurse, depth_current, tetrahedra->neighbors[i]);
+					}
+				}
+
 				};
 
 
@@ -293,8 +304,11 @@ namespace CDT_3D_01_datastruct {
 				}
 				if (seed_tet == nullptr)
 					break;
-				depth_mark(depth_mark, depth, seed_tet);
+				ASSERT(depth < 1000);
+				depth_mark(depth, seed_tet);
+				//depth_mark_recurse(depth_mark_recurse, depth, seed_tet);
 				depth++;
+
 			} while (true);
 		}
 
@@ -547,7 +561,7 @@ namespace CDT_3D_01_datastruct {
 					vulkan_data.triangles[i * 3 * 4 + 10] = vertex_pool.get_index(t->p3);
 					vulkan_data.triangles[i * 3 * 4 + 11] = vertex_pool.get_index(t->p4);
 
-					if (t->draw_red) {
+					if (t->draw_red||true) {
 						vulkan_data.triangleColors[i * 3 * 4] = 1;
 						vulkan_data.triangleColors[i * 3 * 4 + 1] = 0;
 						vulkan_data.triangleColors[i * 3 * 4 + 2] = 0;
@@ -1083,25 +1097,32 @@ CDT_3D_01_datastruct::Gift_Wrapping CDT_3D_01(CDT_3D_01_datastruct::PLC& plc) {
 
 		//delete Outer And Holes
 
-		{
-			gw.tet_depth_mark();
-			int aaa = gw.get_max_depth();
-			for (int i = 0; i < gw.tetrahedra_pool.size(); i++) {
-				auto t = (Tetrahedra*)gw.tetrahedra_pool[i];
-				if (t->depth != 0) {
-					//delet this tet
-					for (int j = 0; j<4; j++) {
-						if (t->neighbors[j] == nullptr) {
-							gw.face_pool.deallocate(t->faces[j]);
-						}
-					}
-					gw.tetrahedra_pool.deallocate(t);
-				}
-				
-			}
 
+		gw.tet_depth_mark();
+		int tet_max_depth = gw.get_max_depth();
+		int tet_num_before_erase = gw.tetrahedra_pool.size();
+
+
+		for (int i = gw.tetrahedra_pool.size()-1; i >=0 ; i--) {
+			auto t = (Tetrahedra*)gw.tetrahedra_pool[i];
+			
+			if (t->depth != 0) {
+				//delet this tet
+				for (int j = 0; j < 4; j++) {
+					if (t->neighbors[j] == nullptr) {
+						gw.face_pool.deallocate(t->faces[j]);
+					}
+				}
+				gw.tetrahedra_pool.deallocate(t);
+			}
 		
+
 		}
+		int tet_num_after_erase = gw.tetrahedra_pool.size();
+
+		debug_cout("* tet_max_depth:" + std::to_string(tet_max_depth));
+		debug_cout("* tet_num_before_erase:" + std::to_string(tet_num_before_erase));
+		debug_cout("* tet_num_after_erase:" + std::to_string(tet_num_after_erase));
 		return gw;
 	}
 }
