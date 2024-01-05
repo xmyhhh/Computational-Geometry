@@ -516,13 +516,48 @@ namespace CDT_3D_01_datastruct {
 				auto t = (Tetrahedra*)tetrahedra_pool[i];
 
 				auto create_tet_face = [find_disjoin_tet_non_share_vtx_index_in_t2, this, &t](int tet_face_index) {
+					auto bind_tet_and_face = [](Tetrahedra* t, Face* f) {
+						bool b1 = t->p1 == f->p1 || t->p1 == f->p2 || t->p1 == f->p3;
+						bool b2 = t->p2 == f->p1 || t->p2 == f->p2 || t->p2 == f->p3;
+						bool b3 = t->p3 == f->p1 || t->p3 == f->p2 || t->p3 == f->p3;
+						bool b4 = t->p4 == f->p1 || t->p4 == f->p2 || t->p4 == f->p3;
+						int i = 0;
+						if (b1)
+							i++;
+						if (b2)
+							i++;
+						if (b3)
+							i++;
+						if (b4)
+							i++;
+						ASSERT(i == 3);
+						bool orient;
+						if (!b1) {
+							orient = ToLeft3D(f->p1->position, f->p2->position, f->p3->position, t->p1->position);
+							t->faces[0] = f;
+						}
+						if (!b2) {
+							orient = ToLeft3D(f->p1->position, f->p2->position, f->p3->position, t->p2->position);
+							t->faces[1] = f;
+						}
+						if (!b3) {
+							orient = ToLeft3D(f->p1->position, f->p2->position, f->p3->position, t->p3->position);
+							t->faces[2] = f;
+						}
+						if (!b4) {
+							orient = ToLeft3D(f->p1->position, f->p2->position, f->p3->position, t->p4->position);
+							t->faces[3] = f;
+						}
+						orient ? f->disjoin_tet[0] = t : f->disjoin_tet[1] = t;
+						};
+
 					if (t->faces[tet_face_index] == nullptr) {
 						if (t->neighbors[tet_face_index] != nullptr) {
 							//find adjface_vtx_index
 							auto face_index = find_disjoin_tet_non_share_vtx_index_in_t2(t, t->neighbors[tet_face_index]);
 							auto face_in_neighbor = t->neighbors[tet_face_index]->faces[face_index];
 							if (face_in_neighbor != nullptr) {
-								t->faces[tet_face_index] = face_in_neighbor;
+								bind_tet_and_face(t, face_in_neighbor);
 							}
 						}
 						if (t->faces[tet_face_index] == nullptr) {
@@ -551,7 +586,7 @@ namespace CDT_3D_01_datastruct {
 							else {
 								ASSERT(false);
 							}
-							t->faces[tet_face_index] = f;
+							bind_tet_and_face(t, f);
 						}
 					}};
 
@@ -1198,101 +1233,217 @@ CDT_3D_01_datastruct::Gift_Wrapping CDT_3D_01(CDT_3D_01_datastruct::PLC& plc) {
 
 			for (auto bad_tet : bad_tet_array) {
 				for (int j = 0; j < 4; j++) {
-
 					if (bad_tet->neighbors[j] != nullptr) {
 						//delete neighnor refer
 						auto index = find_disjoin_tet_non_share_vtx_index_in_t2(bad_tet, bad_tet->neighbors[j]);
 						ASSERT(bad_tet->neighbors[j]->neighbors[index] == bad_tet);
 						bad_tet->neighbors[j]->neighbors[index] = nullptr;
 					}
-
 				}
 				gw.tetrahedra_pool.deallocate(bad_tet);
 			}
 
-			std::stack<Face*> unfinished_face_array;
+			//start to make new tetrahedra
+			std::vector<Face*> unfinished_face_array;
 			for (auto f : canvity_face_array) {
-				unfinished_face_array.push(f);
+				unfinished_face_array.push_back(f);
 			}
 
-
 			std::vector<Face*> face_to_search_array(canvity_face_array);
+			std::vector<Vertex*> vtx_to_search_array;
+
+			for (auto f : canvity_face_array) {
+				vtx_to_search_array.push_back(f->p1);
+				vtx_to_search_array.push_back(f->p2);
+				vtx_to_search_array.push_back(f->p3);
+			}
 
 			while (unfinished_face_array.size() > 0) {
-				auto f = unfinished_face_array.top();
-				unfinished_face_array.pop();
+				auto f = unfinished_face_array.back();
+				unfinished_face_array.pop_back();
 
-				auto find_above_vtx = [](Face* f,bool dir/*ccw = true, cw = false */)->Vertex* {};
+				auto find_above_vtx = [](const std::vector<Vertex*>& array, Face* f, bool dir/*ccw = true, cw = false */)->Vertex* {
+					Vertex* res = nullptr;
+					for (const auto& vtx : array) {
+						bool orient = ToLeft3D(f->p1->position, f->p2->position, f->p3->position, vtx->position);
+						if (orient == dir) {
+							bool is_vtx_good = true;
+							for (const auto& vtx2 : array) {
+								if (vtx == vtx2)
+									continue;
+								bool in_sphere = InCircle3D(f->p1->position, f->p2->position, f->p3->position, vtx->position, vtx2->position);
+								if (in_sphere) {
+									is_vtx_good = false;
+									break;
+								}
+
+							}
+							if (is_vtx_good) {
+								res = vtx;
+								break;
+							}
+						}
+					}
+					ASSERT(res != nullptr);
+					return res;
+					};
+				auto make_gw_face = [&gw](Vertex* p1, Vertex* p2, Vertex* p3) ->Face* {
+					auto new_f = (Face*)gw.face_pool.allocate();
+					new_f->p1 = p1;
+					new_f->p2 = p2;
+					new_f->p3 = p3;
+					new_f->face_from_plc = false;
+					return new_f;
+					};
+				auto get_vtx_index_ccw = [](int index, Tetrahedra* t, Vertex*& a, Vertex*& b, Vertex*& c) {
+					switch (index)
+					{
+					case 0: {
+						a = t->p2;
+						b = t->p3;
+						c = t->p4;
+						bool orient = ToLeft3D(a->position, b->position, c->position, t->p1->position);
+						if (!orient)
+							std::swap(a, c);
+						return;
+					}
+					case 1: {
+						a = t->p3;
+						b = t->p1;
+						c = t->p4;
+						bool orient = ToLeft3D(a->position, b->position, c->position, t->p2->position);
+						if (!orient)
+							std::swap(a, c);
+						return;
+					}
+					case 2: {
+						a = t->p1;
+						b = t->p2;
+						c = t->p4;
+						bool orient = ToLeft3D(a->position, b->position, c->position, t->p3->position);
+						if (!orient)
+							std::swap(a, c);
+						return;
+					}
+					case 3: {
+						a = t->p3;
+						b = t->p2;
+						c = t->p1;
+						bool orient = ToLeft3D(a->position, b->position, c->position, t->p4->position);
+						if (!orient)
+							std::swap(a, c);
+						return;
+					}
+
+
+					default:
+						ASSERT(false);
+					}
+					};
+				auto find_face_in_array_and_remove = [](std::vector<Face*>& array, Vertex* a, Vertex* b, Vertex* c)->Face* {
+					for (auto it = array.begin(); it != array.end(); it++) {
+						auto f = *it;
+						bool b1 = f->p1 == a || f->p1 == b || f->p1 == c;
+						bool b2 = f->p2 == a || f->p2 == b || f->p2 == c;
+						bool b3 = f->p3 == a || f->p3 == b || f->p3 == c;
+						if (b1 && b2 && b3)
+						{
+							array.erase(it);
+							return f;
+						}
+
+					}
+					return nullptr;
+
+					};
+				auto bind_tet_and_face = [](Tetrahedra* t, Face* f) {
+					bool b1 = t->p1 == f->p1 || t->p1 == f->p2 || t->p1 == f->p3;
+					bool b2 = t->p2 == f->p1 || t->p2 == f->p2 || t->p2 == f->p3;
+					bool b3 = t->p3 == f->p1 || t->p3 == f->p2 || t->p3 == f->p3;
+					bool b4 = t->p4 == f->p1 || t->p4 == f->p2 || t->p4 == f->p3;
+					int i = 0;
+					if (b1)
+						i++;
+					if (b2)
+						i++;
+					if (b3)
+						i++;
+					if (b4)
+						i++;
+					ASSERT(i == 3);
+					bool orient;
+					if (!b1) {
+						orient = ToLeft3D(f->p1->position, f->p2->position, f->p3->position, t->p1->position);
+						t->faces[0] = f;
+					}
+					if (!b2) {
+						orient = ToLeft3D(f->p1->position, f->p2->position, f->p3->position, t->p2->position);
+						t->faces[1] = f;
+					}
+					if (!b3) {
+						orient = ToLeft3D(f->p1->position, f->p2->position, f->p3->position, t->p3->position);
+						t->faces[2] = f;
+					}
+					if (!b4) {
+						orient = ToLeft3D(f->p1->position, f->p2->position, f->p3->position, t->p4->position);
+						t->faces[3] = f;
+					}
+					orient ? f->disjoin_tet[0] = t : f->disjoin_tet[1] = t;
+					};
+
+				Tetrahedra* new_tet = (Tetrahedra*)gw.tetrahedra_pool.allocate();
+				new_tet->p2 = f->p1;
+				new_tet->p3 = f->p2;
+				new_tet->p4 = f->p3;
+				new_tet->faces[0] = f;
+				Vertex* vtx_find;
 
 				if (!f->ccw_finished) {
-					auto vtx = find_above_vtx(f,true);
-					auto new_tet  = (Tetrahedra*)gw.tetrahedra_pool.allocate();
-					new_tet->p1 = vtx;
-					new_tet->p2 = f->p1;
-					new_tet->p3 = f->p2;
-					new_tet->p4 = f->p3;
+					vtx_find = find_above_vtx(vtx_to_search_array, f, true);
 
-					new_tet->faces[0] = f;
 					f->disjoin_tet[0] = new_tet;
 					if (f->disjoin_tet[1] != nullptr) {
 						new_tet->neighbors[0] = f->disjoin_tet[1];
 						auto index_in_t2 = find_disjoin_tet_non_share_vtx_index_in_t2(new_tet, f->disjoin_tet[1]);
 						f->disjoin_tet[1]->neighbors[index_in_t2] = new_tet;
 					}
-
-					//TODO:find other face and neighbors
-					auto make_gw_face = [&gw](Vertex* p1, Vertex* p2, Vertex* p3) ->Face*{
-						auto new_f = (Face*)gw.face_pool.allocate();
-						new_f->p1 = p1;
-						new_f->p2 = p2;
-						new_f->p3 = p3;
-						new_f->face_from_plc = false;
-						};
-					auto get_vtx_index = [](int index, Tetrahedra* t,Vertex*& a, Vertex*& b, Vertex*& c) {
-						switch (index)
-						{
-						case 0: {
-							a = t->p2;
-							b = t->p3;
-							c = t->p4;
-							return;
-						}
-						case 1: {
-							a = t->p3;
-							b = t->p1;
-							c = t->p4;
-							return;
-						}
-						case 2: {
-							a = t->p1;
-							b = t->p2;
-							c = t->p4;
-							return;
-						}
-						case 3: {
-							a = t->p3;
-							b = t->p2;
-							c = t->p1;
-							return;
-						}
-						
-
-						default:
-							ASSERT(false);
-						}
-						};
-					for (int j = 1; j < 4; j++) {
-
-					}
-
-					//new_tet->neighbors
-		
-					//new_tet->faces
-
 				}
+				else {
+					ASSERT(!f->cw_finished);
+					vtx_find = find_above_vtx(vtx_to_search_array, f, false);
+					f->disjoin_tet[1] = new_tet;
 
+					if (f->disjoin_tet[0] != nullptr) {
+						new_tet->neighbors[0] = f->disjoin_tet[0];
+						auto index_in_t2 = find_disjoin_tet_non_share_vtx_index_in_t2(new_tet, f->disjoin_tet[0]);
+						f->disjoin_tet[0]->neighbors[index_in_t2] = new_tet;
+					}
+				}
+				new_tet->p1 = vtx_find;
+
+				for (int j = 1; j < 4; j++) {
+					Vertex* a; Vertex* b; Vertex* c;
+					get_vtx_index_ccw(j, new_tet, a, b, c);
+					auto face_find = find_face_in_array_and_remove(face_to_search_array, a, b, c);
+					if (face_find != nullptr) {
+						bind_tet_and_face(new_tet, face_find);
+
+						auto it = std::find(unfinished_face_array.begin(), unfinished_face_array.end(), face_find);
+						if (it != unfinished_face_array.end())
+						{
+							unfinished_face_array.erase(it);
+						}
+					}
+					else {
+						//make new 
+						auto new_face = make_gw_face(a, b, c);
+						new_tet->faces[j] = new_face;
+						new_face->disjoin_tet[0] = new_tet;
+						face_to_search_array.push_back(new_face);
+						unfinished_face_array.push_back(new_face);
+					}
+				}
 			}
-
 			};
 
 		Delaunay3D_01_datastruct::BW_DT_struct bw_dt_struct;
