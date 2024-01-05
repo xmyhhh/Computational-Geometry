@@ -1,6 +1,9 @@
 #pragma once
 #include <cstdlib>
 
+
+
+
 class MemoryPool {
 public:
 	void* firstBlock;
@@ -15,6 +18,7 @@ public:
 	long items, maxItems;
 	int unallocatedItems;
 	int pathItemsLeft;
+	const int itemoffset = sizeof(void*) + sizeof(bool);
 
 	MemoryPool() {
 		firstBlock = nowBlock = nullptr;
@@ -45,6 +49,7 @@ public:
 
 	void initializePool(int byteCount, int itemCount, int wordSize, int alignment) {
 
+		byteCount += itemoffset;
 
 		if (alignment > wordSize) {
 			alignBytes = alignment;
@@ -57,11 +62,13 @@ public:
 			alignBytes = sizeof(void*);
 		}
 
-		itemWords = ((byteCount + alignBytes - 1) / alignBytes) * (alignBytes / wordSize);
+		int byteCount_align = (byteCount + alignBytes - 1) / alignBytes * alignBytes;
+
+		itemWords = byteCount_align / wordSize;
 		itemBytes = itemWords * wordSize;
 		itemsPerBlock = itemCount;
 
-		firstBlock = malloc(itemsPerBlock * itemBytes + sizeof(void*) + alignBytes);
+		firstBlock = malloc(itemsPerBlock * itemBytes + sizeof(void*)/*link to next block*/ + alignBytes);
 		if (firstBlock == nullptr) {
 			return; // Out of memory
 		}
@@ -135,13 +142,20 @@ public:
 			maxItems++;
 		}
 		items++;
-		return newItem;
+
+		bool * pNewItemBool = (bool*)((uintptr_t)newItem + sizeof(void*));
+		*pNewItemBool = true;
+		return (void*)((uintptr_t)newItem + itemoffset);
 	}
 
 	void deallocate(void* dyingItem) {
+		auto pItem = (void*)((uintptr_t)dyingItem - itemoffset);
+		bool* pItembool = (bool*)((uintptr_t)pItem + sizeof(void*));
+		*pItembool = false;//mark as unavalibale
 		dirty = true;
-		*((void**)dyingItem) = deadItemStack;
-		deadItemStack = dyingItem;
+
+		*((void**)pItem) = deadItemStack;
+		deadItemStack = pItem;
 		items--;
 	}
 
@@ -189,7 +203,12 @@ public:
 		newItem = pathItem;
 		pathItem = (void*)((uintptr_t)pathItem + itemBytes);
 		pathItemsLeft--;
-		return newItem;
+
+		bool* newItemBool = (bool*)((uintptr_t)newItem + sizeof(void*));
+		if (*newItemBool)
+			return  (void*)((uintptr_t)newItem + itemoffset);
+		else
+			return traverse();//return next
 	}
 
 	void* operator[](const int index)

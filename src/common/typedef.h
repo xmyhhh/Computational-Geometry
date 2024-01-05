@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 #include <cmath>
+#include <stack>
 
 #define ASSERT(condition) assert(condition)
 #define  WHITE cv::Scalar(255, 255, 255)
