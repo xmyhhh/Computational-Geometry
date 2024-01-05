@@ -238,6 +238,11 @@ namespace CDT_3D_01_datastruct {
 
 		MemoryPool face_pool;
 
+
+		int get_depth_num() {
+
+		}
+
 		int get_max_depth() {
 			int d = 0;
 			for (int i = 0; i < tetrahedra_pool.size(); i++) {
@@ -263,8 +268,8 @@ namespace CDT_3D_01_datastruct {
 					t->depth = depth_current;
 
 					for (int i = 0; i < 4; i++) {
-						if (!tetrahedra->faces[i]->face_from_plc && tetrahedra->neighbors[i] != nullptr && tetrahedra->neighbors[i]->mark == false) {
-							stack.push(tetrahedra->neighbors[i]);
+						if (!t->faces[i]->face_from_plc && t->neighbors[i] != nullptr && t->neighbors[i]->mark == false) {
+							stack.push(t->neighbors[i]);
 						}
 					}
 				}
@@ -304,7 +309,7 @@ namespace CDT_3D_01_datastruct {
 				}
 				if (seed_tet == nullptr)
 					break;
-				ASSERT(depth < 1000);
+				
 				depth_mark(depth, seed_tet);
 				//depth_mark_recurse(depth_mark_recurse, depth, seed_tet);
 				depth++;
@@ -523,8 +528,8 @@ namespace CDT_3D_01_datastruct {
 
 			//edge
 
-			bool draw_tet = true;
-			bool draw_face = false;
+			bool draw_tet = false;
+			bool draw_face = true;
 			if (draw_tet)
 				vulkan_data.numberOfTriangle += tetrahedra_pool.size() * 4;
 			if (draw_face)
@@ -561,7 +566,7 @@ namespace CDT_3D_01_datastruct {
 					vulkan_data.triangles[i * 3 * 4 + 10] = vertex_pool.get_index(t->p3);
 					vulkan_data.triangles[i * 3 * 4 + 11] = vertex_pool.get_index(t->p4);
 
-					if (t->draw_red||true) {
+					if (t->draw_red) {
 						vulkan_data.triangleColors[i * 3 * 4] = 1;
 						vulkan_data.triangleColors[i * 3 * 4 + 1] = 0;
 						vulkan_data.triangleColors[i * 3 * 4 + 2] = 0;
@@ -580,8 +585,8 @@ namespace CDT_3D_01_datastruct {
 					}
 					else {
 						int max_depth = get_max_depth();
-						double color_r1 = 0.17, color_g1 = 0.2, color_b1 = 0.1;
-						double color_r2 = 0.67, color_g2 = 1.0, color_b2 = 0.7;
+						double color_r1 = 0.37, color_g1 = 0.2, color_b1 = 0.2;
+						double color_r2 = 0.87, color_g2 = 1.0, color_b2 = 0.7;
 						double color_r = (color_r2 - color_r1) / max_depth * t->depth + color_r1;
 						double color_g = (color_g2 - color_g1) / max_depth * t->depth + color_g1;
 						double color_b = (color_b2 - color_b1) / max_depth * t->depth + color_b1;
@@ -623,9 +628,9 @@ namespace CDT_3D_01_datastruct {
 						vulkan_data.triangleColors[offset + i * 3 + 2] = 0;
 					}
 					else {
-						vulkan_data.triangleColors[offset + i * 3] = 1;
-						vulkan_data.triangleColors[offset + i * 3 + 1] = 0;
-						vulkan_data.triangleColors[offset + i * 3 + 2] = 0;
+						vulkan_data.triangleColors[offset + i * 3] = 0.3;
+						vulkan_data.triangleColors[offset + i * 3 + 1] = 0.3;
+						vulkan_data.triangleColors[offset + i * 3 + 2] = 0.3;
 					}
 				}
 
@@ -1062,7 +1067,7 @@ CDT_3D_01_datastruct::Gift_Wrapping CDT_3D_01(CDT_3D_01_datastruct::PLC& plc) {
 
 				res = is_tetrahedra_intersect_with_face(*t, face);
 				if (res) {
-					//t->draw_red = true;
+					t->draw_red = true;
 
 				}
 
@@ -1102,22 +1107,19 @@ CDT_3D_01_datastruct::Gift_Wrapping CDT_3D_01(CDT_3D_01_datastruct::PLC& plc) {
 		int tet_max_depth = gw.get_max_depth();
 		int tet_num_before_erase = gw.tetrahedra_pool.size();
 
-
-		for (int i = gw.tetrahedra_pool.size()-1; i >=0 ; i--) {
-			auto t = (Tetrahedra*)gw.tetrahedra_pool[i];
-			
-			if (t->depth != 0) {
-				//delet this tet
-				for (int j = 0; j < 4; j++) {
-					if (t->neighbors[j] == nullptr) {
-						gw.face_pool.deallocate(t->faces[j]);
-					}
-				}
-				gw.tetrahedra_pool.deallocate(t);
-			}
-		
-
-		}
+		//for (int i = gw.tetrahedra_pool.size()-1; i >=0 ; i--) {
+		//	auto t = (Tetrahedra*)gw.tetrahedra_pool[i];
+		//	
+		//	if (t->depth %2!= 1) {
+		//		//delet this tet
+		//		for (int j = 0; j < 4; j++) {
+		//			if (t->neighbors[j] == nullptr) {
+		//				gw.face_pool.deallocate(t->faces[j]);
+		//			}
+		//		}
+		//		gw.tetrahedra_pool.deallocate(t);
+		//	}
+		//}
 		int tet_num_after_erase = gw.tetrahedra_pool.size();
 
 		debug_cout("* tet_max_depth:" + std::to_string(tet_max_depth));

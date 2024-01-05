@@ -243,13 +243,15 @@ public:
 				}
 				if (tr_color != glm::vec4(1)) {
 					vkCmdSetLineWidth(drawCmdBuffers[i], 3);
+					if (tr_color.x == tr_color.y && tr_color.x == tr_color.z)
+						vkCmdSetLineWidth(drawCmdBuffers[i], 1);
 					vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::vec4), &p1);
 					vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::vec4), sizeof(glm::vec4), &p2);
 					vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::vec4) * 2, sizeof(glm::vec4), &p3);
 					vkCmdPushConstants(drawCmdBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::vec4) * 3, sizeof(glm::vec4), &tr_color);
 					vkCmdDraw(drawCmdBuffers[i], 3, 1, 0, 0);
 				}
-				
+
 			}
 
 
