@@ -102,6 +102,22 @@ void lu_solve(double lu[4][4], int n, int* ps, double* b, int N)
 	for (i = N; i < n + N; i++) b[i] = X[i];
 }
 
+bool ToLeft3D(const cv::Point3d& p1, const cv::Point3d& p2, const cv::Point3d& p3, const cv::Point3d& s) {
+	//ORIENT3D
+
+	double a11, a12, a13;
+	double a21, a22, a23;
+	double a31, a32, a33;
+
+	a11 = p1.x - s.x; a12 = p1.y - s.y; a13 = p1.z - s.z;
+	a21 = p2.x - s.x; a22 = p2.y - s.y; a23 = p2.z - s.z;
+	a31 = p3.x - s.x; a32 = p3.y - s.y; a33 = p3.z - s.z;
+
+	double value = a11 * a22 * a33 + a12 * a23 * a31 + a13 * a21 * a32 - a31 * a22 * a13 - a32 * a23 * a11 - a21 * a12 * a33;
+
+	return value > 0;
+}
+
 bool ToLeft(const cv::Point& p1, const cv::Point& p2, const cv::Point& s)
 {
 	double value = p1.x * p2.y - p1.y * p2.x

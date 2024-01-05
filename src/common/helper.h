@@ -10,9 +10,10 @@ void lu_solve(double lu[4][4], int n, int* ps, double* b, int N);
 //geo tesl
 bool ToLeft(const cv::Point& p1, const cv::Point& p2, const cv::Point& p3);
 bool ToLeft(const cv::Point2d& p1, const cv::Point2d& p2, const cv::Point2d& s);
+bool ToLeft3D(const cv::Point3d& p1, const cv::Point3d& p2, const cv::Point3d& p3, const cv::Point3d& s);
+
 
 bool InCircle2D(const cv::Point2d& p1, const cv::Point2d& p2, const cv::Point2d& p3, const cv::Point2d& s);
-
 bool InCircle3D(const cv::Point3d& p1, const cv::Point3d& p2, const cv::Point3d& p3, const cv::Point3d& p4, const cv::Point3d& s);
 
 template<typename PointT >
