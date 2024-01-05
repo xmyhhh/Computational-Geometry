@@ -23,7 +23,8 @@ void ConstrainedDelaunay3D(HINSTANCE hInstance) {
 	CDT_3D_01_datastruct::PLC plc;
 	//ASSERT(plc.init_from_file(getAssetPath() + "tet.obj"));
 	//ASSERT(plc.init_from_file(getAssetPath() + "doughnut.obj"));
-	ASSERT(plc.init_from_file(getAssetPath() + "suzanne.obj"));
+	ASSERT(plc.init_from_file(getAssetPath() + "doughnut2.obj"));
+	//ASSERT(plc.init_from_file(getAssetPath() + "suzanne.obj"));
 
 	auto res = CDT_3D_01(plc);
 

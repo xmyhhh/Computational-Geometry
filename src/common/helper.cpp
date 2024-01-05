@@ -240,13 +240,28 @@ base_type::IntersectionResult3d PlaneIntersectionCalulate(base_type::Plane plane
 }
 
 bool isPointOnTriangle(base_type::Triangle3d tri, cv::Point3d p) {
-	auto Q = tri.p1;
-	auto u = tri.p2 - tri.p1;
-	auto v = tri.p3 - tri.p1;
 
-	cv::Point3d cvu = cross(u, v);
-	cv::Point3d	plane_normal = VectorNormal(cvu);
-	return fabs(dot(Q - p, plane_normal)) < 1e-8;
+	if (tri.p1 == p || tri.p2 == p || tri.p3 == p)
+		return true;
+
+	auto get_triangle_S = [](base_type::Triangle3d t) ->double {
+		auto A = t.p1;
+		auto B = t.p2;
+		auto C = t.p3;
+
+		auto S = VectorLength(cross(B - A, C - A));
+		return S;
+		};
+
+	double S_ABC, S_ABP, S_ACP, S_BCP;
+	S_ABC = get_triangle_S(tri);
+	S_ABP = get_triangle_S({ tri.p1,tri.p2,p });
+	S_ACP = get_triangle_S({ tri.p1,tri.p3,p });
+	S_BCP = get_triangle_S({ tri.p2,tri.p3,p });
+
+	return fabs(S_ABC - (S_ABP + S_ACP + S_BCP)) < 1e-8;
+
+
 }
 
 base_type::IntersectionResult3d TriangleIntersectionCalulate(base_type::Triangle3d tri, base_type::Line3d line) {

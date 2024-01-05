@@ -165,6 +165,9 @@ void CalculateBoundingCircle(const PointT& p1, const PointT& p2, const PointT& p
 inline double VectorLengthSqr(cv::Point3d a) {
 	return (a.x) * (a.x) + (a.y) * (a.y) + (a.z) * (a.z);
 }
+inline double VectorLength(cv::Point3d a) {
+	return std::sqrt((a.x) * (a.x) + (a.y) * (a.y) + (a.z) * (a.z));
+}
 inline double VectorAngle(cv::Point3d a, cv::Point3d b) {
 	auto d = dot(a, b);
 	auto cos = d / (std::sqrt(VectorLengthSqr(a)) * std::sqrt(VectorLengthSqr(b)));
