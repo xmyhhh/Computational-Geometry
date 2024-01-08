@@ -10,7 +10,6 @@
 #include "common/timer/timer.h"
 #include "common/predicates/predicates.h"
 
-
 extern void ShowTriangle();
 extern void ShowDot();
 extern void ShowLine();
@@ -25,8 +24,8 @@ extern void Delaunay();
 extern void Delaunay3D(HINSTANCE hInstance);
 extern void Interpolation4D(HINSTANCE hInstance);
 extern void ConstrainedDelaunay3D(HINSTANCE hInstance);
+extern void Unwrap(HINSTANCE hInstance);
 extern void constrained_DT();
-
 
 bool RedirectConsoleIO()
 {
@@ -140,8 +139,6 @@ bool AttachParentConsole(int16_t minLength)
 	return result;
 }
 
-
-
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	//int main() {
 
@@ -170,8 +167,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
 	//constrained_DT();
 
-	ConstrainedDelaunay3D(hInstance);
+	//ConstrainedDelaunay3D(hInstance);
 
+	Unwrap(hInstance);
 
 
 	ReleaseConsole();

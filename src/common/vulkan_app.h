@@ -232,6 +232,7 @@ public:
 			}
 
 			for (int j = 0; j < data.numberOfTriangle; j++) {
+				break;
 				auto tr = &data.triangles[j * 3];
 
 				glm::vec4 p1 = glm::vec4(data.points[tr[0] * 3], data.points[tr[0] * 3 + 1], data.points[tr[0] * 3 + 2], 1);

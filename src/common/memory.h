@@ -39,6 +39,8 @@ public:
 	}
 
 	~MemoryPool() {
+		if (firstBlock == nullptr)
+			return;
 		while (*(void**)firstBlock != nullptr) {
 			nowBlock = *(void**)firstBlock;
 			free(firstBlock);
