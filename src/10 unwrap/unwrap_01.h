@@ -750,7 +750,7 @@ void Unwrap(unwrap_01_datastruct::Unwrap &uw) {
         ASSERT(six_direction_center_face[5] != nullptr);
     }
     debug_cout("begin grow up");
-
+    uw.phy_group_array.reserve(6);
     uw.phy_group_array[0].boundary_face_array.push_back(six_direction_center_face[0]);
     uw.phy_group_array[1].boundary_face_array.push_back(six_direction_center_face[1]);
     uw.phy_group_array[2].boundary_face_array.push_back(six_direction_center_face[2]);
