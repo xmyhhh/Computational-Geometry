@@ -1107,27 +1107,27 @@ CDT_3D_01_datastruct::Gift_Wrapping CDT_3D_01(CDT_3D_01_datastruct::PLC& plc) {
 
 				{
 					if (intersect == false) {
-						auto  r = TriangleIntersectionCalulate({ face_p1->position,face_p2->position ,face_p3->position }, { t.p1->position ,t.p2->position });
+						auto  r = RayIntersectionCalulate_Triangle({ face_p1->position,face_p2->position ,face_p3->position }, { t.p1->position ,t.p2->position });
 						intersect = r.intersect;
 					}
 					if (intersect == false) {
-						auto  r = TriangleIntersectionCalulate({ face_p1->position,face_p2->position ,face_p3->position }, { t.p1->position ,t.p3->position });
+						auto  r = RayIntersectionCalulate_Triangle({ face_p1->position,face_p2->position ,face_p3->position }, { t.p1->position ,t.p3->position });
 						intersect = r.intersect;
 					}
 					if (intersect == false) {
-						auto  r = TriangleIntersectionCalulate({ face_p1->position,face_p2->position ,face_p3->position }, { t.p1->position ,t.p4->position });
+						auto  r = RayIntersectionCalulate_Triangle({ face_p1->position,face_p2->position ,face_p3->position }, { t.p1->position ,t.p4->position });
 						intersect = r.intersect;
 					}
 					if (intersect == false) {
-						auto  r = TriangleIntersectionCalulate({ face_p1->position,face_p2->position ,face_p3->position }, { t.p2->position ,t.p3->position });
+						auto  r = RayIntersectionCalulate_Triangle({ face_p1->position,face_p2->position ,face_p3->position }, { t.p2->position ,t.p3->position });
 						intersect = r.intersect;
 					}
 					if (intersect == false) {
-						auto  r = TriangleIntersectionCalulate({ face_p1->position,face_p2->position ,face_p3->position }, { t.p3->position ,t.p4->position });
+						auto  r = RayIntersectionCalulate_Triangle({ face_p1->position,face_p2->position ,face_p3->position }, { t.p3->position ,t.p4->position });
 						intersect = r.intersect;
 					}
 					if (intersect == false) {
-						auto  r = TriangleIntersectionCalulate({ face_p1->position,face_p2->position ,face_p3->position }, { t.p2->position ,t.p4->position });
+						auto  r = RayIntersectionCalulate_Triangle({ face_p1->position,face_p2->position ,face_p3->position }, { t.p2->position ,t.p4->position });
 						intersect = r.intersect;
 					}
 				}

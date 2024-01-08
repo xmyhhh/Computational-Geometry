@@ -234,9 +234,9 @@ IntersectionResult LineIntersectionCalulate(Line l1, Line l2) {
     return {l1, l2, {inter_x, inter_y}};
 }
 
-base_type::IntersectionResult3d PlaneIntersectionCalulate(base_type::Plane plane, base_type::Line3d line) {
-    auto ray_dir = VectorNormal(line.p1 - line.p2);
-    auto ray_origin = line.p2;
+base_type::IntersectionResult3d RayIntersectionCalulate_Plane(base_type::Plane plane, base_type::Ray3d ray) {
+    auto ray_dir = VectorNormal(ray.to - ray.from);
+    auto ray_origin = ray.from;
 
     auto denom = dot(plane.normal, ray_dir);
     if (fabs(denom) < 1e-8) {
@@ -280,9 +280,10 @@ bool isPointOnTriangle(base_type::Triangle3d tri, cv::Point3d p) {
 
 }
 
-base_type::IntersectionResult3d TriangleIntersectionCalulate(base_type::Triangle3d tri, base_type::Line3d line) {
-    auto ray_dir = VectorNormal(line.p1 - line.p2);
-    auto ray_origin = line.p2;
+base_type::IntersectionResult3d RayIntersectionCalulate_Triangle(base_type::Triangle3d tri, base_type::Ray3d ray) {
+    auto ray_dir = (ray.to - ray.from);
+    //auto ray_dir_normal = VectorNormal(ray_dir);
+    auto ray_origin = ray.from;
 
     auto u = tri.p2 - tri.p1;
     auto v = tri.p3 - tri.p1;
@@ -296,29 +297,39 @@ base_type::IntersectionResult3d TriangleIntersectionCalulate(base_type::Triangle
         return {false};
     }
 
-    auto w = cvu / dot(cvu, cvu);
     double D = dot(plane_normal, Q);
     double t = (D - dot(plane_normal, ray_origin)) / denom;
     if (t > 1 || t < 0) {
         return {false};
     }
+
     cv::Point3d intersection = ray_origin + ray_dir * t;
-    cv::Point3d planar_hitpt_vector = intersection - Q;
 
-    auto alpha = dot(w, cross(planar_hitpt_vector, v));
-    auto beta = dot(w, cross(u, planar_hitpt_vector));
+#define use_m1 true
+    if (use_m1) {
+        bool b = isPointOnTriangle(tri, intersection);
 
-    //auto aa = alpha * u + beta * v + Q;
+        if (b)
+            return {true, intersection};
 
-    //ASSERT(VectorLengthSqr(aa - intersection) < 1e-8);
+    } else {
+        cv::Point3d planar_hitpt_vector = intersection - Q;
+        auto w = cvu / dot(cvu, cvu);
+        auto alpha = dot(w, cross(planar_hitpt_vector, v));
+        auto beta = dot(w, cross(u, planar_hitpt_vector));
 
-    if (fabs(alpha) < 1e-8 || fabs(beta) < 1e-8) {
-        return {false};
+        //auto aa = alpha * u + beta * v + Q;
+        //ASSERT(VectorLengthSqr(aa - intersection) < 1e-8);
+
+        if (fabs(alpha) < 1e-8 || fabs(beta) < 1e-8) {
+            return {false};
+        }
+
+        if ((alpha + beta) < 0.99999999999 && alpha > 1e-8 && beta > 1e-8) {
+            return {true, intersection};
+        }
     }
 
-    if ((alpha + beta) < 0.99999999999 && alpha > 1e-8 && beta > 1e-8) {
-        return {true, intersection};
-    }
 
     return {false};
 
@@ -438,8 +449,8 @@ void draw_circle_origin_buttom_left(uint width, uint height, cv::InputOutputArra
 }
 
 void debug_cout(std::string msg, bool on) {
-    if(!on){
-        std::cout <<  "\n" << msg;
+    if (!on) {
+        std::cout << "\n" << msg;
         return;
     }
 

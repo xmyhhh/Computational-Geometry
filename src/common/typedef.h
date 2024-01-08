@@ -42,9 +42,14 @@ namespace base_type {
 		cv::Point2d p2;
 	};
 
-	struct Line3d {
-		cv::Point3d p1;
-		cv::Point3d p2;
+    struct Line3d {
+        cv::Point3d p1;
+        cv::Point3d p2;
+    };
+
+	struct Ray3d {
+		cv::Point3d from;
+		cv::Point3d to;
 	};
 
 	struct Plane {

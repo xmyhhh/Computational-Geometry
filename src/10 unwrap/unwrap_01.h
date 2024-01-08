@@ -31,7 +31,8 @@ namespace unwrap_01_datastruct {
         Vertex *p3;
         Tetrahedra *disjoin_tet[2];//0 is ccw , 1 is cw
 
-        bool mark = false;
+        bool is_boundary_face = false;
+        bool draw_read = false;
 
         static Face *allocate_from_pool(MemoryPool *pool, Vertex *_p1, Vertex *_p2, Vertex *_p3) {
             auto f = (Face *) pool->allocate();
@@ -40,7 +41,8 @@ namespace unwrap_01_datastruct {
             f->p1 = _p1;
             f->p2 = _p2;
             f->p3 = _p3;
-            f->mark = false;
+            f->is_boundary_face = false;
+            f->draw_read = false;
             return f;
         }
 
@@ -48,6 +50,7 @@ namespace unwrap_01_datastruct {
             auto f = (Face *) pool->allocate();
             f->disjoin_tet[0] = nullptr;
             f->disjoin_tet[1] = nullptr;
+            f->draw_read = false;
             return f;
         }
     };
@@ -421,10 +424,10 @@ namespace unwrap_01_datastruct {
                 auto f = (Face *) face_pool[i];
 
                 if (f->disjoin_tet[0] == nullptr || f->disjoin_tet[1] == nullptr) {
-                    f->mark = true;
+                    f->is_boundary_face = true;
                     boundary_face_num++;
                 } else {
-                    f->mark = false;
+                    f->is_boundary_face = false;
                 }
 
             }
@@ -512,10 +515,17 @@ namespace unwrap_01_datastruct {
                 vulkan_data.triangles[i * 3 + 1] = t->p2->static_index;
                 vulkan_data.triangles[i * 3 + 2] = t->p3->static_index;
 
-                if (t->mark) {
-                    vulkan_data.triangleColors[i * 3] = 1;
-                    vulkan_data.triangleColors[i * 3 + 1] = 0;
-                    vulkan_data.triangleColors[i * 3 + 2] = 0;
+                if (t->is_boundary_face) {
+                    vulkan_data.triangleColors[i * 3] = 0.5;
+                    vulkan_data.triangleColors[i * 3 + 1] = 0.5;
+                    vulkan_data.triangleColors[i * 3 + 2] = 0.5;
+
+                    if (t->draw_read) {
+                        vulkan_data.triangleColors[i * 3] = 1;
+                        vulkan_data.triangleColors[i * 3 + 1] = 0;
+                        vulkan_data.triangleColors[i * 3 + 2] = 0;
+                    }
+
                 } else {
                     vulkan_data.triangleColors[i * 3] = 0.4;
                     vulkan_data.triangleColors[i * 3 + 1] = 0.4;
@@ -619,6 +629,75 @@ namespace unwrap_01_datastruct {
 }
 
 void Unwrap(unwrap_01_datastruct::Unwrap &uw) {
+    debug_cout("begin Unwrap");
+    using namespace unwrap_01_datastruct;
+    //Step 1: Get mesh center
+    cv::Point3d center(0);
+    auto uw_vtx_len = uw.vertex_pool.size();
+    for (int i = 0; i < uw.vertex_pool.size(); i++) {
+        auto v = (Vertex *) uw.vertex_pool[i];
+        center += cv::Point3d(v->position.x / uw_vtx_len, v->position.y / uw_vtx_len, v->position.z / uw_vtx_len);
+    }
+
+    //find six tri
+    Face *six_direction_center_face[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};//x+-;y+-;z+-
+    const cv::Point3d center_offset{0, 0, 0};
+    const cv::Point3d center_rotation{-50, 0, 0};
+    const double len = 5000;
+    cv::Point3d axis_x = Rotate3d({1, 0, 0}, center_rotation.x, center_rotation.y, center_rotation.z);
+    cv::Point3d axis_y = Rotate3d({0, 1, 0}, center_rotation.x, center_rotation.y, center_rotation.z);
+    cv::Point3d axis_z = VectorNormal(cross(axis_x, axis_y));
+
+    for (int i = 0; i < uw.face_pool.size(); i++) {
+        auto f = (Face *) uw.face_pool[i];
 
 
+        if (f->is_boundary_face) {
+            auto res0 = RayIntersectionCalulate_Triangle({f->p1->position, f->p2->position, f->p3->position}, {center, center + axis_x * len});
+            if (res0.intersect) {
+                f->draw_read = true;
+                six_direction_center_face[0] = f;
+            }
+
+            auto res1 = RayIntersectionCalulate_Triangle({f->p1->position, f->p2->position, f->p3->position}, {center, center - axis_x * len});
+            if (res1.intersect) {
+                f->draw_read = true;
+                six_direction_center_face[1] = f;
+            }
+
+            auto res2 = RayIntersectionCalulate_Triangle({f->p1->position, f->p2->position, f->p3->position}, {center, center + axis_y * len});
+            if (res2.intersect) {
+                f->draw_read = true;
+                six_direction_center_face[2] = f;
+            }
+
+            auto res3 = RayIntersectionCalulate_Triangle({f->p1->position, f->p2->position, f->p3->position}, {center, center - axis_y * len});
+            if (res3.intersect) {
+                f->draw_read = true;
+                six_direction_center_face[3] = f;
+            }
+
+            auto res4 = RayIntersectionCalulate_Triangle({f->p1->position, f->p2->position, f->p3->position}, {center, center + axis_z * len});
+            if (res4.intersect) {
+                f->draw_read = true;
+                six_direction_center_face[4] = f;
+            }
+
+            auto res5 = RayIntersectionCalulate_Triangle({f->p1->position, f->p2->position, f->p3->position}, {center, center - axis_z * len});
+            if (res5.intersect) {
+                f->draw_read = true;
+                six_direction_center_face[5] = f;
+            }
+
+        }
+    }
+    {
+        ASSERT(six_direction_center_face[0] != nullptr);
+        ASSERT(six_direction_center_face[1] != nullptr);
+        ASSERT(six_direction_center_face[2] != nullptr);
+        ASSERT(six_direction_center_face[3] != nullptr);
+        ASSERT(six_direction_center_face[4] != nullptr);
+        ASSERT(six_direction_center_face[5] != nullptr);
+    }
+    debug_cout("end Unwrap");
 }
