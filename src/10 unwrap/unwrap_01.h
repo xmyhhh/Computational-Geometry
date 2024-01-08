@@ -262,7 +262,7 @@ namespace unwrap_01_datastruct {
                     //CELLS 35186 175930
 
                     sscanf(bufferp, "%*s %d %*d", &ntetrahedras);
-                    tetrahedra_pool.initializePool(sizeof(Tetrahedra), ntetrahedras, 8, 32);
+                    tetrahedra_pool.initializePool(sizeof(Tetrahedra), ntetrahedras * 1.2, 8, 32);
 
                 } else if (ntetrahedras > itetrahedras) {
                     static int p0, p1, p2, p3;
@@ -283,7 +283,7 @@ namespace unwrap_01_datastruct {
             fclose(fp);
 
             update_tet_neightbors();
-            create_face_and_egde();
+            create_face_and_edge();
             boundary_face_mark();
             return true;
         }
@@ -321,7 +321,7 @@ namespace unwrap_01_datastruct {
             }
         }
 
-        void create_face_and_egde() {
+        void create_face_and_edge() {
             debug_cout("create_face_and_egde");
 
             face_pool.initializePool(sizeof(Face), tetrahedra_pool.size() * 1.2, 8, 32);
@@ -337,6 +337,7 @@ namespace unwrap_01_datastruct {
                             auto face_in_neighbor = t->neighbors[tet_face_index]->faces[face_index];
                             if (face_in_neighbor != nullptr) {
                                 Tetrahedra::bind_tet_and_face(t, face_in_neighbor);
+                                return;
                             }
                         }
 
@@ -361,7 +362,6 @@ namespace unwrap_01_datastruct {
                             ASSERT(false);
                         }
                         Tetrahedra::bind_tet_and_face(t, f);
-                        int aaa = 0;
                     }
                 };
 
@@ -419,6 +419,7 @@ namespace unwrap_01_datastruct {
             int boundary_face_num = 0;
             for (int i = 0; i < face_pool.size(); i++) {
                 auto f = (Face *) face_pool[i];
+
                 if (f->disjoin_tet[0] == nullptr || f->disjoin_tet[1] == nullptr) {
                     f->mark = true;
                     boundary_face_num++;
@@ -491,13 +492,14 @@ namespace unwrap_01_datastruct {
             }
 
             //edge
-            vulkan_data.numberOfTriangle += face_pool.size();
+            vulkan_data.numberOfTriangle = face_pool.size();
 
             vulkan_data.triangles = (int *) malloc(vulkan_data.numberOfTriangle * 3/*xyz*/ * sizeof(int));
             vulkan_data.triangleColoring = true;
             vulkan_data.triangleColors = (double *) malloc(vulkan_data.numberOfTriangle * 3/*rgb*/ * sizeof(double));
 
-            for (int i = 0; i < vulkan_data.numberOfTriangle/* tetrahedra_pool.size() * 4 * 3 */; i++) {
+            for (int i = 0; i < vulkan_data.numberOfTriangle; i++) {
+
                 vulkan_data.triangleColors[i * 3] = 1;
                 vulkan_data.triangleColors[i * 3 + 1] = 1;
                 vulkan_data.triangleColors[i * 3 + 2] = 1;
@@ -510,12 +512,15 @@ namespace unwrap_01_datastruct {
                 vulkan_data.triangles[i * 3 + 1] = t->p2->static_index;
                 vulkan_data.triangles[i * 3 + 2] = t->p3->static_index;
 
-                vulkan_data.triangleColors[i * 3] = 1;
-                vulkan_data.triangleColors[i * 3 + 1] = 1;
-                vulkan_data.triangleColors[i * 3 + 2] = 1;
-
-                if (t->mark)
-                    vulkan_data.triangleColors[i * 3] = 0.2;
+                if (t->mark) {
+                    vulkan_data.triangleColors[i * 3] = 1;
+                    vulkan_data.triangleColors[i * 3 + 1] = 0;
+                    vulkan_data.triangleColors[i * 3 + 2] = 0;
+                } else {
+                    vulkan_data.triangleColors[i * 3] = 0.4;
+                    vulkan_data.triangleColors[i * 3 + 1] = 0.4;
+                    vulkan_data.triangleColors[i * 3 + 2] = 0.4;
+                }
             }
             debug_cout("prepare vulkan data end");
             return vulkan_data;
@@ -568,21 +573,42 @@ namespace unwrap_01_datastruct {
                 vulkan_data.triangles[i * 3 * 4 + 10] = t->p3->static_index;
                 vulkan_data.triangles[i * 3 * 4 + 11] = t->p4->static_index;
 
-                vulkan_data.triangleColors[i * 3 * 4] = 1;
-                vulkan_data.triangleColors[i * 3 * 4 + 1] = 0;
-                vulkan_data.triangleColors[i * 3 * 4 + 2] = 0;
+                bool is_interior_tet = (t->neighbors[0] != nullptr) && (t->neighbors[1] != nullptr) && (t->neighbors[2] != nullptr) && (t->neighbors[3] != nullptr);
 
-                vulkan_data.triangleColors[i * 3 * 4 + 3] = 1;
-                vulkan_data.triangleColors[i * 3 * 4 + 4] = 0;
-                vulkan_data.triangleColors[i * 3 * 4 + 5] = 0;
+                if (!is_interior_tet) {
+                    vulkan_data.triangleColors[i * 3 * 4] = 1;
+                    vulkan_data.triangleColors[i * 3 * 4 + 1] = 0;
+                    vulkan_data.triangleColors[i * 3 * 4 + 2] = 0;
 
-                vulkan_data.triangleColors[i * 3 * 4 + 6] = 1;
-                vulkan_data.triangleColors[i * 3 * 4 + 7] = 0;
-                vulkan_data.triangleColors[i * 3 * 4 + 8] = 0;
+                    vulkan_data.triangleColors[i * 3 * 4 + 3] = 1;
+                    vulkan_data.triangleColors[i * 3 * 4 + 4] = 0;
+                    vulkan_data.triangleColors[i * 3 * 4 + 5] = 0;
 
-                vulkan_data.triangleColors[i * 3 * 4 + 9] = 1;
-                vulkan_data.triangleColors[i * 3 * 4 + 10] = 0;
-                vulkan_data.triangleColors[i * 3 * 4 + 11] = 0;
+                    vulkan_data.triangleColors[i * 3 * 4 + 6] = 1;
+                    vulkan_data.triangleColors[i * 3 * 4 + 7] = 0;
+                    vulkan_data.triangleColors[i * 3 * 4 + 8] = 0;
+
+                    vulkan_data.triangleColors[i * 3 * 4 + 9] = 1;
+                    vulkan_data.triangleColors[i * 3 * 4 + 10] = 0;
+                    vulkan_data.triangleColors[i * 3 * 4 + 11] = 0;
+                } else {
+                    vulkan_data.triangleColors[i * 3 * 4] = 0.4;
+                    vulkan_data.triangleColors[i * 3 * 4 + 1] = 0.4;
+                    vulkan_data.triangleColors[i * 3 * 4 + 2] = 0.4;
+
+                    vulkan_data.triangleColors[i * 3 * 4 + 3] = 0.4;
+                    vulkan_data.triangleColors[i * 3 * 4 + 4] = 0.4;
+                    vulkan_data.triangleColors[i * 3 * 4 + 5] = 0.4;
+
+                    vulkan_data.triangleColors[i * 3 * 4 + 6] = 0.4;
+                    vulkan_data.triangleColors[i * 3 * 4 + 7] = 0.4;
+                    vulkan_data.triangleColors[i * 3 * 4 + 8] = 0.4;
+
+                    vulkan_data.triangleColors[i * 3 * 4 + 9] = 0.4;
+                    vulkan_data.triangleColors[i * 3 * 4 + 10] = 0.4;
+                    vulkan_data.triangleColors[i * 3 * 4 + 11] = 0.4;
+                }
+
             }
             debug_cout("prepare vulkan data end");
             return vulkan_data;
