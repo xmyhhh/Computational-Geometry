@@ -30,19 +30,25 @@ namespace unwrap_01_datastruct {
         Vertex *p2;
         Vertex *p3;
         Tetrahedra *disjoin_tet[2];//0 is ccw , 1 is cw
-
+        Edge *disjoin_edge[3];
         bool is_boundary_face = false;
         bool draw_read = false;
+        bool mark = false;
+
 
         static Face *allocate_from_pool(MemoryPool *pool, Vertex *_p1, Vertex *_p2, Vertex *_p3) {
             auto f = (Face *) pool->allocate();
             f->disjoin_tet[0] = nullptr;
             f->disjoin_tet[1] = nullptr;
+            f->disjoin_edge[0] = nullptr;
+            f->disjoin_edge[1] = nullptr;
+            f->disjoin_edge[2] = nullptr;
             f->p1 = _p1;
             f->p2 = _p2;
             f->p3 = _p3;
             f->is_boundary_face = false;
             f->draw_read = false;
+            f->mark = false;
             return f;
         }
 
@@ -50,15 +56,42 @@ namespace unwrap_01_datastruct {
             auto f = (Face *) pool->allocate();
             f->disjoin_tet[0] = nullptr;
             f->disjoin_tet[1] = nullptr;
+
+            f->disjoin_edge[0] = nullptr;
+            f->disjoin_edge[1] = nullptr;
+            f->disjoin_edge[2] = nullptr;
             f->draw_read = false;
+            f->mark = false;
             return f;
+        }
+
+        static bool is_disjoin_face(Face *f1, Face *f2) {
+            bool b1 = f1->p1 == f2->p1 || f1->p1 == f2->p2 || f1->p1 == f2->p3;
+            bool b2 = f1->p2 == f2->p1 || f1->p2 == f2->p2 || f1->p2 == f2->p3;
+            bool b3 = f1->p3 == f2->p1 || f1->p3 == f2->p2 || f1->p3 == f2->p3;
+            int i = 0;
+            if (b1)
+                i++;
+            if (b2)
+                i++;
+            if (b3)
+                i++;
+            return i == 2;
+        }
+
+        static cv::Point3d get_face_normal(Face *f) {
+            auto u = f->p2->position - f->p1->position;
+            auto v = f->p3->position - f->p1->position;
+            auto n = VectorNormal(cross(v, u));
+            return n;
+
         }
     };
 
     struct Edge {
         Vertex *orig;
         Vertex *end;
-
+        std::vector<Face *> *connect_face_array;
         //for draw debug
         bool draw_red = false;
 
@@ -69,6 +102,7 @@ namespace unwrap_01_datastruct {
             e->draw_red = false;
             _orig->connect_edge_array->push_back(e);
             _end->connect_edge_array->push_back(e);
+            e->connect_face_array = new std::vector<Face *>();
             return e;
         }
 
@@ -214,6 +248,11 @@ namespace unwrap_01_datastruct {
         }
     };
 
+    struct PhysicalGroup_2D {
+        std::vector<Face *> face_array;
+        std::vector<Face *> boundary_face_array;
+    };
+
     struct Unwrap {
         MemoryPool vertex_pool;
         MemoryPool edge_pool;
@@ -221,8 +260,11 @@ namespace unwrap_01_datastruct {
         MemoryPool tetrahedra_pool;
 
         int size = 40;
+        std::vector<PhysicalGroup_2D> phy_group_array;
 
         bool init_from_file(std::string path) {
+
+
             debug_cout("init_from_file");
             FILE *fp = fopen(path.c_str(), "r");
             if (fp == (FILE *) NULL) {
@@ -406,12 +448,18 @@ namespace unwrap_01_datastruct {
                     if (!find_edge(p1, p2, e)) {
                         e = Edge::allocate_from_pool(&edge_pool, p1, p2);
                     }
+                    f->disjoin_edge[0] = e;
+                    e->connect_face_array->push_back(f);
                     if (!find_edge(p2, p3, e)) {
                         e = Edge::allocate_from_pool(&edge_pool, p2, p3);
                     }
+                    f->disjoin_edge[1] = e;
+                    e->connect_face_array->push_back(f);
                     if (!find_edge(p3, p1, e)) {
                         e = Edge::allocate_from_pool(&edge_pool, p3, p1);
                     }
+                    f->disjoin_edge[2] = e;
+                    e->connect_face_array->push_back(f);
                 }
 
             }
@@ -626,6 +674,8 @@ namespace unwrap_01_datastruct {
 
 
     };
+
+
 }
 
 void Unwrap(unwrap_01_datastruct::Unwrap &uw) {
@@ -640,6 +690,7 @@ void Unwrap(unwrap_01_datastruct::Unwrap &uw) {
     }
 
     //find six tri
+    debug_cout("find six tri");
     Face *six_direction_center_face[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};//x+-;y+-;z+-
     const cv::Point3d center_offset{0, 0, 0};
     const cv::Point3d center_rotation{-50, 0, 0};
@@ -650,7 +701,6 @@ void Unwrap(unwrap_01_datastruct::Unwrap &uw) {
 
     for (int i = 0; i < uw.face_pool.size(); i++) {
         auto f = (Face *) uw.face_pool[i];
-
 
         if (f->is_boundary_face) {
             auto res0 = RayIntersectionCalulate_Triangle({f->p1->position, f->p2->position, f->p3->position}, {center, center + axis_x * len});
@@ -699,5 +749,89 @@ void Unwrap(unwrap_01_datastruct::Unwrap &uw) {
         ASSERT(six_direction_center_face[4] != nullptr);
         ASSERT(six_direction_center_face[5] != nullptr);
     }
+    debug_cout("begin grow up");
+
+    uw.phy_group_array[0].boundary_face_array.push_back(six_direction_center_face[0]);
+    uw.phy_group_array[1].boundary_face_array.push_back(six_direction_center_face[1]);
+    uw.phy_group_array[2].boundary_face_array.push_back(six_direction_center_face[2]);
+    uw.phy_group_array[3].boundary_face_array.push_back(six_direction_center_face[3]);
+    uw.phy_group_array[4].boundary_face_array.push_back(six_direction_center_face[4]);
+    uw.phy_group_array[5].boundary_face_array.push_back(six_direction_center_face[5]);
+
+
+
+    //auto grow
+    auto physicalGroup_2D_grow = [](PhysicalGroup_2D &phy_group) {
+
+        auto find_boundary_adj_face = [](Face *f, int index) -> Face * {
+            for (auto connect_f: *f->disjoin_edge[index]->connect_face_array) {
+                if (connect_f->is_boundary_face && connect_f != f)
+                    return connect_f;
+            }
+            return nullptr;
+        };
+        auto is_face_grow_able = [](Face *f, Face *face_to_grow) {
+            ASSERT(Face::is_disjoin_face(f, face_to_grow));
+            auto n1 = Face::get_face_normal(f);
+            auto n2 = Face::get_face_normal(face_to_grow);
+            static const double limit = std::cos(45);
+            return fabs(dot(n1, n2)) > limit;
+        };
+
+        if (phy_group.boundary_face_array.size() == 0)
+            return false;
+        std::vector<Face *> new_add_face_array;
+
+        bool new_face_added = false;
+        for (auto f: phy_group.boundary_face_array) {
+            auto adj_f0 = find_boundary_adj_face(f, 0);
+            if (adj_f0->mark == false && is_face_grow_able(f, adj_f0)) {
+                new_add_face_array.push_back(adj_f0);
+                adj_f0->mark = true;
+                new_face_added = true;
+            }
+
+            auto adj_f1 = find_boundary_adj_face(f, 1);
+            if (adj_f1->mark == false && is_face_grow_able(f, adj_f1)) {
+                new_add_face_array.push_back(adj_f1);
+                adj_f1->mark = true;
+                new_face_added = true;
+            }
+
+            auto adj_f2 = find_boundary_adj_face(f, 2);
+            if (adj_f2->mark == false && is_face_grow_able(f, adj_f2)) {
+                new_add_face_array.push_back(adj_f2);
+                adj_f2->mark = true;
+                new_face_added = true;
+            }
+
+
+        }
+
+        for (auto f: phy_group.boundary_face_array) {
+            phy_group.face_array.push_back(f);
+        }
+        phy_group.boundary_face_array.clear();
+
+        for (auto f: new_add_face_array) {
+            phy_group.boundary_face_array.push_back(f);
+        }
+
+        return new_face_added;
+
+    };
+    bool do_next = false;
+    do {
+        debug_cout("do_next Unwrap");
+        do_next |= physicalGroup_2D_grow(uw.phy_group_array[0]);
+        do_next |= physicalGroup_2D_grow(uw.phy_group_array[1]);
+        do_next |= physicalGroup_2D_grow(uw.phy_group_array[2]);
+        do_next |= physicalGroup_2D_grow(uw.phy_group_array[3]);
+        do_next |= physicalGroup_2D_grow(uw.phy_group_array[4]);
+        do_next |= physicalGroup_2D_grow(uw.phy_group_array[5]);
+
+    } while (do_next);
+
+
     debug_cout("end Unwrap");
 }
