@@ -18,6 +18,8 @@ void Unwrap(HINSTANCE hInstance) {
 	int height = 50;
 	int deepth = 50;
 
+    debug_cout("begin");
+
 	unwrap_01_datastruct::Unwrap uw;
 	ASSERT(uw.init_from_file(getAssetPath() + "23308.1.vtk"));
 
@@ -25,7 +27,7 @@ void Unwrap(HINSTANCE hInstance) {
 
 	unwrap_Vulkan_app = new Delaunay3D_Vulkan();
 
-	unwrap_Vulkan_app->SetData(uw.toVulkanDrawData());
+	unwrap_Vulkan_app->SetData(uw.toVulkanDrawData_Face());
 	unwrap_Vulkan_app->initVulkan();
 	unwrap_Vulkan_app->setupWindow(hInstance, Unwrap3D_WndProc);
 	unwrap_Vulkan_app->prepare();

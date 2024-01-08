@@ -15,6 +15,7 @@ class MyTimer {
 public:
 	static milliseconds startTime;
 	static void ResetTime();
-	static double GetTime();
+	static double GetDurationTime();
 	static double GetCurrentTimeinSce();
+    static double GetCurrentTime();
 };

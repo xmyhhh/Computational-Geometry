@@ -232,16 +232,13 @@ void Delaunay_3D_01(std::vector<cv::Point3d>& all_dots, Delaunay3D_01_datastruct
 		n_simplices_bounding_sphere_cal(bw_dt_struct.n_simplices_list[0]);
 	}
 	int i = 0;
-	MyTimer::ResetTime();
 
 	debug_cout("beging Incremental_construction pt");
 	for (const auto& point : all_dots) {
 		debug_cout("Incremental_construction pt " + std::to_string(i));
 		i++;
-
 		Incremental_construction(point, bw_dt_struct);
 	}
-	auto t = MyTimer::GetTime();
-	std::cout << "run time:" + std::to_string(t);
+
 
 }
